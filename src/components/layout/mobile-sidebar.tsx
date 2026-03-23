@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { NAV_ITEMS } from '@/lib/constants'
 import {
   LayoutDashboard, ArrowLeftRight, Wallet, Tags, PieChart,
-  Target, Repeat, BarChart3, Bot, Lightbulb, Settings, Plus
+  Target, BarChart3, Bot, Lightbulb, Settings, Plus
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -18,7 +18,6 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'tags': Tags,
   'pie-chart': PieChart,
   'target': Target,
-  'repeat': Repeat,
   'bar-chart-3': BarChart3,
   'bot': Bot,
   'lightbulb': Lightbulb,

@@ -55,7 +55,6 @@ export const NAV_ITEMS = [
   { href: '/categories', label: 'Categorias', icon: 'tags' },
   { href: '/budgets', label: 'Orçamentos', icon: 'pie-chart' },
   { href: '/goals', label: 'Metas', icon: 'target' },
-  { href: '/recurring', label: 'Recorrentes', icon: 'repeat' },
   { href: '/reports', label: 'Relatórios', icon: 'bar-chart-3' },
   { href: '/bot', label: 'Assistente', icon: 'bot' },
   { href: '/insights', label: 'Insights', icon: 'lightbulb' },
