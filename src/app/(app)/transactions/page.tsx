@@ -28,8 +28,6 @@ export default function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [activeTab, setActiveTab] = useState('transactions')
-  const [recurringDialogOpen, setRecurringDialogOpen] = useState(false)
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true)
@@ -72,25 +70,15 @@ export default function TransactionsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Transações</h1>
-        {activeTab === 'transactions' ? (
-          <Link href="/transactions/new">
-            <Button className="gap-2 gradient-primary shadow-md shadow-primary/25 border-0">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Nova Transação</span>
-            </Button>
-          </Link>
-        ) : (
-          <Button
-            className="gap-2 gradient-primary shadow-md shadow-primary/25 border-0"
-            onClick={() => setRecurringDialogOpen(true)}
-          >
+        <Link href="/transactions/new">
+          <Button className="gap-2 gradient-primary shadow-md shadow-primary/25 border-0">
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nova Recorrência</span>
+            <span className="hidden sm:inline">Nova Transação</span>
           </Button>
-        )}
+        </Link>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => v && setActiveTab(v)}>
+      <Tabs defaultValue="transactions">
         <TabsList className="grid w-full grid-cols-2 sm:w-[300px]">
           <TabsTrigger value="transactions">Transações</TabsTrigger>
           <TabsTrigger value="recurring">Recorrentes</TabsTrigger>
@@ -237,7 +225,7 @@ export default function TransactionsPage() {
 
         <TabsContent value="recurring">
           <div className="pt-4">
-            <RecurringTab dialogOpen={recurringDialogOpen} setDialogOpen={setRecurringDialogOpen} />
+            <RecurringTab />
           </div>
         </TabsContent>
       </Tabs>

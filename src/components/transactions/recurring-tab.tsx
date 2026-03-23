@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
@@ -27,6 +27,7 @@ import { formatCurrency, formatDate, cn } from '@/lib/utils'
 import { RECURRENCE_LABELS } from '@/lib/constants'
 import { Repeat, Pencil, Trash2, Pause, Play, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
+import Link from 'next/link'
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   ACTIVE: { label: 'Ativo', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
@@ -35,16 +36,12 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   COMPLETED: { label: 'Concluído', className: 'bg-muted text-muted-foreground border-border' },
 }
 
-interface RecurringTabProps {
-  dialogOpen: boolean
-  setDialogOpen: (open: boolean) => void
-}
-
-export function RecurringTab({ dialogOpen, setDialogOpen }: RecurringTabProps) {
+export function RecurringTab() {
   const [items, setItems] = useState<any[]>([])
   const [accounts, setAccounts] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
   // Form state
@@ -126,15 +123,13 @@ export function RecurringTab({ dialogOpen, setDialogOpen }: RecurringTabProps) {
     }
 
     try {
-      const url = editingId ? `/api/recurring/${editingId}` : '/api/recurring'
-      const method = editingId ? 'PUT' : 'POST'
-      const res = await fetch(url, {
-        method,
+      const res = await fetch(`/api/recurring/${editingId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
       if (res.ok) {
-        toast.success(editingId ? 'Recorrência atualizada!' : 'Recorrência criada!')
+        toast.success('Recorrência atualizada!')
         setDialogOpen(false)
         resetForm()
         fetchData()
@@ -176,17 +171,18 @@ export function RecurringTab({ dialogOpen, setDialogOpen }: RecurringTabProps) {
     }
   }
 
-  function handleDialogChange(open: boolean) {
-    setDialogOpen(open)
-    if (!open) resetForm()
-  }
+  const selectedAccountName = accounts.find(a => a.id === accountId)?.name
+  const selectedCategoryName = filteredCategories.find((c: any) => c.id === categoryId)?.name
 
   return (
     <>
-      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open)
+        if (!open) resetForm()
+      }}>
         <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Editar Recorrência' : 'Nova Recorrência'}</DialogTitle>
+            <DialogTitle>Editar Recorrência</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 overflow-y-auto flex-1 pr-1">
             {/* Type Tabs */}
@@ -256,7 +252,9 @@ export function RecurringTab({ dialogOpen, setDialogOpen }: RecurringTabProps) {
               <Label>Conta (opcional)</Label>
               <Select value={accountId} onValueChange={(v) => v && setAccountId(v)}>
                 <SelectTrigger className="h-11 rounded-xl w-full">
-                  <SelectValue placeholder="Selecione" />
+                  <span className="flex flex-1 text-left truncate">
+                    {selectedAccountName || <span className="text-muted-foreground">Selecione</span>}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   {accounts.map((a: any) => (
@@ -271,7 +269,9 @@ export function RecurringTab({ dialogOpen, setDialogOpen }: RecurringTabProps) {
               <Label>Categoria (opcional)</Label>
               <Select value={categoryId} onValueChange={(v) => v && setCategoryId(v)}>
                 <SelectTrigger className="h-11 rounded-xl w-full">
-                  <SelectValue placeholder="Selecione" />
+                  <span className="flex flex-1 text-left truncate">
+                    {selectedCategoryName || <span className="text-muted-foreground">Selecione</span>}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   {filteredCategories.map((c: any) => (
@@ -333,7 +333,7 @@ export function RecurringTab({ dialogOpen, setDialogOpen }: RecurringTabProps) {
               className="w-full gradient-primary shadow-md shadow-primary/25 border-0"
               onClick={handleSubmit}
             >
-              {editingId ? 'Salvar Alterações' : 'Criar Recorrência'}
+              Salvar Alterações
             </Button>
           </div>
         </DialogContent>
@@ -348,7 +348,11 @@ export function RecurringTab({ dialogOpen, setDialogOpen }: RecurringTabProps) {
           icon={<Repeat className="h-12 w-12" />}
           title="Nenhuma recorrência cadastrada"
           description="Cadastre assinaturas, contas fixas e receitas recorrentes para acompanhar automaticamente."
-          action={<Button onClick={() => setDialogOpen(true)}>Nova Recorrência</Button>}
+          action={
+            <Link href="/transactions/new">
+              <Button>Nova Transação Recorrente</Button>
+            </Link>
+          }
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
