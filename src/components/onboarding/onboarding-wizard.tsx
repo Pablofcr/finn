@@ -7,15 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { ACCOUNT_TYPE_LABELS, TRANSACTION_TYPE_LABELS, COLORS } from '@/lib/constants'
-import { formatCurrency } from '@/lib/utils'
+import { ACCOUNT_TYPE_LABELS, TRANSACTION_TYPE_LABELS, RECURRENCE_LABELS, COLORS } from '@/lib/constants'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
   Wallet,
@@ -30,6 +23,7 @@ import {
   Check,
   Sparkles,
   CircleDollarSign,
+  Repeat,
 } from 'lucide-react'
 
 const STEPS = [
@@ -45,6 +39,40 @@ interface Category {
   name: string
   icon: string
   type: string
+}
+
+function NativeSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  id,
+}: {
+  value: string
+  onChange: (value: string) => void
+  options: { value: string; label: string }[]
+  placeholder?: string
+  id?: string
+}) {
+  return (
+    <select
+      id={id}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-10 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm transition-all outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20 dark:bg-input/30"
+    >
+      {placeholder && (
+        <option value="" disabled>
+          {placeholder}
+        </option>
+      )}
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  )
 }
 
 export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
@@ -64,6 +92,9 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
   const [txAmount, setTxAmount] = useState('')
   const [txDescription, setTxDescription] = useState('')
   const [txCategoryId, setTxCategoryId] = useState('')
+  const [txDate, setTxDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [txRecurring, setTxRecurring] = useState(false)
+  const [txFrequency, setTxFrequency] = useState('MONTHLY')
   const [categories, setCategories] = useState<Category[]>([])
 
   const fetchCategories = useCallback(async () => {
@@ -72,7 +103,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
       const data = await res.json()
       if (data.data) setCategories(data.data)
     } catch {
-      // Categories are optional, continue without them
+      // Categories are optional
     }
   }, [])
 
@@ -120,9 +151,14 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
       toast.error('Informe um valor válido')
       return
     }
+    if (!txDate) {
+      toast.error('Informe a data')
+      return
+    }
 
     setLoading(true)
     try {
+      // Create the transaction
       const res = await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,13 +166,32 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
           type: txType,
           amount: parseFloat(txAmount),
           description: txDescription.trim(),
-          date: new Date().toISOString(),
+          date: new Date(txDate).toISOString(),
           accountId: createdAccountId,
           categoryId: txCategoryId || undefined,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erro ao criar transação')
+
+      // If recurring, also create recurring transaction
+      if (txRecurring) {
+        await fetch('/api/recurring', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: txType,
+            amount: parseFloat(txAmount),
+            description: txDescription.trim(),
+            frequency: txFrequency,
+            startDate: txDate,
+            accountId: createdAccountId,
+            categoryId: txCategoryId || undefined,
+            autoConfirm: true,
+          }),
+        })
+      }
+
       toast.success('Transação registrada!')
       setStep(3)
     } catch (err: any) {
@@ -153,10 +208,14 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
 
   const userName = user?.user_metadata?.name?.split(' ')[0] || 'usuário'
 
+  const filteredCategories = categories.filter((c) =>
+    txType === 'INCOME' ? c.type === 'INCOME' : c.type === 'EXPENSE'
+  )
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background overflow-y-auto py-8">
       {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
         <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
       </div>
@@ -236,21 +295,15 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="account-type">Tipo</Label>
-                    <Select
+                    <NativeSelect
+                      id="account-type"
                       value={accountType}
-                      onValueChange={(v) => v && setAccountType(v)}
-                    >
-                      <SelectTrigger id="account-type" className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(ACCOUNT_TYPE_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={setAccountType}
+                      options={Object.entries(ACCOUNT_TYPE_LABELS).map(([value, label]) => ({
+                        value,
+                        label,
+                      }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="account-balance">Saldo inicial</Label>
@@ -302,7 +355,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
                         <button
                           key={type}
                           type="button"
-                          onClick={() => setTxType(type)}
+                          onClick={() => { setTxType(type); setTxCategoryId('') }}
                           className={`rounded-xl border p-3 text-sm font-medium transition-all ${
                             txType === type
                               ? type === 'INCOME'
@@ -337,32 +390,60 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
                       onChange={(e) => setTxDescription(e.target.value)}
                     />
                   </div>
-                  {categories.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="tx-date">Data</Label>
+                    <Input
+                      id="tx-date"
+                      type="date"
+                      value={txDate}
+                      onChange={(e) => setTxDate(e.target.value)}
+                    />
+                  </div>
+                  {filteredCategories.length > 0 && (
                     <div className="space-y-2">
                       <Label htmlFor="tx-category">Categoria (opcional)</Label>
-                      <Select
+                      <NativeSelect
+                        id="tx-category"
                         value={txCategoryId}
-                        onValueChange={(v) => v && setTxCategoryId(v)}
-                      >
-                        <SelectTrigger id="tx-category" className="w-full">
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories
-                            .filter((c) =>
-                              txType === 'INCOME'
-                                ? c.type === 'INCOME'
-                                : c.type === 'EXPENSE'
-                            )
-                            .map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id}>
-                                {cat.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={setTxCategoryId}
+                        placeholder="Selecione..."
+                        options={filteredCategories.map((cat) => ({
+                          value: cat.id,
+                          label: cat.name,
+                        }))}
+                      />
                     </div>
                   )}
+                  {/* Recurrence toggle */}
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => setTxRecurring(!txRecurring)}
+                      className={cn(
+                        'flex w-full items-center gap-3 rounded-xl border p-3 text-sm transition-all',
+                        txRecurring
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-border hover:bg-muted'
+                      )}
+                    >
+                      <Repeat className="h-4 w-4" />
+                      <span className="font-medium">Transação recorrente</span>
+                    </button>
+                    {txRecurring && (
+                      <div className="space-y-2 animate-fade-in">
+                        <Label htmlFor="tx-frequency">Frequência</Label>
+                        <NativeSelect
+                          id="tx-frequency"
+                          value={txFrequency}
+                          onChange={setTxFrequency}
+                          options={Object.entries(RECURRENCE_LABELS).map(([value, label]) => ({
+                            value,
+                            label,
+                          }))}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-3">
                   <Button
