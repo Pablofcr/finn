@@ -1,0 +1,76 @@
+"use client"
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { formatCurrency, formatDate } from '@/lib/utils'
+import { ArrowRight } from 'lucide-react'
+import Link from 'next/link'
+
+interface RecentTransaction {
+  id: string
+  description: string
+  amount: number
+  type: string
+  date: string
+  categoryName?: string
+  categoryColor?: string
+}
+
+interface RecentTransactionsProps {
+  transactions: RecentTransaction[]
+}
+
+export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-base">Transações Recentes</CardTitle>
+        <Link href="/transactions">
+          <Button variant="ghost" size="sm" className="gap-1 text-xs">
+            Ver todas
+            <ArrowRight className="h-3 w-3" />
+          </Button>
+        </Link>
+      </CardHeader>
+      <CardContent>
+        {transactions.length === 0 ? (
+          <p className="text-center text-sm text-muted-foreground py-8">
+            Nenhuma transação registrada
+          </p>
+        ) : (
+          <div className="space-y-1">
+            {transactions.map((t) => (
+              <div key={t.id} className="flex items-center justify-between hover:bg-muted/50 rounded-lg transition-colors p-2 -mx-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-xs font-semibold"
+                    style={{
+                      backgroundColor: `${t.categoryColor || '#94a3b8'}15`,
+                      color: t.categoryColor || '#94a3b8',
+                    }}
+                  >
+                    {(t.categoryName || 'S')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{t.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t.categoryName || 'Sem categoria'} · {formatDate(t.date)}
+                    </p>
+                  </div>
+                </div>
+                <span
+                  className={`text-sm font-semibold ${
+                    t.type === 'INCOME' ? 'text-income' : 'text-expense'
+                  }`}
+                >
+                  {t.type === 'INCOME' ? '+' : '-'}
+                  {formatCurrency(Number(t.amount))}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
