@@ -127,26 +127,33 @@ export async function POST(request: NextRequest) {
     },
   })
 
-  // Update account balance
-  if (data.type === 'EXPENSE') {
-    await prisma.account.update({
-      where: { id: data.accountId },
-      data: { balance: { decrement: data.amount } },
-    })
-  } else if (data.type === 'INCOME') {
-    await prisma.account.update({
-      where: { id: data.accountId },
-      data: { balance: { increment: data.amount } },
-    })
-  } else if (data.type === 'TRANSFER' && data.toAccountId) {
-    await prisma.account.update({
-      where: { id: data.accountId },
-      data: { balance: { decrement: data.amount } },
-    })
-    await prisma.account.update({
-      where: { id: data.toAccountId },
-      data: { balance: { increment: data.amount } },
-    })
+  // Update account balance only for present/past transactions
+  const transactionDate = new Date(data.date)
+  const today = new Date()
+  today.setHours(23, 59, 59, 999)
+  const isFuture = transactionDate > today
+
+  if (!isFuture) {
+    if (data.type === 'EXPENSE') {
+      await prisma.account.update({
+        where: { id: data.accountId },
+        data: { balance: { decrement: data.amount } },
+      })
+    } else if (data.type === 'INCOME') {
+      await prisma.account.update({
+        where: { id: data.accountId },
+        data: { balance: { increment: data.amount } },
+      })
+    } else if (data.type === 'TRANSFER' && data.toAccountId) {
+      await prisma.account.update({
+        where: { id: data.accountId },
+        data: { balance: { decrement: data.amount } },
+      })
+      await prisma.account.update({
+        where: { id: data.toAccountId },
+        data: { balance: { increment: data.amount } },
+      })
+    }
   }
 
   return Response.json({ data: transaction }, { status: 201 })
