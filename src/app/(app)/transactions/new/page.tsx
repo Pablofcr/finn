@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { ArrowLeft } from 'lucide-react'
@@ -17,6 +17,18 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { RECURRENCE_LABELS } from '@/lib/constants'
+
+function formatCurrencyInput(cents: number): string {
+  const value = (cents / 100).toFixed(2)
+  const [intPart, decPart] = value.split('.')
+  const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${formatted},${decPart}`
+}
+
+function parseCurrencyInput(display: string): number {
+  const digits = display.replace(/\D/g, '')
+  return parseInt(digits || '0', 10)
+}
 
 export default function NewTransactionPage() {
   const router = useRouter()
@@ -26,6 +38,10 @@ export default function NewTransactionPage() {
   const [categories, setCategories] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
 
+  // Currency input state (stored as cents)
+  const [amountCents, setAmountCents] = useState(0)
+  const amountDisplay = formatCurrencyInput(amountCents)
+
   // Recurring state
   const [isRecurring, setIsRecurring] = useState(false)
   const [frequency, setFrequency] = useState('MONTHLY')
@@ -33,11 +49,12 @@ export default function NewTransactionPage() {
   const [endDate, setEndDate] = useState('')
   const [autoConfirm, setAutoConfirm] = useState(false)
 
-  const { register, handleSubmit, setValue, watch, formState: { errors }, reset, getValues } = useForm<TransactionInput>({
+  const { register, handleSubmit, setValue, watch, formState: { errors }, reset } = useForm<TransactionInput>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       type: 'EXPENSE',
       date: new Date().toISOString().split('T')[0],
+      amount: 0,
     },
   })
 
@@ -50,6 +67,13 @@ export default function NewTransactionPage() {
   const type = watch('type')
   const accountId = watch('accountId')
   const categoryId = watch('categoryId')
+
+  function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/\D/g, '')
+    const cents = parseInt(raw || '0', 10)
+    setAmountCents(cents)
+    setValue('amount', cents / 100, { shouldValidate: true })
+  }
 
   useEffect(() => {
     Promise.all([
@@ -68,9 +92,11 @@ export default function NewTransactionPage() {
         .then(res => {
           if (res.data) {
             const t = res.data
+            const amt = Number(t.amount)
+            setAmountCents(Math.round(amt * 100))
             reset({
               type: t.type,
-              amount: Number(t.amount),
+              amount: amt,
               description: t.description,
               date: new Date(t.date).toISOString().split('T')[0],
               accountId: t.accountId,
@@ -87,7 +113,6 @@ export default function NewTransactionPage() {
     setSaving(true)
     try {
       if (isRecurring && !editId) {
-        // Create recurring transaction
         const recurringPayload = {
           description: data.description,
           amount: data.amount,
@@ -112,7 +137,6 @@ export default function NewTransactionPage() {
           toast.error(err.error || 'Erro ao salvar')
         }
       } else {
-        // Create/update regular transaction
         const url = editId ? `/api/transactions/${editId}` : '/api/transactions'
         const method = editId ? 'PUT' : 'POST'
         const res = await fetch(url, {
@@ -188,15 +212,19 @@ export default function NewTransactionPage() {
 
             <div className="space-y-2">
               <Label htmlFor="amount">Valor (R$)</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0,00"
-                className="text-center text-4xl font-bold border-0 bg-transparent h-16 focus-visible:ring-0"
-                {...register('amount', { valueAsNumber: true })}
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-muted-foreground pointer-events-none">
+                  R$
+                </span>
+                <Input
+                  id="amount"
+                  type="text"
+                  inputMode="numeric"
+                  value={amountDisplay}
+                  onChange={handleAmountChange}
+                  className="text-right text-3xl font-bold border-0 bg-muted/30 h-16 focus-visible:ring-1 focus-visible:ring-primary rounded-xl pl-14 pr-4"
+                />
+              </div>
               {errors.amount && <p className="text-xs text-destructive text-center">{errors.amount.message}</p>}
             </div>
 
