@@ -11,7 +11,9 @@ export const transactionSchema = z.object({
   location: z.string().optional(),
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  installments: z.number().int().min(1).max(48).optional(),
+  installments: z.nan().transform(() => undefined).pipe(z.undefined())
+    .or(z.number().int().min(1).max(48))
+    .optional(),
 })
 
 export type TransactionInput = z.infer<typeof transactionSchema>
