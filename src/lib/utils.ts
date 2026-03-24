@@ -14,7 +14,7 @@ export function formatCurrency(value: number): string {
 
 export function formatDate(date: string | Date): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date
-  return new Intl.DateTimeFormat('pt-BR').format(dateObj)
+  return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(dateObj)
 }
 
 export function formatDateTime(date: string | Date): string {
