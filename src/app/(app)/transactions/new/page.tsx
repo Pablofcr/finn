@@ -33,13 +33,19 @@ export default function NewTransactionPage() {
   const [endDate, setEndDate] = useState('')
   const [autoConfirm, setAutoConfirm] = useState(false)
 
-  const { register, handleSubmit, setValue, watch, formState: { errors }, reset } = useForm<TransactionInput>({
+  const { register, handleSubmit, setValue, watch, formState: { errors }, reset, getValues } = useForm<TransactionInput>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       type: 'EXPENSE',
       date: new Date().toISOString().split('T')[0],
     },
   })
+
+  function onError(fieldErrors: any) {
+    const firstError = Object.values(fieldErrors)[0] as any
+    toast.error(firstError?.message || 'Preencha todos os campos obrigatórios')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const type = watch('type')
   const accountId = watch('accountId')
@@ -154,9 +160,9 @@ export default function NewTransactionPage() {
           <CardTitle className="text-base">Detalhes da transação</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-4">
             <div>
-              <Tabs value={type} onValueChange={(v) => v && setValue('type', v as any)}>
+              <Tabs value={type} onValueChange={(v) => v && setValue('type', v as any, { shouldValidate: true })}>
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger
                     value="EXPENSE"
@@ -218,7 +224,7 @@ export default function NewTransactionPage() {
 
             <div className="space-y-2">
               <Label>Conta</Label>
-              <Select onValueChange={(v) => v && setValue('accountId', v)} value={accountId}>
+              <Select onValueChange={(v) => v && setValue('accountId', v, { shouldValidate: true })} value={accountId}>
                 <SelectTrigger className="h-11 rounded-xl">
                   <span className="flex flex-1 text-left truncate">
                     {selectedAccountName || <span className="text-muted-foreground">Selecione a conta</span>}
@@ -236,7 +242,7 @@ export default function NewTransactionPage() {
             {type === 'TRANSFER' && (
               <div className="space-y-2">
                 <Label>Conta destino</Label>
-                <Select onValueChange={(v) => v && setValue('toAccountId', v)} value={watch('toAccountId')}>
+                <Select onValueChange={(v) => v && setValue('toAccountId', v, { shouldValidate: true })} value={watch('toAccountId')}>
                   <SelectTrigger className="h-11 rounded-xl">
                     <span className="flex flex-1 text-left truncate">
                       {accounts.find(a => a.id === watch('toAccountId'))?.name || <span className="text-muted-foreground">Selecione a conta destino</span>}
@@ -254,7 +260,7 @@ export default function NewTransactionPage() {
             {type !== 'TRANSFER' && (
               <div className="space-y-2">
                 <Label>Categoria</Label>
-                <Select onValueChange={(v) => v && setValue('categoryId', v)} value={categoryId}>
+                <Select onValueChange={(v) => v && setValue('categoryId', v, { shouldValidate: true })} value={categoryId}>
                   <SelectTrigger className="h-11 rounded-xl">
                     <span className="flex flex-1 text-left truncate">
                       {selectedCategoryName ? (
