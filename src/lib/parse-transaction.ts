@@ -14,8 +14,14 @@ interface ParsedReceipt {
   items: string[]
 }
 
+type RecurrenceFrequency = 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY'
+
 interface ParsedTransactionWithDate extends ParsedTransaction {
   date: string | null
+  recurring?: {
+    frequency: RecurrenceFrequency
+    label: string
+  } | null
 }
 
 // Convert written-out numbers to digits
@@ -129,7 +135,27 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
     return null
   }
 
-  // 4. Extract DESCRIPTION from whatever remains
+  // 4. Detect RECURRENCE from anywhere
+  let recurring: ParsedTransactionWithDate['recurring'] = null
+  const recurrencePatterns: { pattern: RegExp; frequency: RecurrenceFrequency; label: string }[] = [
+    { pattern: /\b(todo\s+dia|di[aá]ri[oa]|diariamente)\b/, frequency: 'DAILY', label: 'Diário' },
+    { pattern: /\b(toda\s+semana|semanal|semanalmente)\b/, frequency: 'WEEKLY', label: 'Semanal' },
+    { pattern: /\b(quinzenal|quinzenalmente|a\s+cada\s+15\s+dias)\b/, frequency: 'BIWEEKLY', label: 'Quinzenal' },
+    { pattern: /\b(todo\s+m[eê]s|mensal|mensalmente|todos\s+os\s+meses)\b/, frequency: 'MONTHLY', label: 'Mensal' },
+    { pattern: /\b(trimestral|trimestralmente|a\s+cada\s+3\s+meses)\b/, frequency: 'QUARTERLY', label: 'Trimestral' },
+    { pattern: /\b(todo\s+ano|anual|anualmente|todos\s+os\s+anos)\b/, frequency: 'YEARLY', label: 'Anual' },
+  ]
+
+  for (const { pattern, frequency, label } of recurrencePatterns) {
+    const match = normalized.match(pattern)
+    if (match) {
+      recurring = { frequency, label }
+      normalized = normalized.replace(match[0], ' ').trim()
+      break
+    }
+  }
+
+  // 5. Extract DESCRIPTION from whatever remains
   let description = normalized
     .replace(/\b(reais|real|conto[s]?|r\$)\b/g, '')  // remove currency words
     .replace(/\b(de|do|da|dos|das|no|na|nos|nas|em|pra|para|com|pelo|pela|um|uma|uns|umas|o|a|os|as|e|que)\b/g, ' ')
@@ -143,7 +169,7 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
   // Capitalize first letter
   description = description.charAt(0).toUpperCase() + description.slice(1)
 
-  return { type, amount, description, date: dateStr }
+  return { type, amount, description, date: dateStr, recurring }
 }
 
 function extractJson<T extends { amount: number; description: string }>(raw: string): T | null {

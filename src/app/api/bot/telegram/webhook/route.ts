@@ -155,10 +155,15 @@ async function handleMessage(message: any) {
           amount: parsed.amount,
           description: parsed.description,
           date: parsed.date || null,
+          recurring: parsed.recurring || null,
         },
         status: 'PARSED',
       },
     })
+
+    const recurringLine = parsed.recurring
+      ? `\n🔄 Recorrente: ${parsed.recurring.label}`
+      : ''
 
     await sendMessage({
       chatId,
@@ -167,7 +172,8 @@ async function handleMessage(message: any) {
         `${typeLabel}\n` +
         `📝 ${parsed.description}\n` +
         `💰 ${formattedAmount}\n` +
-        `📅 ${dateLabel}`,
+        `📅 ${dateLabel}` +
+        recurringLine,
       replyMarkup: {
         inline_keyboard: [
           [
@@ -427,7 +433,7 @@ async function handleVoiceMessage(
   })
 
   // Step 2: Parse as transaction
-  let parsed: { type: 'INCOME' | 'EXPENSE'; amount: number; description: string; date?: string | null } | null = null
+  let parsed: { type: 'INCOME' | 'EXPENSE'; amount: number; description: string; date?: string | null; recurring?: { frequency: string; label: string } | null } | null = null
   try {
     parsed = await parseTransactionMessage(transcription)
   } catch (err) {
@@ -471,10 +477,15 @@ async function handleVoiceMessage(
           amount: parsed.amount,
           description: parsed.description,
           date: parsed.date || null,
+          recurring: parsed.recurring || null,
         },
         status: 'PARSED',
       },
     })
+
+    const recurringLine = parsed.recurring
+      ? `\n🔄 Recorrente: ${parsed.recurring.label}`
+      : ''
 
     await sendMessage({
       chatId,
@@ -483,7 +494,8 @@ async function handleVoiceMessage(
         `${typeLabel}\n` +
         `📝 ${parsed.description}\n` +
         `💰 ${formattedAmount}\n` +
-        `📅 ${dateLabel}`,
+        `📅 ${dateLabel}` +
+        recurringLine,
       replyMarkup: {
         inline_keyboard: [
           [
@@ -625,7 +637,11 @@ async function handleConfirmTransaction(
     return
   }
 
-  const parsed = botMsg.parsedData as { type: string; amount: number; description: string; date?: string | null }
+  const parsed = botMsg.parsedData as {
+    type: string; amount: number; description: string;
+    date?: string | null;
+    recurring?: { frequency: string; label: string } | null;
+  }
 
   // Get user's default account
   const defaultAccount = await prisma.account.findFirst({
@@ -652,6 +668,25 @@ async function handleConfirmTransaction(
       accountId: defaultAccount.id,
     },
   })
+
+  // If recurring, also create a recurring transaction
+  let recurringInfo = ''
+  if (parsed.recurring) {
+    await prisma.recurringTransaction.create({
+      data: {
+        userId: connection.userId,
+        description: parsed.description,
+        amount: parsed.amount,
+        type: parsed.type as 'INCOME' | 'EXPENSE',
+        frequency: parsed.recurring.frequency as any,
+        startDate: txDate,
+        nextDueDate: txDate,
+        accountId: defaultAccount.id,
+        autoConfirm: false,
+      },
+    })
+    recurringInfo = `\n🔄 Recorrência ${parsed.recurring.label} criada`
+  }
 
   // Update account balance
   const balanceChange = parsed.type === 'INCOME'
@@ -683,8 +718,9 @@ async function handleConfirmTransaction(
       `<b>✅ Transação registrada!</b>\n\n` +
       `${typeEmoji} ${parsed.description}\n` +
       `💰 ${formattedAmount}\n` +
-      `🏦 ${defaultAccount.name}\n\n` +
-      `Saldo atualizado automaticamente.`,
+      `🏦 ${defaultAccount.name}` +
+      recurringInfo +
+      `\n\nSaldo atualizado automaticamente.`,
   })
 
   await answerCallbackQuery(callbackId, '✅ Registrado!')
