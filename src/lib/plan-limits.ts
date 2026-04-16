@@ -27,6 +27,19 @@ export const PLAN_LIMITS = {
     exportData: true,
     fullReports: true,
   },
+  MASTER: {
+    transactionsPerMonth: Infinity,
+    accounts: Infinity,
+    budgets: Infinity,
+    goals: Infinity,
+    recurringTransactions: Infinity,
+    aiInsights: true,
+    botVoice: true,
+    botPhoto: true,
+    autoCategory: true,
+    exportData: true,
+    fullReports: true,
+  },
 } as const
 
 export type PlanType = keyof typeof PLAN_LIMITS
@@ -34,6 +47,7 @@ export type PlanType = keyof typeof PLAN_LIMITS
 export const PLAN_PRICES = {
   FREE: 0,
   PRO: 14.90,
+  MASTER: 0,
 } as const
 
 export async function getUserPlan(userId: string): Promise<PlanType> {

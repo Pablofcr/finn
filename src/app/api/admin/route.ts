@@ -82,7 +82,7 @@ export async function PUT(request: NextRequest) {
 
   const { userId, plan } = await request.json()
 
-  if (!userId || !['FREE', 'PRO'].includes(plan)) {
+  if (!userId || !['FREE', 'PRO', 'MASTER'].includes(plan)) {
     return Response.json({ error: 'Dados inválidos' }, { status: 400 })
   }
 

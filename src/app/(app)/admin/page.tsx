@@ -173,12 +173,14 @@ export default function AdminPage() {
                     <td className="px-4 py-3">
                       <Badge
                         className={
-                          u.plan === 'PRO'
-                            ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0'
-                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-0'
+                          u.plan === 'MASTER'
+                            ? 'bg-gradient-to-r from-amber-500 to-red-500 text-white border-0'
+                            : u.plan === 'PRO'
+                              ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0'
+                              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-0'
                         }
                       >
-                        {u.plan === 'PRO' ? '👑 Pro' : 'Free'}
+                        {u.plan === 'MASTER' ? '⚡ Master' : u.plan === 'PRO' ? '👑 Pro' : 'Free'}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-center">{u.transactions}</td>
