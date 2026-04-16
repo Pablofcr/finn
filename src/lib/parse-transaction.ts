@@ -18,66 +18,122 @@ interface ParsedTransactionWithDate extends ParsedTransaction {
   date: string | null
 }
 
-// Fast regex parser for common patterns — no API call needed
+// Convert written-out numbers to digits
+const WORD_NUMBERS: Record<string, number> = {
+  'um': 1, 'uma': 1, 'dois': 2, 'duas': 2, 'três': 3, 'tres': 3,
+  'quatro': 4, 'cinco': 5, 'seis': 6, 'sete': 7, 'oito': 8, 'nove': 9,
+  'dez': 10, 'onze': 11, 'doze': 12, 'treze': 13, 'quatorze': 14, 'catorze': 14,
+  'quinze': 15, 'dezesseis': 16, 'dezessete': 17, 'dezoito': 18, 'dezenove': 19,
+  'vinte': 20, 'trinta': 30, 'quarenta': 40, 'cinquenta': 50, 'cinqüenta': 50,
+  'sessenta': 60, 'setenta': 70, 'oitenta': 80, 'noventa': 90,
+  'cem': 100, 'cento': 100, 'duzentos': 200, 'duzentas': 200,
+  'trezentos': 300, 'trezentas': 300, 'quatrocentos': 400, 'quatrocentas': 400,
+  'quinhentos': 500, 'quinhentas': 500, 'seiscentos': 600, 'seiscentas': 600,
+  'setecentos': 700, 'setecentas': 700, 'oitocentos': 800, 'oitocentas': 800,
+  'novecentos': 900, 'novecentas': 900, 'mil': 1000,
+}
+
+function parseWrittenNumber(text: string): number | null {
+  const words = text.toLowerCase().split(/[\s,]+e?\s*/).filter(Boolean)
+  if (words.length === 0) return null
+
+  let total = 0
+  let current = 0
+  let hasNumber = false
+
+  for (const word of words) {
+    const val = WORD_NUMBERS[word]
+    if (val === undefined) continue
+    hasNumber = true
+    if (val === 1000) {
+      current = current === 0 ? 1000 : current * 1000
+    } else if (val >= 100) {
+      current += val
+    } else {
+      current += val
+    }
+  }
+  total += current
+
+  return hasNumber && total > 0 ? total : null
+}
+
+// Fast regex parser — position-independent
 function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
-  const normalized = text.toLowerCase().trim().replace(/[.!?]+$/, '')
+  let normalized = text.toLowerCase().trim().replace(/[.!?]+$/, '')
 
-  // Strip time prefixes and extract date
-  const timePatterns: { pattern: RegExp; daysAgo: number }[] = [
-    { pattern: /^(hoje\s+)/, daysAgo: 0 },
-    { pattern: /^(ontem\s+)/, daysAgo: 1 },
-    { pattern: /^(anteontem\s+)/, daysAgo: 2 },
-    { pattern: /^(antes\s+de\s+ontem\s+)/, daysAgo: 2 },
-    { pattern: /^(nesta?\s+(?:segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo)\s*)/, daysAgo: -1 },
-    { pattern: /^(essa?\s+semana\s+)/, daysAgo: 0 },
-  ]
-
+  // 1. Extract DATE from anywhere
   let dateStr: string | null = null
-  let textWithoutTime = normalized
+  const timePatterns: { pattern: RegExp; daysAgo: number }[] = [
+    { pattern: /\b(anteontem|antes\s+de\s+ontem)\b/, daysAgo: 2 },
+    { pattern: /\b(ontem)\b/, daysAgo: 1 },
+    { pattern: /\b(hoje)\b/, daysAgo: 0 },
+  ]
 
   for (const { pattern, daysAgo } of timePatterns) {
     const match = normalized.match(pattern)
     if (match) {
-      textWithoutTime = normalized.slice(match[0].length).trim()
-      if (daysAgo >= 0) {
-        const d = new Date()
-        d.setDate(d.getDate() - daysAgo)
-        dateStr = d.toISOString().split('T')[0]
-      }
+      const d = new Date()
+      d.setDate(d.getDate() - daysAgo)
+      dateStr = d.toISOString().split('T')[0]
+      normalized = normalized.replace(match[0], ' ').trim()
       break
     }
   }
 
-  // Extract amount: "300", "R$ 300", "R$ 300,00", "300 reais", "1.500,00"
-  const amountMatch = textWithoutTime.match(/r?\$?\s*(\d[\d.,]*\d|\d+)\s*(?:reais|real)?/)
-  if (!amountMatch) return null
+  // 2. Extract AMOUNT from anywhere (try digits first, then written numbers)
+  let amount: number | null = null
 
-  const amountStr = amountMatch[1]
-    .replace(/\./g, '')   // remove thousand separator
-    .replace(',', '.')     // convert decimal comma to dot
-  const amount = parseFloat(amountStr)
-  if (!amount || amount <= 0) return null
+  // Try numeric amounts: "300", "R$ 300", "R$ 300,00", "1.500,00", "300 reais"
+  const numMatch = normalized.match(/r?\$?\s*(\d[\d.,]*\d|\d+)\s*(?:reais|real|conto[s]?)?/)
+  if (numMatch) {
+    const amountStr = numMatch[1].replace(/\./g, '').replace(',', '.')
+    amount = parseFloat(amountStr)
+    if (amount > 0) {
+      normalized = normalized.replace(numMatch[0], ' ').trim()
+    } else {
+      amount = null
+    }
+  }
 
-  // Determine type
-  const incomePatterns = /^(recebi|ganhei|entrou|me\s+pag|pix\s+de|transfer[eê]ncia\s+de|receb)/
-  const expensePatterns = /^(gastei|paguei|comprei|sa[ií]u?|d[eé]bito|pag)/
+  // Try written numbers: "cem reais", "duzentos", "mil e quinhentos"
+  if (!amount) {
+    const writtenMatch = normalized.match(
+      /(?:r?\$?\s*)?((?:(?:um|uma|dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|(?:qu)?atorze|quinze|dezess?[ei]s|dezess?ete|dezoito|dezenove|vinte|trinta|quarenta|cinq[uü]enta|sessenta|setenta|oitenta|noventa|cem|cento|duzentos?|duzentas?|trezentos?|trezentas?|quatrocentos?|quatrocentas?|quinhentos?|quinhentas?|seiscentos?|seiscentas?|setecentos?|setecentas?|oitocentos?|oitocentas?|novecentos?|novecentas?|mil)[\s,]*(?:e\s+)?)+)\s*(?:reais|real|conto[s]?)?/
+    )
+    if (writtenMatch) {
+      amount = parseWrittenNumber(writtenMatch[1])
+      if (amount) {
+        normalized = normalized.replace(writtenMatch[0], ' ').trim()
+      }
+    }
+  }
+
+  if (!amount) return null
+
+  // 3. Determine TYPE from anywhere
+  const incomeWords = /(recebi|recebemos|ganhei|ganhamos|entrou|me\s+pag\w*|me\s+deu|me\s+enviou|me\s+transferi\w*|pix\s+de|transfer[eê]ncia\s+de)/
+  const expenseWords = /(gastei|gastamos|paguei|pagamos|comprei|compramos|sa[ií]\w*|d[eé]bito)/
 
   let type: 'INCOME' | 'EXPENSE'
-  if (incomePatterns.test(textWithoutTime)) {
+  const incomeMatch = normalized.match(incomeWords)
+  const expenseMatch = normalized.match(expenseWords)
+
+  if (incomeMatch && !expenseMatch) {
     type = 'INCOME'
-  } else if (expensePatterns.test(textWithoutTime)) {
+    normalized = normalized.replace(incomeMatch[0], ' ').trim()
+  } else if (expenseMatch && !incomeMatch) {
     type = 'EXPENSE'
+    normalized = normalized.replace(expenseMatch[0], ' ').trim()
   } else {
     return null
   }
 
-  // Extract description: everything after the amount and connectors
-  let description = textWithoutTime
-    .replace(amountMatch[0], '')           // remove amount
-    .replace(incomePatterns, '')            // remove action verb
-    .replace(expensePatterns, '')           // remove action verb
-    .replace(/^[\s,]+|[\s,]+$/g, '')       // trim
-    .replace(/^(de|do|da|dos|das|no|na|nos|nas|em|pra|para|com|pelo|pela|um|uma)\s+/i, '') // remove prepositions
+  // 4. Extract DESCRIPTION from whatever remains
+  let description = normalized
+    .replace(/\b(reais|real|conto[s]?|r\$)\b/g, '')  // remove currency words
+    .replace(/\b(de|do|da|dos|das|no|na|nos|nas|em|pra|para|com|pelo|pela|um|uma|uns|umas|o|a|os|as|e|que)\b/g, ' ')
+    .replace(/\s{2,}/g, ' ')
     .trim()
 
   if (!description) {
