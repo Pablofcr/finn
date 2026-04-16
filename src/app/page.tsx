@@ -291,11 +291,11 @@ export default async function LandingPage() {
               <div className="pt-3">
                 <h3 className="text-xl font-bold mb-2">Família</h3>
                 <div className="mb-1">
-                  <span className="text-4xl font-extrabold text-slate-900 dark:text-white">R$ 24</span>
+                  <span className="text-4xl font-extrabold text-slate-900 dark:text-white">R$ 34</span>
                   <span className="text-xl font-bold text-slate-900 dark:text-white">,90</span>
                   <span className="text-slate-400">/mês</span>
                 </div>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-4">Até 5 pessoas — R$ 4,98 por pessoa</p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-4">Até 5 pessoas — R$ 6,98 por pessoa</p>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Toda a família com controle financeiro</p>
                 <Link href="/register" className="block w-full text-center py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-[1.02] transition-all">
                   Começar com Família
