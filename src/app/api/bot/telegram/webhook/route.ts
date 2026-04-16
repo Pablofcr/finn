@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { sendMessage, answerCallbackQuery, editMessageText } from '@/lib/telegram'
+import { parseTransactionMessage } from '@/lib/parse-transaction'
 
 export async function POST(request: NextRequest) {
   const secret = request.headers.get('x-telegram-bot-api-secret-token')
@@ -42,10 +43,13 @@ async function handleMessage(message: any) {
       chatId,
       text:
         '<b>Olá! Eu sou o Finn 🤖</b>\n\n' +
-        'Sou seu assistente financeiro. Através de mim você vai:\n\n' +
+        'Sou seu assistente financeiro. Através de mim você pode:\n\n' +
+        '💬 Registrar transações por mensagem\n' +
         '🔔 Receber lembretes de pagamento\n' +
-        '✅ Confirmar pagamentos com um toque\n' +
-        '📊 Acompanhar suas finanças\n\n' +
+        '✅ Confirmar pagamentos com um toque\n\n' +
+        'Exemplos de mensagens:\n' +
+        '• <i>"Recebi 500 do João"</i>\n' +
+        '• <i>"Gastei 50 no mercado"</i>\n\n' +
         'Para me conectar à sua conta, acesse <b>Assistente</b> no app Finn e siga as instruções.',
     })
     return
@@ -57,7 +61,7 @@ async function handleMessage(message: any) {
     return
   }
 
-  // Default response
+  // Check if user is connected
   const connection = await prisma.botConnection.findFirst({
     where: { platformUserId: chatId, platform: 'TELEGRAM', isVerified: true },
   })
@@ -70,14 +74,88 @@ async function handleMessage(message: any) {
     return
   }
 
-  await sendMessage({
-    chatId,
-    text:
-      '📋 <b>O que posso fazer:</b>\n\n' +
-      '🔔 Envio lembretes automáticos de pagamento\n' +
-      '✅ Você confirma com um toque\n\n' +
-      'Tudo automático! Relaxa que eu cuido dos lembretes. 😉',
-  })
+  // Handle /ajuda command
+  if (text === '/ajuda' || text === '/help') {
+    await sendMessage({
+      chatId,
+      text:
+        '📋 <b>O que posso fazer:</b>\n\n' +
+        '💬 <b>Registrar transações por mensagem:</b>\n' +
+        '• <i>"Recebi 500 do João"</i>\n' +
+        '• <i>"Gastei 50 no mercado"</i>\n' +
+        '• <i>"Pix de 1200 da empresa"</i>\n' +
+        '• <i>"Paguei 89,90 na farmácia"</i>\n\n' +
+        '🔔 <b>Alertas automáticos</b> de contas a vencer\n' +
+        '✅ <b>Confirmar pagamentos</b> com um toque\n\n' +
+        'É só mandar uma mensagem descrevendo o que recebeu ou gastou!',
+    })
+    return
+  }
+
+  // Try to parse as a transaction
+  try {
+    const parsed = await parseTransactionMessage(text)
+
+    if (!parsed) {
+      await sendMessage({
+        chatId,
+        text:
+          'Não entendi como transação. Tente algo como:\n\n' +
+          '• <i>"Recebi 500 do João"</i>\n' +
+          '• <i>"Gastei 50 no mercado"</i>\n\n' +
+          'Ou envie <b>/ajuda</b> para ver tudo que posso fazer.',
+      })
+      return
+    }
+
+    const formattedAmount = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(parsed.amount)
+
+    const typeLabel = parsed.type === 'INCOME' ? '📥 Receita' : '📤 Despesa'
+    const typeEmoji = parsed.type === 'INCOME' ? '🟢' : '🔴'
+
+    // Store parsed data temporarily in bot message for confirmation
+    const botMsg = await prisma.botMessage.create({
+      data: {
+        userId: connection.userId,
+        connectionId: connection.id,
+        direction: 'INBOUND',
+        rawContent: text,
+        parsedData: {
+          type: parsed.type,
+          amount: parsed.amount,
+          description: parsed.description,
+        },
+        status: 'PARSED',
+      },
+    })
+
+    await sendMessage({
+      chatId,
+      text:
+        `${typeEmoji} <b>Confirme a transação:</b>\n\n` +
+        `${typeLabel}\n` +
+        `📝 ${parsed.description}\n` +
+        `💰 ${formattedAmount}\n` +
+        `📅 Hoje`,
+      replyMarkup: {
+        inline_keyboard: [
+          [
+            { text: '✅ Confirmar', callback_data: `confirm_tx:${botMsg.id}` },
+            { text: '❌ Cancelar', callback_data: `cancel_tx:${botMsg.id}` },
+          ],
+        ],
+      },
+    })
+  } catch (err) {
+    console.error('Error parsing transaction:', err)
+    await sendMessage({
+      chatId,
+      text: 'Ops, tive um problema ao processar sua mensagem. Tente novamente.',
+    })
+  }
 }
 
 async function handleVerification(chatId: string, code: string) {
@@ -126,7 +204,7 @@ async function handleCallbackQuery(callbackQuery: any) {
   const data = callbackQuery.data || ''
   const callbackId = callbackQuery.id
 
-  const [action, recurringId] = data.split(':')
+  const [action, targetId] = data.split(':')
 
   const connection = await prisma.botConnection.findFirst({
     where: { platformUserId: chatId, platform: 'TELEGRAM', isVerified: true },
@@ -137,6 +215,28 @@ async function handleCallbackQuery(callbackQuery: any) {
     return
   }
 
+  // Handle transaction confirmation from text message
+  if (action === 'confirm_tx') {
+    await handleConfirmTransaction(chatId, messageId, callbackId, connection, targetId)
+    return
+  }
+
+  if (action === 'cancel_tx') {
+    await prisma.botMessage.update({
+      where: { id: targetId },
+      data: { status: 'REJECTED' },
+    })
+    await editMessageText({
+      chatId,
+      messageId,
+      text: '❌ Transação cancelada.',
+    })
+    await answerCallbackQuery(callbackId, 'Cancelado')
+    return
+  }
+
+  // Handle recurring payment callbacks
+  const recurringId = targetId
   const recurring = await prisma.recurringTransaction.findFirst({
     where: { id: recurringId, userId: connection.userId },
     include: { account: true, category: true },
@@ -244,6 +344,84 @@ async function handleCallbackQuery(callbackQuery: any) {
 
     await answerCallbackQuery(callbackId, '⏰ Vou lembrar amanhã!')
   }
+}
+
+async function handleConfirmTransaction(
+  chatId: string,
+  messageId: number,
+  callbackId: string,
+  connection: { userId: string; id: string },
+  botMsgId: string,
+) {
+  const botMsg = await prisma.botMessage.findFirst({
+    where: { id: botMsgId, userId: connection.userId, status: 'PARSED' },
+  })
+
+  if (!botMsg || !botMsg.parsedData) {
+    await answerCallbackQuery(callbackId, 'Transação expirada.')
+    return
+  }
+
+  const parsed = botMsg.parsedData as { type: string; amount: number; description: string }
+
+  // Get user's default account
+  const defaultAccount = await prisma.account.findFirst({
+    where: { userId: connection.userId },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  if (!defaultAccount) {
+    await answerCallbackQuery(callbackId, 'Crie uma conta no app primeiro.')
+    return
+  }
+
+  // Create the transaction
+  const transaction = await prisma.transaction.create({
+    data: {
+      userId: connection.userId,
+      description: parsed.description,
+      amount: parsed.amount,
+      type: parsed.type as 'INCOME' | 'EXPENSE',
+      date: new Date(),
+      accountId: defaultAccount.id,
+    },
+  })
+
+  // Update account balance
+  const balanceChange = parsed.type === 'INCOME'
+    ? parsed.amount
+    : -parsed.amount
+
+  await prisma.account.update({
+    where: { id: defaultAccount.id },
+    data: { balance: { increment: balanceChange } },
+  })
+
+  // Update bot message status
+  await prisma.botMessage.update({
+    where: { id: botMsgId },
+    data: { status: 'CONFIRMED', transactionId: transaction.id },
+  })
+
+  const formattedAmount = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(parsed.amount)
+
+  const typeEmoji = parsed.type === 'INCOME' ? '📥' : '📤'
+
+  await editMessageText({
+    chatId,
+    messageId,
+    text:
+      `<b>✅ Transação registrada!</b>\n\n` +
+      `${typeEmoji} ${parsed.description}\n` +
+      `💰 ${formattedAmount}\n` +
+      `🏦 ${defaultAccount.name}\n\n` +
+      `Saldo atualizado automaticamente.`,
+  })
+
+  await answerCallbackQuery(callbackId, '✅ Registrado!')
 }
 
 function calculateNextDueDate(current: Date, frequency: string): Date {
