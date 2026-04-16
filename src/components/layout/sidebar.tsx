@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { cn, getInitials } from '@/lib/utils'
 import { NAV_SECTIONS } from '@/lib/constants'
+import { isAdmin } from '@/lib/admin'
 import {
   LayoutDashboard, ArrowLeftRight, Wallet, Tags, PieChart,
   Target, BarChart3, Bot, Lightbulb, Settings, Plus, Shield, Crown
@@ -25,6 +26,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'settings': Settings,
   'shield': Shield,
   'crown': Crown,
+  'shield-alert': LayoutDashboard, // reuse for admin
 }
 
 export function Sidebar() {
@@ -111,6 +113,25 @@ export function Sidebar() {
           ))}
         </nav>
       </ScrollArea>
+
+      {/* Admin link — only visible to admins */}
+      {isAdmin(user?.email) && (
+        <div className="px-4 pt-2 shrink-0">
+          <Link
+            href="/admin"
+            aria-current={pathname === '/admin' ? 'page' : undefined}
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-4 py-2 text-[0.875rem] font-medium transition-all',
+              pathname === '/admin'
+                ? 'bg-white/20 text-white font-semibold'
+                : 'text-white/75 hover:bg-white/10 hover:text-white'
+            )}
+          >
+            <LayoutDashboard className="h-5 w-5" />
+            Admin
+          </Link>
+        </div>
+      )}
 
       {/* User Profile */}
       <div className="px-4 pb-4 pt-2 mt-auto shrink-0">
