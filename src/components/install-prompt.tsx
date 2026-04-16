@@ -88,20 +88,47 @@ export function InstallPrompt() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Rapido e facil — so 3 toques:</p>
-            <div className="space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
-              <p className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 text-[10px] font-bold shrink-0">1</span>
-                Toque nos <strong>tres pontinhos</strong> <span className="text-xs text-slate-400">(menu do navegador)</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 text-[10px] font-bold shrink-0">2</span>
-                <strong>&quot;Adicionar a Tela de Inicio&quot;</strong>
-              </p>
-              <p className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 text-[10px] font-bold shrink-0">3</span>
-                Confirme e pronto — o Finn vira um app!
-              </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Rapido e facil — so 3 toques:</p>
+            <div className="flex items-center justify-between gap-2">
+              {/* Step 1 - Three dots */}
+              <div className="flex flex-col items-center gap-1.5 flex-1">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-slate-600 dark:text-slate-300">
+                    <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
+                    <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
+                    <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
+                  </svg>
+                </div>
+                <span className="text-[10px] text-center text-slate-500 leading-tight">Tres<br/>pontinhos</span>
+              </div>
+
+              <span className="text-slate-300 dark:text-slate-600 text-xs mt-[-12px]">›</span>
+
+              {/* Step 2 - Share */}
+              <div className="flex flex-col items-center gap-1.5 flex-1">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-slate-300">
+                    <rect x="4" y="8" width="16" height="14" rx="2"/>
+                    <path d="M12 2v12"/>
+                    <path d="M8 6l4-4 4 4"/>
+                  </svg>
+                </div>
+                <span className="text-[10px] text-center text-slate-500 leading-tight">Compar-<br/>tilhar</span>
+              </div>
+
+              <span className="text-slate-300 dark:text-slate-600 text-xs mt-[-12px]">›</span>
+
+              {/* Step 3 - Add to home */}
+              <div className="flex flex-col items-center gap-1.5 flex-1">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-slate-300">
+                    <rect x="3" y="3" width="18" height="18" rx="3"/>
+                    <path d="M12 8v8"/>
+                    <path d="M8 12h8"/>
+                  </svg>
+                </div>
+                <span className="text-[10px] text-center text-slate-500 leading-tight">Tela de<br/>inicio</span>
+              </div>
             </div>
             <Button variant="outline" size="sm" onClick={handleDismiss} className="w-full">
               Entendi
