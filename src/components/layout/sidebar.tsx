@@ -30,9 +30,9 @@ export function Sidebar() {
   const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário'
 
   return (
-    <aside className="hidden lg:flex lg:flex-col lg:w-[280px] sidebar-gradient text-white shadow-2xl">
+    <aside className="hidden lg:flex lg:flex-col lg:w-[280px] lg:h-screen lg:overflow-hidden sidebar-gradient text-white shadow-2xl">
       {/* Logo */}
-      <div className="px-6 pt-6 pb-4">
+      <div className="px-6 pt-5 pb-3 shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
             <span className="text-[1.75rem] font-extrabold font-heading">F</span>
@@ -45,7 +45,7 @@ export function Sidebar() {
       </div>
 
       {/* New Transaction Button */}
-      <div className="px-6 pb-4">
+      <div className="px-6 pb-3 shrink-0">
         <Link href="/transactions/new">
           <button className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white/95 hover:bg-white text-[#5568d3] rounded-xl font-semibold text-[0.938rem] shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 active:translate-y-0 transition-all">
             <Plus className="h-5 w-5" />
@@ -55,8 +55,8 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-4">
-        <nav className="py-2 space-y-4">
+      <ScrollArea className="flex-1 min-h-0 px-4">
+        <nav className="py-2 space-y-3">
           {NAV_SECTIONS.map((section) => (
             <div key={section.label}>
               <p className="px-4 mb-1 text-[0.688rem] font-semibold uppercase tracking-wider text-white/40">
@@ -72,7 +72,7 @@ export function Sidebar() {
                       href={item.href}
                       aria-current={isActive ? 'page' : undefined}
                       className={cn(
-                        'flex items-center gap-3 rounded-lg px-4 py-2.5 text-[0.938rem] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
+                        'flex items-center gap-3 rounded-lg px-4 py-2 text-[0.875rem] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
                         isActive
                           ? 'bg-white/20 text-white font-semibold'
                           : 'text-white/75 hover:bg-white/10 hover:text-white'
@@ -90,7 +90,7 @@ export function Sidebar() {
       </ScrollArea>
 
       {/* User Profile */}
-      <div className="px-4 pb-4 pt-2 mt-auto">
+      <div className="px-4 pb-4 pt-2 mt-auto shrink-0">
         <div className="border-t border-white/15 pt-4">
           <Link href="/settings" className="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/15 rounded-xl transition-all cursor-pointer">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 border-2 border-white/30 text-sm font-semibold shrink-0">
