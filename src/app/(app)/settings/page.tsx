@@ -350,7 +350,7 @@ export default function SettingsPage() {
               size="sm"
               className="gap-2"
               onClick={() => {
-                localStorage.removeItem('finn-install-dismissed')
+                localStorage.removeItem('finn-installed')
                 window.location.reload()
               }}
             >

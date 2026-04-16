@@ -16,17 +16,15 @@ export function InstallPrompt() {
   const [showIOSGuide, setShowIOSGuide] = useState(false)
 
   useEffect(() => {
-    // Check if dismissed recently (expires after 7 days)
-    const dismissed = localStorage.getItem('finn-install-dismissed')
-    if (dismissed) {
-      const dismissedAt = parseInt(dismissed, 10)
-      const sevenDays = 7 * 24 * 60 * 60 * 1000
-      if (Date.now() - dismissedAt < sevenDays) return
-      localStorage.removeItem('finn-install-dismissed')
-    }
+    // Only hide permanently if user completed install or finished iOS guide
+    const installed = localStorage.getItem('finn-installed')
+    if (installed) return
 
     // Check if already installed (standalone mode)
-    if (window.matchMedia('(display-mode: standalone)').matches) return
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      localStorage.setItem('finn-installed', 'true')
+      return
+    }
 
     // Detect iOS
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -61,14 +59,22 @@ export function InstallPrompt() {
 
     if (outcome === 'accepted') {
       setShowBanner(false)
+      localStorage.setItem('finn-installed', 'true')
     }
     setDeferredPrompt(null)
   }
 
-  function handleDismiss() {
+  // "Depois" — some só nesta sessão, volta no próximo acesso
+  function handleDismissTemporary() {
     setShowBanner(false)
     setShowIOSGuide(false)
-    localStorage.setItem('finn-install-dismissed', String(Date.now()))
+  }
+
+  // "Entendi, obrigado!" — o usuário seguiu o guia, não mostrar mais
+  function handleDismissPermanent() {
+    setShowBanner(false)
+    setShowIOSGuide(false)
+    localStorage.setItem('finn-installed', 'true')
   }
 
   if (!showBanner) return null
@@ -88,7 +94,7 @@ export function InstallPrompt() {
                   <p className="text-[11px] text-white/80">É rápido! Siga os 3 passos abaixo:</p>
                 </div>
               </div>
-              <button onClick={handleDismiss} className="text-white/60 hover:text-white p-1">
+              <button onClick={handleDismissTemporary} className="text-white/60 hover:text-white p-1">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -157,7 +163,7 @@ export function InstallPrompt() {
                   Prontinho! Agora você já terá o Finn no seu celular, igualzinho a um app.
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={handleDismiss} className="w-full">
+              <Button variant="outline" size="sm" onClick={handleDismissPermanent} className="w-full">
                 Entendi, obrigado!
               </Button>
             </div>
@@ -175,7 +181,7 @@ export function InstallPrompt() {
                       Instale na sua tela inicial e acesse suas finanças com um toque. Rápido e prático!
                     </p>
                   </div>
-                  <button onClick={handleDismiss} className="text-slate-400 hover:text-slate-600 p-1 shrink-0 ml-2">
+                  <button onClick={handleDismissTemporary} className="text-slate-400 hover:text-slate-600 p-1 shrink-0 ml-2">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -188,7 +194,7 @@ export function InstallPrompt() {
                     <Download className="h-3.5 w-3.5" />
                     Instalar agora
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={handleDismiss} className="text-xs text-slate-400">
+                  <Button variant="ghost" size="sm" onClick={handleDismissTemporary} className="text-xs text-slate-400">
                     Depois
                   </Button>
                 </div>
