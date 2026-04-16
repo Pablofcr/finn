@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
-import { sendMessage, answerCallbackQuery, editMessageText } from '@/lib/telegram'
-import { parseTransactionMessage } from '@/lib/parse-transaction'
+import { sendMessage, answerCallbackQuery, editMessageText, downloadFileAsBase64 } from '@/lib/telegram'
+import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
 
 export async function POST(request: NextRequest) {
   const secret = request.headers.get('x-telegram-bot-api-secret-token')
@@ -74,20 +74,28 @@ async function handleMessage(message: any) {
     return
   }
 
+  // Handle photo messages (receipts/invoices)
+  if (message.photo && message.photo.length > 0) {
+    await handleReceiptPhoto(chatId, message, connection)
+    return
+  }
+
   // Handle /ajuda command
   if (text === '/ajuda' || text === '/help') {
     await sendMessage({
       chatId,
       text:
         '📋 <b>O que posso fazer:</b>\n\n' +
-        '💬 <b>Registrar transações por mensagem:</b>\n' +
+        '💬 <b>Registrar por mensagem:</b>\n' +
         '• <i>"Recebi 500 do João"</i>\n' +
         '• <i>"Gastei 50 no mercado"</i>\n' +
-        '• <i>"Pix de 1200 da empresa"</i>\n' +
-        '• <i>"Paguei 89,90 na farmácia"</i>\n\n' +
+        '• <i>"Pix de 1200 da empresa"</i>\n\n' +
+        '🧾 <b>Ler cupons fiscais:</b>\n' +
+        '• Envie uma <b>foto</b> do cupom ou nota\n' +
+        '• Leio automaticamente o valor e o estabelecimento\n\n' +
         '🔔 <b>Alertas automáticos</b> de contas a vencer\n' +
         '✅ <b>Confirmar pagamentos</b> com um toque\n\n' +
-        'É só mandar uma mensagem descrevendo o que recebeu ou gastou!',
+        'É só mandar uma mensagem ou foto!',
     })
     return
   }
@@ -346,6 +354,104 @@ async function handleCallbackQuery(callbackQuery: any) {
   }
 }
 
+async function handleReceiptPhoto(
+  chatId: string,
+  message: any,
+  connection: { userId: string; id: string },
+) {
+  // Send "processing" message
+  await sendMessage({
+    chatId,
+    text: '🔍 Analisando seu cupom fiscal...',
+  })
+
+  // Get the highest resolution photo
+  const photo = message.photo[message.photo.length - 1]
+  const fileData = await downloadFileAsBase64(photo.file_id)
+
+  if (!fileData) {
+    await sendMessage({
+      chatId,
+      text: '❌ Não consegui baixar a imagem. Tente enviar novamente.',
+    })
+    return
+  }
+
+  try {
+    const parsed = await parseReceiptImage(fileData.base64, fileData.mimeType)
+
+    if (!parsed) {
+      await sendMessage({
+        chatId,
+        text:
+          '🤔 Não consegui identificar um cupom fiscal nessa imagem.\n\n' +
+          'Dicas para uma boa leitura:\n' +
+          '• Tire a foto com boa iluminação\n' +
+          '• Centralize o cupom na imagem\n' +
+          '• Evite reflexos e sombras',
+      })
+      return
+    }
+
+    const formattedAmount = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(parsed.amount)
+
+    const formattedDate = parsed.date
+      ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(parsed.date))
+      : 'Hoje'
+
+    const itemsList = parsed.items.length > 0
+      ? '\n\n📋 <b>Itens:</b>\n' + parsed.items.map(item => `  • ${item}`).join('\n')
+      : ''
+
+    // Store parsed data in bot message
+    const botMsg = await prisma.botMessage.create({
+      data: {
+        userId: connection.userId,
+        connectionId: connection.id,
+        direction: 'INBOUND',
+        rawContent: `[FOTO] Cupom: ${parsed.description}`,
+        mediaType: fileData.mimeType,
+        parsedData: {
+          type: parsed.type,
+          amount: parsed.amount,
+          description: parsed.description,
+          date: parsed.date,
+          items: parsed.items,
+        },
+        status: 'PARSED',
+      },
+    })
+
+    await sendMessage({
+      chatId,
+      text:
+        `🧾 <b>Cupom identificado!</b>\n\n` +
+        `🏪 ${parsed.description}\n` +
+        `💰 <b>${formattedAmount}</b>\n` +
+        `📅 ${formattedDate}` +
+        itemsList +
+        `\n\nEstá correto?`,
+      replyMarkup: {
+        inline_keyboard: [
+          [
+            { text: '✅ Confirmar', callback_data: `confirm_tx:${botMsg.id}` },
+            { text: '❌ Cancelar', callback_data: `cancel_tx:${botMsg.id}` },
+          ],
+        ],
+      },
+    })
+  } catch (err) {
+    console.error('Error parsing receipt:', err)
+    await sendMessage({
+      chatId,
+      text: 'Ops, tive um problema ao analisar o cupom. Tente novamente.',
+    })
+  }
+}
+
 async function handleConfirmTransaction(
   chatId: string,
   messageId: number,
@@ -362,7 +468,7 @@ async function handleConfirmTransaction(
     return
   }
 
-  const parsed = botMsg.parsedData as { type: string; amount: number; description: string }
+  const parsed = botMsg.parsedData as { type: string; amount: number; description: string; date?: string | null }
 
   // Get user's default account
   const defaultAccount = await prisma.account.findFirst({
@@ -375,6 +481,9 @@ async function handleConfirmTransaction(
     return
   }
 
+  // Use receipt date if available, otherwise today
+  const txDate = parsed.date ? new Date(parsed.date) : new Date()
+
   // Create the transaction
   const transaction = await prisma.transaction.create({
     data: {
@@ -382,7 +491,7 @@ async function handleConfirmTransaction(
       description: parsed.description,
       amount: parsed.amount,
       type: parsed.type as 'INCOME' | 'EXPENSE',
-      date: new Date(),
+      date: txDate,
       accountId: defaultAccount.id,
     },
   })

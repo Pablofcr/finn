@@ -121,6 +121,34 @@ export async function setWebhook(url: string) {
   return res.json()
 }
 
+export async function getFileUrl(fileId: string): Promise<string | null> {
+  const res = await fetch(`${TELEGRAM_API}/getFile`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file_id: fileId }),
+  })
+
+  const data = await res.json()
+  if (!data.ok || !data.result?.file_path) return null
+
+  return `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${data.result.file_path}`
+}
+
+export async function downloadFileAsBase64(fileId: string): Promise<{ base64: string; mimeType: string } | null> {
+  const url = await getFileUrl(fileId)
+  if (!url) return null
+
+  const res = await fetch(url)
+  if (!res.ok) return null
+
+  const buffer = await res.arrayBuffer()
+  const base64 = Buffer.from(buffer).toString('base64')
+
+  const contentType = res.headers.get('content-type') || 'image/jpeg'
+
+  return { base64, mimeType: contentType }
+}
+
 export function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }

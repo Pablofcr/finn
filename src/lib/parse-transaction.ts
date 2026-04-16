@@ -6,6 +6,14 @@ interface ParsedTransaction {
   description: string
 }
 
+interface ParsedReceipt {
+  type: 'EXPENSE'
+  amount: number
+  description: string
+  date: string | null
+  items: string[]
+}
+
 export async function parseTransactionMessage(text: string): Promise<ParsedTransaction | null> {
   const client = new Anthropic()
 
@@ -49,6 +57,68 @@ Exemplos:
     if (!parsed.type || !parsed.amount || !parsed.description) return null
     if (parsed.amount <= 0) return null
     return parsed
+  } catch {
+    return null
+  }
+}
+
+export async function parseReceiptImage(imageBase64: string, mimeType: string): Promise<ParsedReceipt | null> {
+  const client = new Anthropic()
+
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 400,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: mimeType as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif',
+              data: imageBase64,
+            },
+          },
+          {
+            type: 'text',
+            text: 'Analise este cupom fiscal ou nota e extraia os dados.',
+          },
+        ],
+      },
+    ],
+    system: `Você é um leitor de cupons fiscais e notas. Analise a imagem e extraia as informações da compra.
+
+Responda APENAS com um JSON válido, sem markdown, sem explicação:
+{"type":"EXPENSE","amount":número,"description":"nome do estabelecimento","date":"YYYY-MM-DD ou null","items":["item1","item2"]}
+
+Regras:
+- type é sempre "EXPENSE" (cupons são despesas)
+- amount: valor TOTAL da compra (procure "TOTAL", "VALOR TOTAL", "TOTAL A PAGAR"). Número positivo, sem R$
+- description: nome do estabelecimento/loja (geralmente no topo do cupom). Curto e limpo
+- date: data da compra no formato YYYY-MM-DD. Se não encontrar, null
+- items: lista dos 5 principais itens comprados (resumidos). Se não legível, lista vazia []
+
+Se a imagem não for um cupom fiscal ou nota, responda: null`,
+  })
+
+  const content = response.content[0]
+  if (content.type !== 'text') return null
+
+  const cleaned = content.text.trim()
+  if (cleaned === 'null') return null
+
+  try {
+    const parsed = JSON.parse(cleaned)
+    if (!parsed.amount || !parsed.description) return null
+    if (parsed.amount <= 0) return null
+    return {
+      type: 'EXPENSE',
+      amount: parsed.amount,
+      description: parsed.description,
+      date: parsed.date || null,
+      items: parsed.items || [],
+    }
   } catch {
     return null
   }
