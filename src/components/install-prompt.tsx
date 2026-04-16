@@ -88,18 +88,19 @@ export function InstallPrompt() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Rapido e facil — so 3 toques:</p>
+            <div className="space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
               <p className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 text-xs font-bold shrink-0">1</span>
-                Toque no botao de <strong>compartilhar</strong> (quadrado com seta pra cima)
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 text-[10px] font-bold shrink-0">1</span>
+                Toque nos <strong>tres pontinhos</strong> <span className="text-xs text-slate-400">(menu do navegador)</span>
               </p>
               <p className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 text-xs font-bold shrink-0">2</span>
-                Role e toque em <strong>&quot;Adicionar a Tela de Inicio&quot;</strong>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 text-[10px] font-bold shrink-0">2</span>
+                <strong>&quot;Adicionar a Tela de Inicio&quot;</strong>
               </p>
               <p className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 text-xs font-bold shrink-0">3</span>
-                Toque em <strong>&quot;Adicionar&quot;</strong> — pronto!
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 text-[10px] font-bold shrink-0">3</span>
+                Confirme e pronto — o Finn vira um app!
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={handleDismiss} className="w-full">
