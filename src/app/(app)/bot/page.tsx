@@ -1,27 +1,350 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Bot } from 'lucide-react'
+"use client"
+
+import { useState, useEffect, useCallback } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Bot, Send, CheckCircle, Copy, ExternalLink,
+  Bell, Shield, MessageCircle, Unplug,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+
+interface ConnectionStatus {
+  connected: boolean
+  platformUserId?: string
+  verificationCode?: string | null
+}
+
+function ChatBubble({
+  from,
+  children,
+  delay = 0,
+}: {
+  from: 'bot' | 'user'
+  children: React.ReactNode
+  delay?: number
+}) {
+  return (
+    <div
+      className={cn(
+        'flex animate-fade-in',
+        from === 'user' ? 'justify-end' : 'justify-start'
+      )}
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <div
+        className={cn(
+          'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
+          from === 'bot'
+            ? 'bg-muted text-foreground rounded-bl-md'
+            : 'gradient-primary text-white rounded-br-md'
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function TutorialChat({ botUsername, verificationCode }: { botUsername: string; verificationCode: string }) {
+  return (
+    <Card className="border-dashed">
+      <CardContent className="pt-5 pb-5">
+        <div className="flex items-center gap-2 mb-4">
+          <MessageCircle className="h-4 w-4 text-primary" />
+          <p className="text-xs font-semibold text-primary uppercase tracking-wide">Como conectar — passo a passo</p>
+        </div>
+
+        <div className="space-y-3">
+          <ChatBubble from="bot" delay={0}>
+            Olá! Eu sou o <strong>Finn</strong> 🤖<br />
+            Vou te ajudar a nunca esquecer um pagamento!
+          </ChatBubble>
+
+          <ChatBubble from="bot" delay={100}>
+            <strong>Passo 1:</strong> Abra o Telegram e pesquise por:<br />
+            <code className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono">@{botUsername}</code>
+          </ChatBubble>
+
+          <ChatBubble from="bot" delay={200}>
+            <strong>Passo 2:</strong> Envie esta mensagem para o bot:
+            <div className="mt-2 flex items-center gap-2 bg-black/10 dark:bg-white/10 rounded-lg px-3 py-2">
+              <code className="font-mono text-xs flex-1">/start {verificationCode}</code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`/start ${verificationCode}`)
+                  toast.success('Comando copiado!')
+                }}
+                className="p-1 hover:bg-black/10 rounded transition-colors"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </ChatBubble>
+
+          <ChatBubble from="user" delay={300}>
+            /start {verificationCode}
+          </ChatBubble>
+
+          <ChatBubble from="bot" delay={400}>
+            <strong>✅ Conectado com sucesso!</strong><br />
+            A partir de agora você vai receber lembretes de pagamento aqui!
+          </ChatBubble>
+
+          <ChatBubble from="bot" delay={500}>
+            <strong>Exemplo de lembrete:</strong><br /><br />
+            🔔 <strong>Lembrete de pagamento</strong><br />
+            <strong>Condomínio</strong><br />
+            💰 R$ 620,00<br />
+            📅 Vence amanhã<br /><br />
+            <span className="inline-flex gap-2 mt-1">
+              <span className="bg-green-500/20 text-green-700 dark:text-green-400 px-2 py-0.5 rounded text-xs font-medium">✅ Paguei</span>
+              <span className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 px-2 py-0.5 rounded text-xs font-medium">⏰ Lembrar amanhã</span>
+            </span>
+          </ChatBubble>
+        </div>
+
+        <div className="mt-5 pt-4 border-t">
+          <a
+            href={`https://t.me/${botUsername}?start=${verificationCode}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button className="w-full gap-2 gradient-primary shadow-md shadow-primary/25 border-0">
+              <Send className="h-4 w-4" />
+              Abrir no Telegram
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Button>
+          </a>
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Ou pesquise <strong>@{botUsername}</strong> no Telegram
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function ConnectedState({ onDisconnect }: { onDisconnect: () => void }) {
+  return (
+    <Card>
+      <CardContent className="pt-5 pb-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10">
+              <CheckCircle className="h-6 w-6 text-green-500" />
+            </div>
+            <div>
+              <p className="font-semibold">Telegram conectado</p>
+              <p className="text-sm text-muted-foreground">
+                Você está recebendo alertas de pagamento
+              </p>
+            </div>
+          </div>
+          <Badge className="bg-green-500/10 text-green-600 border-0">Ativo</Badge>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            {
+              icon: Bell,
+              title: 'Lembretes automáticos',
+              desc: '3 dias antes, 1 dia antes e no dia do vencimento',
+            },
+            {
+              icon: CheckCircle,
+              title: 'Confirmar com um toque',
+              desc: 'Toque em "Paguei" e a transação é registrada',
+            },
+            {
+              icon: Shield,
+              title: 'Saldo atualizado',
+              desc: 'O saldo da conta é ajustado automaticamente',
+            },
+          ].map((item) => (
+            <div key={item.title} className="rounded-xl border border-border/50 p-3">
+              <item.icon className="h-5 w-5 text-primary mb-2" />
+              <p className="text-sm font-medium">{item.title}</p>
+              <p className="text-xs text-muted-foreground">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 pt-4 border-t">
+          <AlertDialog>
+            <AlertDialogTrigger render={<Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive" />}>
+              <Unplug className="h-4 w-4" />
+              Desconectar Telegram
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Desconectar Telegram?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Você não receberá mais alertas de pagamento. Pode reconectar a qualquer momento.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={onDisconnect}>
+                  Desconectar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function BotPage() {
+  const [status, setStatus] = useState<ConnectionStatus | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [connecting, setConnecting] = useState(false)
+  const [botUsername, setBotUsername] = useState('FinnFinancasBot')
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/bot/telegram/connect')
+      if (res.ok) {
+        const result = await res.json()
+        setStatus(result.data)
+      }
+    } catch {
+      toast.error('Não foi possível verificar a conexão.')
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    fetchStatus()
+  }, [fetchStatus])
+
+  async function handleConnect() {
+    setConnecting(true)
+    try {
+      const res = await fetch('/api/bot/telegram/connect', { method: 'POST' })
+      if (res.ok) {
+        const result = await res.json()
+        setStatus({ connected: false, verificationCode: result.data.verificationCode })
+        setBotUsername(result.data.botUsername)
+      } else {
+        const err = await res.json()
+        toast.error(err.error || 'Não foi possível iniciar a conexão.')
+      }
+    } catch {
+      toast.error('Não foi possível iniciar a conexão. Tente novamente.')
+    }
+    setConnecting(false)
+  }
+
+  async function handleDisconnect() {
+    try {
+      const res = await fetch('/api/bot/telegram/connect', { method: 'DELETE' })
+      if (res.ok) {
+        setStatus({ connected: false })
+        toast.success('Telegram desconectado.')
+      }
+    } catch {
+      toast.error('Não foi possível desconectar. Tente novamente.')
+    }
+  }
+
+  // Poll for connection verification
+  useEffect(() => {
+    if (!status?.verificationCode || status.connected) return
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/bot/telegram/connect')
+        if (res.ok) {
+          const result = await res.json()
+          if (result.data.connected) {
+            setStatus(result.data)
+            toast.success('Telegram conectado com sucesso! 🎉')
+            clearInterval(interval)
+          }
+        }
+      } catch { /* ignore polling errors */ }
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [status?.verificationCode, status?.connected])
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-64 rounded-2xl" />
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Assistente Finn</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Bot className="h-5 w-5" />
-            Conecte seu WhatsApp ou Telegram
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Registre gastos por mensagem de voz ou texto. Diga "Finn, gastei R$20 no almoço"
-            e a transação será registrada automaticamente.
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Funcionalidade em desenvolvimento.
-          </p>
-        </CardContent>
-      </Card>
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h1 className="text-2xl font-bold">Assistente Finn</h1>
+        <p className="text-sm text-muted-foreground">
+          Receba lembretes de pagamento e confirme com um toque
+        </p>
+      </div>
+
+      {status?.connected ? (
+        <ConnectedState onDisconnect={handleDisconnect} />
+      ) : status?.verificationCode ? (
+        <TutorialChat
+          botUsername={botUsername}
+          verificationCode={status.verificationCode}
+        />
+      ) : (
+        <Card>
+          <CardContent className="pt-5 pb-5">
+            <div className="flex flex-col items-center text-center space-y-5 py-4">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
+                <Bot className="h-10 w-10 text-primary" />
+              </div>
+              <div className="space-y-2 max-w-md">
+                <h2 className="text-xl font-bold">Nunca mais esqueça um pagamento</h2>
+                <p className="text-sm text-muted-foreground">
+                  Conecte seu Telegram e receba lembretes automáticos antes do vencimento.
+                  Confirme pagamentos com um toque e o Finn dá baixa na transação.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full text-left">
+                {[
+                  { icon: Bell, title: 'Lembrete automático', desc: 'Alertas 3 dias antes e no dia' },
+                  { icon: CheckCircle, title: 'Um toque para pagar', desc: 'Confirme direto no Telegram' },
+                  { icon: Shield, title: 'Saldo atualizado', desc: 'Tudo sincronizado com o app' },
+                ].map((item) => (
+                  <div key={item.title} className="rounded-xl border border-border/50 p-3">
+                    <item.icon className="h-5 w-5 text-primary mb-2" />
+                    <p className="text-sm font-medium">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                onClick={handleConnect}
+                disabled={connecting}
+                className="w-full sm:w-auto gap-2 gradient-primary shadow-md shadow-primary/25 border-0"
+              >
+                <Send className="h-4 w-4" />
+                {connecting ? 'Gerando código...' : 'Conectar Telegram'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
