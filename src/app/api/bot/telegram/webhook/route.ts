@@ -4,6 +4,8 @@ import { sendMessage, answerCallbackQuery, editMessageText, downloadFileAsBase64
 import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
 import { transcribeAudio } from '@/lib/transcribe-audio'
 
+export const maxDuration = 60
+
 export async function POST(request: NextRequest) {
   const secret = request.headers.get('x-telegram-bot-api-secret-token')
   if (secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
@@ -387,37 +389,49 @@ async function handleVoiceMessage(
     return
   }
 
+  // Step 1: Transcribe
+  let transcription: string | null = null
   try {
-    const transcription = await transcribeAudio(audioBuffer, 'voice.ogg')
+    transcription = await transcribeAudio(audioBuffer, 'voice.ogg')
+  } catch (err) {
+    console.error('Transcription error:', err)
+  }
 
-    if (!transcription) {
-      await sendMessage({
-        chatId,
-        text: '❌ Não consegui entender o áudio. Tente falar mais perto do microfone.',
-      })
-      return
-    }
-
-    // Show what was understood
+  if (!transcription) {
     await sendMessage({
       chatId,
-      text: `🎙️ Entendi: <i>"${transcription}"</i>`,
+      text: '❌ Não consegui entender o áudio. Tente falar mais perto do microfone.',
     })
+    return
+  }
 
-    // Parse the transcribed text as a transaction
-    const parsed = await parseTransactionMessage(transcription)
+  // Show what was understood
+  await sendMessage({
+    chatId,
+    text: `🎙️ Entendi: <i>"${transcription}"</i>`,
+  })
 
-    if (!parsed) {
-      await sendMessage({
-        chatId,
-        text:
-          'Não identifiquei uma transação no áudio. Tente algo como:\n\n' +
-          '🎙️ <i>"Recebi quinhentos reais do João"</i>\n' +
-          '🎙️ <i>"Gastei cinquenta no mercado"</i>',
-      })
-      return
-    }
+  // Step 2: Parse as transaction
+  let parsed: { type: 'INCOME' | 'EXPENSE'; amount: number; description: string } | null = null
+  try {
+    parsed = await parseTransactionMessage(transcription)
+  } catch (err) {
+    console.error('Parse error:', err)
+  }
 
+  if (!parsed) {
+    await sendMessage({
+      chatId,
+      text:
+        'Não identifiquei uma transação no áudio. Tente algo como:\n\n' +
+        '🎙️ <i>"Recebi quinhentos reais do João"</i>\n' +
+        '🎙️ <i>"Gastei cinquenta no mercado"</i>',
+    })
+    return
+  }
+
+  // Step 3: Save and confirm
+  try {
     const formattedAmount = new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -460,10 +474,10 @@ async function handleVoiceMessage(
       },
     })
   } catch (err) {
-    console.error('Error processing voice:', err)
+    console.error('Save/confirm error:', err)
     await sendMessage({
       chatId,
-      text: 'Ops, tive um problema ao processar o áudio. Tente novamente.',
+      text: 'Ops, não consegui salvar a transação. Tente novamente.',
     })
   }
 }
