@@ -38,7 +38,9 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/api/auth') &&
     !request.nextUrl.pathname.startsWith('/api/bot') &&
     !request.nextUrl.pathname.startsWith('/api/cron') &&
-    request.nextUrl.pathname !== '/'
+    request.nextUrl.pathname !== '/' &&
+    request.nextUrl.pathname !== '/privacy' &&
+    request.nextUrl.pathname !== '/security'
   ) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'

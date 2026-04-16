@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -42,6 +42,11 @@ export default function NewTransactionPage() {
   const [amountCents, setAmountCents] = useState(0)
   const amountDisplay = formatCurrencyInput(amountCents)
 
+  // Category suggestion state
+  const [suggestionMsg, setSuggestionMsg] = useState('')
+  const suggestionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // Recurring state
   const [isRecurring, setIsRecurring] = useState(false)
   const [frequency, setFrequency] = useState('MONTHLY')
@@ -73,6 +78,39 @@ export default function NewTransactionPage() {
     const cents = parseInt(raw || '0', 10)
     setAmountCents(cents)
     setValue('amount', cents / 100, { shouldValidate: true })
+  }
+
+  const suggestCategory = useCallback(async (desc: string) => {
+    if (!desc || desc.trim().length < 3) return
+    // Only suggest if no category is selected yet
+    if (watch('categoryId')) return
+    if (type === 'TRANSFER') return
+
+    try {
+      const res = await fetch(`/api/categories/suggest?description=${encodeURIComponent(desc)}`)
+      const json = await res.json()
+      if (json.data?.categoryId) {
+        setValue('categoryId', json.data.categoryId, { shouldValidate: true })
+        setSuggestionMsg('Categoria sugerida automaticamente')
+        if (fadeTimer.current) clearTimeout(fadeTimer.current)
+        fadeTimer.current = setTimeout(() => setSuggestionMsg(''), 3000)
+      }
+    } catch {
+      // Silently ignore suggestion errors
+    }
+  }, [type, setValue, watch])
+
+  function handleDescriptionChange(e: React.ChangeEvent<HTMLInputElement>) {
+    // Let react-hook-form handle the value via register
+    if (suggestionTimer.current) clearTimeout(suggestionTimer.current)
+    suggestionTimer.current = setTimeout(() => {
+      suggestCategory(e.target.value)
+    }, 500)
+  }
+
+  function handleDescriptionBlur(e: React.FocusEvent<HTMLInputElement>) {
+    if (suggestionTimer.current) clearTimeout(suggestionTimer.current)
+    suggestCategory(e.target.value)
   }
 
   useEffect(() => {
@@ -234,9 +272,15 @@ export default function NewTransactionPage() {
                 id="description"
                 placeholder="Ex: Almoço no restaurante"
                 className="h-11 rounded-xl"
-                {...register('description')}
+                {...register('description', {
+                  onChange: handleDescriptionChange,
+                  onBlur: handleDescriptionBlur,
+                })}
               />
               {errors.description && <p className="text-xs text-destructive">{errors.description.message}</p>}
+              {suggestionMsg && (
+                <p className="text-xs text-muted-foreground animate-fade-in">{suggestionMsg}</p>
+              )}
             </div>
 
             <div className="space-y-2">
