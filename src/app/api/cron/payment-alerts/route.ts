@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
     include: {
       user: {
         include: {
+          notificationSetting: true,
           botConnections: {
             where: {
               platform: 'TELEGRAM',
@@ -41,6 +42,10 @@ export async function GET(request: NextRequest) {
   for (const payment of upcomingPayments) {
     const connection = payment.user.botConnections[0]
     if (!connection) continue
+
+    // Check if telegram alerts are enabled
+    const alertsEnabled = payment.user.notificationSetting?.telegramAlerts ?? true
+    if (!alertsEnabled) continue
 
     const daysUntilDue = Math.ceil(
       (payment.nextDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)

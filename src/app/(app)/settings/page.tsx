@@ -45,6 +45,9 @@ interface NotificationSettings {
   weeklyReport: boolean
   monthlyReport: boolean
   botConfirmations: boolean
+  autoInsights: boolean
+  telegramInsights: boolean
+  telegramAlerts: boolean
 }
 
 export default function SettingsPage() {
@@ -69,6 +72,9 @@ export default function SettingsPage() {
     weeklyReport: true,
     monthlyReport: true,
     botConfirmations: true,
+    autoInsights: true,
+    telegramInsights: true,
+    telegramAlerts: true,
   })
 
   const fetchData = useCallback(async () => {
@@ -97,6 +103,9 @@ export default function SettingsPage() {
           weeklyReport: notifRes.data.weeklyReport,
           monthlyReport: notifRes.data.monthlyReport,
           botConfirmations: notifRes.data.botConfirmations,
+          autoInsights: notifRes.data.autoInsights ?? true,
+          telegramInsights: notifRes.data.telegramInsights ?? true,
+          telegramAlerts: notifRes.data.telegramAlerts ?? true,
         })
       }
     } catch {
@@ -277,6 +286,9 @@ export default function SettingsPage() {
             { key: 'weeklyReport' as const, label: 'Resumo semanal', desc: 'Resumo financeiro toda semana' },
             { key: 'monthlyReport' as const, label: 'Resumo mensal', desc: 'Relatório completo todo mês' },
             { key: 'botConfirmations' as const, label: 'Confirmações do bot', desc: 'Confirmar transações criadas pelo assistente' },
+            { key: 'autoInsights' as const, label: 'Insights automáticos', desc: 'Gerar análises financeiras semanalmente com IA' },
+            { key: 'telegramInsights' as const, label: 'Insights pelo Telegram', desc: 'Receber insights importantes no Telegram' },
+            { key: 'telegramAlerts' as const, label: 'Alertas pelo Telegram', desc: 'Receber lembretes de vencimento no Telegram' },
           ].map((item) => (
             <div key={item.key} className="flex items-center justify-between py-1">
               <div>

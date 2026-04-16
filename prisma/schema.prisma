@@ -340,6 +340,9 @@ model NotificationSetting {
   weeklyReport       Boolean @default(true)
   monthlyReport      Boolean @default(true)
   botConfirmations   Boolean @default(true)
+  autoInsights       Boolean @default(true)
+  telegramInsights   Boolean @default(true)
+  telegramAlerts     Boolean @default(true)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

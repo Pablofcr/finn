@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
@@ -30,6 +31,23 @@ export function Sidebar() {
   const pathname = usePathname()
   const { user } = useAuth()
   const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário'
+  const [unreadInsights, setUnreadInsights] = useState(0)
+
+  const fetchUnread = useCallback(async () => {
+    try {
+      const res = await fetch('/api/insights/unread')
+      if (res.ok) {
+        const data = await res.json()
+        setUnreadInsights(data.data?.unreadCount || 0)
+      }
+    } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => {
+    fetchUnread()
+    const interval = setInterval(fetchUnread, 60000) // Check every minute
+    return () => clearInterval(interval)
+  }, [fetchUnread])
 
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-[280px] lg:h-screen lg:overflow-hidden sidebar-gradient text-white shadow-2xl">
@@ -79,7 +97,12 @@ export function Sidebar() {
                       )}
                     >
                       {Icon && <Icon className={cn('h-5 w-5', isActive ? 'opacity-100' : 'opacity-75')} />}
-                      {item.label}
+                      <span className="flex-1">{item.label}</span>
+                      {item.href === '/insights' && unreadInsights > 0 && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white px-1">
+                          {unreadInsights > 9 ? '9+' : unreadInsights}
+                        </span>
+                      )}
                     </Link>
                   )
                 })}

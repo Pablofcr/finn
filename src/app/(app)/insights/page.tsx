@@ -67,6 +67,8 @@ export default function InsightsPage() {
       if (res.ok) {
         const result = await res.json()
         setInsights(result.data || [])
+        // Mark all as read
+        fetch('/api/insights/mark-read', { method: 'POST' }).catch(() => {})
       }
     } catch {
       toast.error('Não conseguimos carregar seus insights. Tente novamente.')
