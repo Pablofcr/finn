@@ -225,9 +225,9 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto items-start">
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
             {/* Free */}
-            <div className="p-8 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex flex-col">
+            <div className="p-7 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex flex-col">
               <div className="pt-3">
                 <h3 className="text-xl font-bold mb-2">Free</h3>
                 <div className="mb-1">
@@ -240,7 +240,7 @@ export default async function LandingPage() {
                   Começar grátis
                 </Link>
               </div>
-              <ul className="mt-6 space-y-3 text-sm text-slate-600 dark:text-slate-400">
+              <ul className="mt-6 space-y-2.5 text-sm text-slate-600 dark:text-slate-400">
                 {['Dashboard completo', '50 transações/mês', '2 contas bancárias', '3 orçamentos', '1 meta financeira', 'Bot Telegram por texto', '5 alertas de pagamento', 'Dados protegidos (LGPD)'].map((item) => (
                   <li key={item} className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -251,7 +251,7 @@ export default async function LandingPage() {
             </div>
 
             {/* Pro */}
-            <div className="relative p-8 rounded-2xl bg-white dark:bg-white/5 border-2 border-indigo-500 shadow-xl shadow-indigo-500/10 flex flex-col">
+            <div className="relative p-7 rounded-2xl bg-white dark:bg-white/5 border-2 border-indigo-500 shadow-xl shadow-indigo-500/10 flex flex-col">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-semibold shadow-lg">
                   <Sparkles className="h-3 w-3" />
@@ -266,15 +266,45 @@ export default async function LandingPage() {
                   <span className="text-slate-400">/mês</span>
                 </div>
                 <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-4">Menos de R$ 0,50 por dia</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Seu assistente financeiro com IA completa</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Assistente financeiro com IA completa</p>
                 <Link href="/register" className="block w-full text-center py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] transition-all">
                   Começar com o Pro
                 </Link>
               </div>
-              <ul className="mt-6 space-y-3 text-sm text-slate-600 dark:text-slate-400">
+              <ul className="mt-6 space-y-2.5 text-sm text-slate-600 dark:text-slate-400">
                 {['Tudo do Free, mais:', 'Transações ilimitadas', 'Contas e orçamentos ilimitados', 'Metas ilimitadas', 'Bot por áudio e foto de cupom', 'Insights com inteligência artificial', 'Categorização automática', 'Relatórios históricos (12 meses)', 'Exportação de dados', 'Alertas ilimitados'].map((item, i) => (
                   <li key={item} className={`flex items-center gap-2 ${i === 0 ? 'font-semibold text-slate-900 dark:text-white' : ''}`}>
                     {i === 0 ? <Sparkles className="h-4 w-4 text-indigo-500 shrink-0" /> : <Check className="h-4 w-4 text-indigo-500 shrink-0" />}
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Família */}
+            <div className="relative p-7 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex flex-col">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold shadow-lg">
+                  Melhor custo-benefício
+                </span>
+              </div>
+              <div className="pt-3">
+                <h3 className="text-xl font-bold mb-2">Família</h3>
+                <div className="mb-1">
+                  <span className="text-4xl font-extrabold text-slate-900 dark:text-white">R$ 24</span>
+                  <span className="text-xl font-bold text-slate-900 dark:text-white">,90</span>
+                  <span className="text-slate-400">/mês</span>
+                </div>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-4">Até 5 pessoas — R$ 4,98 por pessoa</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Toda a família com controle financeiro</p>
+                <Link href="/register" className="block w-full text-center py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-[1.02] transition-all">
+                  Começar com Família
+                </Link>
+              </div>
+              <ul className="mt-6 space-y-2.5 text-sm text-slate-600 dark:text-slate-400">
+                {['Tudo do Pro, mais:', 'Até 5 membros da família', 'Cada um com login próprio', 'Cada um com dados privados', 'Dashboard familiar consolidado', 'Metas compartilhadas em grupo', 'Controle dos gastos em conjunto', 'Relatórios individuais e da família', 'Economize em relação a 5 planos Pro'].map((item, i) => (
+                  <li key={item} className={`flex items-center gap-2 ${i === 0 ? 'font-semibold text-slate-900 dark:text-white' : ''}`}>
+                    {i === 0 ? <Sparkles className="h-4 w-4 text-amber-500 shrink-0" /> : <Check className="h-4 w-4 text-amber-500 shrink-0" />}
                     {item}
                   </li>
                 ))}
