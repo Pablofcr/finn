@@ -14,6 +14,28 @@ interface ParsedReceipt {
   items: string[]
 }
 
+function extractJson<T extends { amount: number; description: string }>(raw: string): T | null {
+  const text = raw.trim()
+  if (text === 'null' || text === 'nulo') return null
+
+  // Try direct parse first
+  try {
+    const parsed = JSON.parse(text)
+    if (parsed && parsed.amount > 0 && parsed.description) return parsed
+  } catch { /* continue */ }
+
+  // Try extracting JSON from markdown code blocks or surrounding text
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0])
+      if (parsed && parsed.amount > 0 && parsed.description) return parsed
+    } catch { /* continue */ }
+  }
+
+  return null
+}
+
 export async function parseTransactionMessage(text: string): Promise<ParsedTransaction | null> {
   const client = new Anthropic()
 
@@ -49,17 +71,7 @@ Exemplos:
   const content = response.content[0]
   if (content.type !== 'text') return null
 
-  const cleaned = content.text.trim()
-  if (cleaned === 'null') return null
-
-  try {
-    const parsed = JSON.parse(cleaned)
-    if (!parsed.type || !parsed.amount || !parsed.description) return null
-    if (parsed.amount <= 0) return null
-    return parsed
-  } catch {
-    return null
-  }
+  return extractJson<ParsedTransaction>(content.text)
 }
 
 export async function parseReceiptImage(imageBase64: string, mimeType: string): Promise<ParsedReceipt | null> {
@@ -105,21 +117,14 @@ Se a imagem não for um cupom fiscal ou nota, responda: null`,
   const content = response.content[0]
   if (content.type !== 'text') return null
 
-  const cleaned = content.text.trim()
-  if (cleaned === 'null') return null
+  const parsed = extractJson<ParsedReceipt>(content.text)
+  if (!parsed) return null
 
-  try {
-    const parsed = JSON.parse(cleaned)
-    if (!parsed.amount || !parsed.description) return null
-    if (parsed.amount <= 0) return null
-    return {
-      type: 'EXPENSE',
-      amount: parsed.amount,
-      description: parsed.description,
-      date: parsed.date || null,
-      items: parsed.items || [],
-    }
-  } catch {
-    return null
+  return {
+    type: 'EXPENSE',
+    amount: parsed.amount,
+    description: parsed.description,
+    date: parsed.date || null,
+    items: parsed.items || [],
   }
 }
