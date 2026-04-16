@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
-import { sendMessage, answerCallbackQuery, editMessageText, downloadFileAsBase64 } from '@/lib/telegram'
+import { sendMessage, answerCallbackQuery, editMessageText, downloadFileAsBase64, downloadFileAsBuffer } from '@/lib/telegram'
 import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
+import { transcribeAudio } from '@/lib/transcribe-audio'
 
 export async function POST(request: NextRequest) {
   const secret = request.headers.get('x-telegram-bot-api-secret-token')
@@ -44,12 +45,15 @@ async function handleMessage(message: any) {
       text:
         '<b>Olá! Eu sou o Finn 🤖</b>\n\n' +
         'Sou seu assistente financeiro. Através de mim você pode:\n\n' +
-        '💬 Registrar transações por mensagem\n' +
+        '💬 Registrar transações por texto\n' +
+        '🎙️ Registrar transações por áudio\n' +
+        '🧾 Ler cupons fiscais por foto\n' +
         '🔔 Receber lembretes de pagamento\n' +
         '✅ Confirmar pagamentos com um toque\n\n' +
-        'Exemplos de mensagens:\n' +
-        '• <i>"Recebi 500 do João"</i>\n' +
-        '• <i>"Gastei 50 no mercado"</i>\n\n' +
+        'Exemplos:\n' +
+        '• Texto: <i>"Recebi 500 do João"</i>\n' +
+        '• Áudio: <i>"Gastei 50 no mercado"</i>\n' +
+        '• Foto: envie um cupom fiscal\n\n' +
         'Para me conectar à sua conta, acesse <b>Assistente</b> no app Finn e siga as instruções.',
     })
     return
@@ -80,22 +84,30 @@ async function handleMessage(message: any) {
     return
   }
 
+  // Handle voice/audio messages
+  if (message.voice || message.audio) {
+    await handleVoiceMessage(chatId, message, connection)
+    return
+  }
+
   // Handle /ajuda command
   if (text === '/ajuda' || text === '/help') {
     await sendMessage({
       chatId,
       text:
         '📋 <b>O que posso fazer:</b>\n\n' +
-        '💬 <b>Registrar por mensagem:</b>\n' +
+        '💬 <b>Registrar por texto:</b>\n' +
         '• <i>"Recebi 500 do João"</i>\n' +
-        '• <i>"Gastei 50 no mercado"</i>\n' +
-        '• <i>"Pix de 1200 da empresa"</i>\n\n' +
+        '• <i>"Gastei 50 no mercado"</i>\n\n' +
+        '🎙️ <b>Registrar por áudio:</b>\n' +
+        '• Grave um áudio descrevendo a transação\n' +
+        '• <i>"Paguei oitenta reais na farmácia"</i>\n\n' +
         '🧾 <b>Ler cupons fiscais:</b>\n' +
         '• Envie uma <b>foto</b> do cupom ou nota\n' +
         '• Leio automaticamente o valor e o estabelecimento\n\n' +
         '🔔 <b>Alertas automáticos</b> de contas a vencer\n' +
         '✅ <b>Confirmar pagamentos</b> com um toque\n\n' +
-        'É só mandar uma mensagem ou foto!',
+        'É só mandar uma mensagem, áudio ou foto!',
     })
     return
   }
@@ -351,6 +363,108 @@ async function handleCallbackQuery(callbackQuery: any) {
     })
 
     await answerCallbackQuery(callbackId, '⏰ Vou lembrar amanhã!')
+  }
+}
+
+async function handleVoiceMessage(
+  chatId: string,
+  message: any,
+  connection: { userId: string; id: string },
+) {
+  await sendMessage({
+    chatId,
+    text: '🎙️ Ouvindo seu áudio...',
+  })
+
+  const fileId = message.voice?.file_id || message.audio?.file_id
+  const audioBuffer = await downloadFileAsBuffer(fileId)
+
+  if (!audioBuffer) {
+    await sendMessage({
+      chatId,
+      text: '❌ Não consegui baixar o áudio. Tente enviar novamente.',
+    })
+    return
+  }
+
+  try {
+    const transcription = await transcribeAudio(audioBuffer, 'voice.ogg')
+
+    if (!transcription) {
+      await sendMessage({
+        chatId,
+        text: '❌ Não consegui entender o áudio. Tente falar mais perto do microfone.',
+      })
+      return
+    }
+
+    // Show what was understood
+    await sendMessage({
+      chatId,
+      text: `🎙️ Entendi: <i>"${transcription}"</i>`,
+    })
+
+    // Parse the transcribed text as a transaction
+    const parsed = await parseTransactionMessage(transcription)
+
+    if (!parsed) {
+      await sendMessage({
+        chatId,
+        text:
+          'Não identifiquei uma transação no áudio. Tente algo como:\n\n' +
+          '🎙️ <i>"Recebi quinhentos reais do João"</i>\n' +
+          '🎙️ <i>"Gastei cinquenta no mercado"</i>',
+      })
+      return
+    }
+
+    const formattedAmount = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(parsed.amount)
+
+    const typeLabel = parsed.type === 'INCOME' ? '📥 Receita' : '📤 Despesa'
+    const typeEmoji = parsed.type === 'INCOME' ? '🟢' : '🔴'
+
+    const botMsg = await prisma.botMessage.create({
+      data: {
+        userId: connection.userId,
+        connectionId: connection.id,
+        direction: 'INBOUND',
+        rawContent: `[ÁUDIO] ${transcription}`,
+        mediaType: 'audio/ogg',
+        parsedData: {
+          type: parsed.type,
+          amount: parsed.amount,
+          description: parsed.description,
+        },
+        status: 'PARSED',
+      },
+    })
+
+    await sendMessage({
+      chatId,
+      text:
+        `${typeEmoji} <b>Confirme a transação:</b>\n\n` +
+        `${typeLabel}\n` +
+        `📝 ${parsed.description}\n` +
+        `💰 ${formattedAmount}\n` +
+        `📅 Hoje`,
+      replyMarkup: {
+        inline_keyboard: [
+          [
+            { text: '✅ Confirmar', callback_data: `confirm_tx:${botMsg.id}` },
+            { text: '❌ Cancelar', callback_data: `cancel_tx:${botMsg.id}` },
+          ],
+        ],
+      },
+    })
+  } catch (err) {
+    console.error('Error processing voice:', err)
+    await sendMessage({
+      chatId,
+      text: 'Ops, tive um problema ao processar o áudio. Tente novamente.',
+    })
   }
 }
 

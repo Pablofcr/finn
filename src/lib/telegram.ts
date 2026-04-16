@@ -149,6 +149,17 @@ export async function downloadFileAsBase64(fileId: string): Promise<{ base64: st
   return { base64, mimeType: contentType }
 }
 
+export async function downloadFileAsBuffer(fileId: string): Promise<Buffer | null> {
+  const url = await getFileUrl(fileId)
+  if (!url) return null
+
+  const res = await fetch(url)
+  if (!res.ok) return null
+
+  const buffer = await res.arrayBuffer()
+  return Buffer.from(buffer)
+}
+
 export function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
