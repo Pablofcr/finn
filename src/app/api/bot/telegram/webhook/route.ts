@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { sendMessage, answerCallbackQuery, editMessageText, downloadFileAsBase64, downloadFileAsBuffer } from '@/lib/telegram'
 import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
 import { transcribeAudio } from '@/lib/transcribe-audio'
+import { canUseFeature } from '@/lib/plan-limits'
 
 export const maxDuration = 60
 
@@ -378,6 +379,15 @@ async function handleVoiceMessage(
   message: any,
   connection: { userId: string; id: string },
 ) {
+  const canVoice = await canUseFeature(connection.userId, 'botVoice')
+  if (!canVoice) {
+    await sendMessage({
+      chatId,
+      text: '🔒 Áudio é exclusivo do Finn Pro. Faça upgrade em finn-steel.vercel.app/pricing',
+    })
+    return
+  }
+
   await sendMessage({
     chatId,
     text: '🎙️ Ouvindo seu áudio...',
@@ -497,6 +507,15 @@ async function handleReceiptPhoto(
   message: any,
   connection: { userId: string; id: string },
 ) {
+  const canPhoto = await canUseFeature(connection.userId, 'botPhoto')
+  if (!canPhoto) {
+    await sendMessage({
+      chatId,
+      text: '🔒 Leitura de cupom por foto é exclusiva do Finn Pro. Faça upgrade em finn-steel.vercel.app/pricing',
+    })
+    return
+  }
+
   // Send "processing" message
   await sendMessage({
     chatId,

@@ -74,6 +74,11 @@ enum Currency {
   GBP
 }
 
+enum UserPlan {
+  FREE
+  PRO
+}
+
 // ============================================================
 // MODELS
 // ============================================================
@@ -85,6 +90,7 @@ model User {
   name            String
   phone           String?
   avatarUrl       String?
+  plan            UserPlan @default(FREE)
   defaultCurrency Currency @default(BRL)
   timezone        String   @default("America/Sao_Paulo")
   locale          String   @default("pt-BR")

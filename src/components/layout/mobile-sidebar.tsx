@@ -7,7 +7,7 @@ import { cn, getInitials } from '@/lib/utils'
 import { NAV_SECTIONS } from '@/lib/constants'
 import {
   LayoutDashboard, ArrowLeftRight, Wallet, Tags, PieChart,
-  Target, BarChart3, Bot, Lightbulb, Settings, Plus, Shield
+  Target, BarChart3, Bot, Lightbulb, Settings, Plus, Shield, Crown
 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
@@ -23,6 +23,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'lightbulb': Lightbulb,
   'settings': Settings,
   'shield': Shield,
+  'crown': Crown,
 }
 
 export function MobileSidebar() {

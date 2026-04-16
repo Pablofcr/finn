@@ -76,6 +76,7 @@ export const NAV_SECTIONS = [
   {
     label: 'Conta',
     items: [
+      { href: '/pricing', label: 'Meu Plano', icon: 'crown' },
       { href: '/settings', label: 'Configurações', icon: 'settings' },
       { href: '/security', label: 'Sua Segurança', icon: 'shield' },
     ],

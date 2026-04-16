@@ -1,12 +1,18 @@
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import Anthropic from '@anthropic-ai/sdk'
+import { canUseFeature } from '@/lib/plan-limits'
 
 const anthropic = new Anthropic()
 
 export async function POST() {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const allowed = await canUseFeature(user.id, 'aiInsights')
+  if (!allowed) {
+    return Response.json({ error: 'Funcionalidade exclusiva do Finn Pro. Faça upgrade para desbloquear.', upgrade: true }, { status: 403 })
+  }
 
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)

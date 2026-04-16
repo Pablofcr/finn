@@ -210,8 +210,83 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Pricing */}
       <section className="py-20 lg:py-28 bg-slate-50/50 dark:bg-white/[0.02]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              Comece gratis.{' '}
+              <span className="bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
+                Evolua quando quiser.
+              </span>
+            </h2>
+            <p className="text-lg text-slate-500 dark:text-slate-400">
+              Sem surpresas. Sem taxas escondidas.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+            {/* Free */}
+            <div className="p-8 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10">
+              <h3 className="text-xl font-bold mb-2">Free</h3>
+              <div className="mb-4">
+                <span className="text-4xl font-extrabold text-slate-900 dark:text-white">R$ 0</span>
+                <span className="text-slate-400">/mes</span>
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Para comecar a organizar suas financas</p>
+              <Link href="/register" className="block w-full text-center py-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                Comecar gratis
+              </Link>
+              <ul className="mt-6 space-y-3 text-sm text-slate-600 dark:text-slate-400">
+                {['Dashboard completo', '50 transacoes/mes', '2 contas bancarias', '3 orcamentos', '1 meta financeira', 'Bot Telegram por texto', '5 alertas de pagamento', 'Dados protegidos (LGPD)'].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Pro */}
+            <div className="relative p-8 rounded-2xl bg-white dark:bg-white/5 border-2 border-indigo-500 shadow-xl shadow-indigo-500/10">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-semibold shadow-lg">
+                  <Sparkles className="h-3 w-3" />
+                  Mais popular
+                </span>
+              </div>
+              <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                Pro
+              </h3>
+              <div className="mb-1">
+                <span className="text-4xl font-extrabold text-slate-900 dark:text-white">R$ 14</span>
+                <span className="text-xl font-bold text-slate-900 dark:text-white">,90</span>
+                <span className="text-slate-400">/mes</span>
+              </div>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-4">Menos de R$ 0,50 por dia</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Seu assistente financeiro com IA completa</p>
+              <Link href="/register" className="block w-full text-center py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] transition-all">
+                Comecar com o Pro
+              </Link>
+              <ul className="mt-6 space-y-3 text-sm text-slate-600 dark:text-slate-400">
+                {['Tudo do Free, mais:', 'Transacoes ilimitadas', 'Contas e orcamentos ilimitados', 'Metas ilimitadas', 'Bot por audio e foto de cupom', 'Insights com inteligencia artificial', 'Categorizacao automatica', 'Relatorios historicos (12 meses)', 'Exportacao de dados', 'Alertas ilimitados'].map((item, i) => (
+                  <li key={item} className={`flex items-center gap-2 ${i === 0 ? 'font-semibold text-slate-900 dark:text-white' : ''}`}>
+                    {i === 0 ? <Sparkles className="h-4 w-4 text-indigo-500 shrink-0" /> : <Check className="h-4 w-4 text-indigo-500 shrink-0" />}
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <p className="text-center text-sm text-slate-400 mt-8">
+            Um unico insight de economia ja cobre meses de assinatura.
+          </p>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
