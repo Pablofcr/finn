@@ -43,7 +43,7 @@ export default async function LandingPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-sm font-medium mb-8">
             <Sparkles className="h-4 w-4" />
-            100% gratuito com inteligencia artificial
+            Comece gratis — com inteligencia artificial
           </div>
 
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.1] mb-6">
@@ -56,7 +56,7 @@ export default async function LandingPage() {
           </h1>
 
           <p className="text-lg sm:text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Finn organiza suas financas, alerta sobre vencimentos e mostra exatamente para onde cada real vai — tudo com inteligencia artificial e sem custo nenhum.
+            Finn organiza suas financas, alerta sobre vencimentos e mostra exatamente para onde cada real vai — com inteligencia artificial e plano gratuito para comecar.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -227,12 +227,13 @@ export default async function LandingPage() {
 
           <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
             {/* Free */}
-            <div className="p-8 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10">
+            <div className="p-8 pt-11 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10">
               <h3 className="text-xl font-bold mb-2">Free</h3>
-              <div className="mb-4">
+              <div className="mb-1">
                 <span className="text-4xl font-extrabold text-slate-900 dark:text-white">R$ 0</span>
                 <span className="text-slate-400">/mes</span>
               </div>
+              <p className="text-xs text-transparent font-medium mb-4 select-none" aria-hidden="true">.</p>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Para comecar a organizar suas financas</p>
               <Link href="/register" className="block w-full text-center py-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
                 Comecar gratis
