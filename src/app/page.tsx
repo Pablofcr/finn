@@ -21,9 +21,7 @@ export default async function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-[#0f0f12]/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-sm shadow-md">
-              F
-            </div>
+            <img src="/icons/icon-192.svg" alt="Finn" className="h-9 w-9 rounded-xl shadow-md" />
             <span className="text-xl font-extrabold tracking-tight">Finn</span>
           </div>
           <div className="flex items-center gap-3">
@@ -284,9 +282,7 @@ export default async function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs">
-                F
-              </div>
+              <img src="/icons/icon-192.svg" alt="Finn" className="h-8 w-8 rounded-lg" />
               <span className="font-bold text-white">Finn</span>
               <span className="text-sm">— Inteligencia financeira para quem quer viver melhor.</span>
             </div>
