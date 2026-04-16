@@ -138,6 +138,10 @@ async function handleMessage(message: any) {
     const typeLabel = parsed.type === 'INCOME' ? '📥 Receita' : '📤 Despesa'
     const typeEmoji = parsed.type === 'INCOME' ? '🟢' : '🔴'
 
+    const dateLabel = parsed.date
+      ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(parsed.date))
+      : 'Hoje'
+
     // Store parsed data temporarily in bot message for confirmation
     const botMsg = await prisma.botMessage.create({
       data: {
@@ -149,6 +153,7 @@ async function handleMessage(message: any) {
           type: parsed.type,
           amount: parsed.amount,
           description: parsed.description,
+          date: parsed.date || null,
         },
         status: 'PARSED',
       },
@@ -161,7 +166,7 @@ async function handleMessage(message: any) {
         `${typeLabel}\n` +
         `📝 ${parsed.description}\n` +
         `💰 ${formattedAmount}\n` +
-        `📅 Hoje`,
+        `📅 ${dateLabel}`,
       replyMarkup: {
         inline_keyboard: [
           [
@@ -412,7 +417,7 @@ async function handleVoiceMessage(
   })
 
   // Step 2: Parse as transaction
-  let parsed: { type: 'INCOME' | 'EXPENSE'; amount: number; description: string } | null = null
+  let parsed: { type: 'INCOME' | 'EXPENSE'; amount: number; description: string; date?: string | null } | null = null
   try {
     parsed = await parseTransactionMessage(transcription)
   } catch (err) {
@@ -440,6 +445,10 @@ async function handleVoiceMessage(
     const typeLabel = parsed.type === 'INCOME' ? '📥 Receita' : '📤 Despesa'
     const typeEmoji = parsed.type === 'INCOME' ? '🟢' : '🔴'
 
+    const dateLabel = parsed.date
+      ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(parsed.date))
+      : 'Hoje'
+
     const botMsg = await prisma.botMessage.create({
       data: {
         userId: connection.userId,
@@ -451,6 +460,7 @@ async function handleVoiceMessage(
           type: parsed.type,
           amount: parsed.amount,
           description: parsed.description,
+          date: parsed.date || null,
         },
         status: 'PARSED',
       },
@@ -463,7 +473,7 @@ async function handleVoiceMessage(
         `${typeLabel}\n` +
         `📝 ${parsed.description}\n` +
         `💰 ${formattedAmount}\n` +
-        `📅 Hoje`,
+        `📅 ${dateLabel}`,
       replyMarkup: {
         inline_keyboard: [
           [

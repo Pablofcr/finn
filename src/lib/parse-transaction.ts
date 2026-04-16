@@ -14,15 +14,45 @@ interface ParsedReceipt {
   items: string[]
 }
 
+interface ParsedTransactionWithDate extends ParsedTransaction {
+  date: string | null
+}
+
 // Fast regex parser for common patterns — no API call needed
-function regexParseTransaction(text: string): ParsedTransaction | null {
+function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
   const normalized = text.toLowerCase().trim().replace(/[.!?]+$/, '')
 
+  // Strip time prefixes and extract date
+  const timePatterns: { pattern: RegExp; daysAgo: number }[] = [
+    { pattern: /^(hoje\s+)/, daysAgo: 0 },
+    { pattern: /^(ontem\s+)/, daysAgo: 1 },
+    { pattern: /^(anteontem\s+)/, daysAgo: 2 },
+    { pattern: /^(antes\s+de\s+ontem\s+)/, daysAgo: 2 },
+    { pattern: /^(nesta?\s+(?:segunda|terça|quarta|quinta|sexta|s[aá]bado|domingo)\s*)/, daysAgo: -1 },
+    { pattern: /^(essa?\s+semana\s+)/, daysAgo: 0 },
+  ]
+
+  let dateStr: string | null = null
+  let textWithoutTime = normalized
+
+  for (const { pattern, daysAgo } of timePatterns) {
+    const match = normalized.match(pattern)
+    if (match) {
+      textWithoutTime = normalized.slice(match[0].length).trim()
+      if (daysAgo >= 0) {
+        const d = new Date()
+        d.setDate(d.getDate() - daysAgo)
+        dateStr = d.toISOString().split('T')[0]
+      }
+      break
+    }
+  }
+
   // Extract amount: "300", "R$ 300", "R$ 300,00", "300 reais", "1.500,00"
-  const amountMatch = normalized.match(/r?\$?\s*(\d[\d.,]*\d|\d+)\s*(?:reais|real)?/)
+  const amountMatch = textWithoutTime.match(/r?\$?\s*(\d[\d.,]*\d|\d+)\s*(?:reais|real)?/)
   if (!amountMatch) return null
 
-  let amountStr = amountMatch[1]
+  const amountStr = amountMatch[1]
     .replace(/\./g, '')   // remove thousand separator
     .replace(',', '.')     // convert decimal comma to dot
   const amount = parseFloat(amountStr)
@@ -33,16 +63,16 @@ function regexParseTransaction(text: string): ParsedTransaction | null {
   const expensePatterns = /^(gastei|paguei|comprei|sa[ií]u?|d[eé]bito|pag)/
 
   let type: 'INCOME' | 'EXPENSE'
-  if (incomePatterns.test(normalized)) {
+  if (incomePatterns.test(textWithoutTime)) {
     type = 'INCOME'
-  } else if (expensePatterns.test(normalized)) {
+  } else if (expensePatterns.test(textWithoutTime)) {
     type = 'EXPENSE'
   } else {
     return null
   }
 
   // Extract description: everything after the amount and connectors
-  let description = normalized
+  let description = textWithoutTime
     .replace(amountMatch[0], '')           // remove amount
     .replace(incomePatterns, '')            // remove action verb
     .replace(expensePatterns, '')           // remove action verb
@@ -57,7 +87,7 @@ function regexParseTransaction(text: string): ParsedTransaction | null {
   // Capitalize first letter
   description = description.charAt(0).toUpperCase() + description.slice(1)
 
-  return { type, amount, description }
+  return { type, amount, description, date: dateStr }
 }
 
 function extractJson<T extends { amount: number; description: string }>(raw: string): T | null {
@@ -82,7 +112,7 @@ function extractJson<T extends { amount: number; description: string }>(raw: str
   return null
 }
 
-export async function parseTransactionMessage(text: string): Promise<ParsedTransaction | null> {
+export async function parseTransactionMessage(text: string): Promise<ParsedTransactionWithDate | null> {
   // Try fast regex parser first (handles 90% of cases instantly)
   const regexResult = regexParseTransaction(text)
   if (regexResult) return regexResult
@@ -123,7 +153,9 @@ Exemplos:
     const content = response.content[0]
     if (content.type !== 'text') return null
 
-    return extractJson<ParsedTransaction>(content.text)
+    const result = extractJson<ParsedTransaction>(content.text)
+    if (!result) return null
+    return { ...result, date: null }
   } catch (err) {
     console.error('Claude parse fallback error:', err)
     return null
