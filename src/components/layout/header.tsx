@@ -35,9 +35,7 @@ export function Header() {
         </Sheet>
 
         <div className="lg:hidden flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary text-white font-bold text-xs shadow-md shadow-primary/25">
-            F
-          </div>
+          <img src="/icons/icon-192.svg" alt="Finn" className="h-8 w-8 rounded-lg shadow-md shadow-primary/25" />
           <span className="font-semibold">Finn</span>
         </div>
       </div>

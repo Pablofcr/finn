@@ -35,9 +35,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="px-6 pt-5 pb-3 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
-            <span className="text-[1.75rem] font-extrabold font-heading">F</span>
-          </div>
+          <img src="/icons/icon-192.svg" alt="Finn" className="h-[52px] w-[52px] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)]" />
           <div>
             <span className="text-[1.5rem] font-extrabold tracking-tight leading-tight">Finn</span>
             <p className="text-[0.813rem] text-white/70 font-normal">Suas finanças</p>

@@ -67,9 +67,7 @@ export default function RegisterPage() {
   return (
     <Card className="card-elevated-lg border-0">
       <CardHeader className="text-center">
-        <div className="lg:hidden mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary text-white font-bold text-2xl shadow-lg shadow-primary/25">
-          F
-        </div>
+        <img src="/icons/icon-192.svg" alt="Finn" className="lg:hidden mx-auto mb-4 h-14 w-14 rounded-2xl shadow-lg shadow-primary/25" />
         <CardTitle className="text-2xl">Comece sua jornada financeira</CardTitle>
         <CardDescription>
           Crie sua conta e tenha controle total das suas finanças
