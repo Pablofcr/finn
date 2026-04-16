@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { cn, getInitials } from '@/lib/utils'
-import { NAV_ITEMS } from '@/lib/constants'
+import { NAV_SECTIONS } from '@/lib/constants'
 import {
   LayoutDashboard, ArrowLeftRight, Wallet, Tags, PieChart,
   Target, BarChart3, Bot, Lightbulb, Settings, Plus
@@ -56,26 +56,36 @@ export function Sidebar() {
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-4">
-        <nav className="space-y-1 py-2">
-          {NAV_ITEMS.map((item) => {
-            const Icon = iconMap[item.icon]
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-4 py-2.5 text-[0.938rem] font-medium transition-all',
-                  isActive
-                    ? 'bg-white/20 text-white font-semibold'
-                    : 'text-white/75 hover:bg-white/10 hover:text-white'
-                )}
-              >
-                {Icon && <Icon className={cn('h-5 w-5', isActive ? 'opacity-100' : 'opacity-75')} />}
-                {item.label}
-              </Link>
-            )
-          })}
+        <nav className="py-2 space-y-4">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.label}>
+              <p className="px-4 mb-1 text-[0.688rem] font-semibold uppercase tracking-wider text-white/40">
+                {section.label}
+              </p>
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const Icon = iconMap[item.icon]
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg px-4 py-2.5 text-[0.938rem] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
+                        isActive
+                          ? 'bg-white/20 text-white font-semibold'
+                          : 'text-white/75 hover:bg-white/10 hover:text-white'
+                      )}
+                    >
+                      {Icon && <Icon className={cn('h-5 w-5', isActive ? 'opacity-100' : 'opacity-75')} />}
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
       </ScrollArea>
 

@@ -36,7 +36,7 @@ export default function CategoriesPage() {
         setCategories(result.data || [])
       }
     } catch {
-      toast.error('Erro ao carregar categorias')
+      toast.error('Não conseguimos carregar as categorias. Tente novamente em instantes.')
     }
     setLoading(false)
   }, [])
@@ -54,13 +54,13 @@ export default function CategoriesPage() {
         body: JSON.stringify({ name, type, color, icon: 'tag' }),
       })
       if (res.ok) {
-        toast.success('Categoria criada!')
+        toast.success('Categoria criada! Use-a para organizar suas transações.')
         setDialogOpen(false)
         setName('')
         fetchCategories()
       }
     } catch {
-      toast.error('Erro ao criar categoria')
+      toast.error('Não foi possível criar a categoria. Tente novamente em instantes.')
     }
   }
 
@@ -68,14 +68,14 @@ export default function CategoriesPage() {
     try {
       const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
       if (res.ok) {
-        toast.success('Categoria excluída')
+        toast.success('Categoria excluída. Suas transações anteriores foram mantidas.')
         fetchCategories()
       } else {
         const err = await res.json()
-        toast.error(err.error || 'Erro ao excluir')
+        toast.error(err.error || 'Não foi possível excluir a categoria. Tente novamente.')
       }
     } catch {
-      toast.error('Erro ao excluir categoria')
+      toast.error('Não foi possível excluir a categoria. Tente novamente em instantes.')
     }
   }
 
@@ -140,8 +140,8 @@ export default function CategoriesPage() {
       ) : categories.length === 0 ? (
         <EmptyState
           icon={<Tags className="h-12 w-12" />}
-          title="Nenhuma categoria"
-          description="As categorias padrão serão criadas automaticamente."
+          title="Personalize suas categorias"
+          description="Crie categorias para organizar melhor suas receitas e despesas."
         />
       ) : (
         <div className="space-y-6">

@@ -69,7 +69,7 @@ export default function InsightsPage() {
         setInsights(result.data || [])
       }
     } catch {
-      toast.error('Erro ao carregar insights')
+      toast.error('Não conseguimos carregar seus insights. Tente novamente.')
     }
     setLoading(false)
   }, [])
@@ -85,13 +85,13 @@ export default function InsightsPage() {
       if (res.ok) {
         const result = await res.json()
         setInsights(result.data || [])
-        toast.success('Insights gerados com sucesso!')
+        toast.success('Pronto! Confira o que a IA encontrou sobre suas finanças.')
       } else {
         const err = await res.json()
-        toast.error(err.error || 'Erro ao gerar insights')
+        toast.error(err.error || 'Não foi possível gerar os insights agora. Tente novamente em alguns minutos.')
       }
     } catch {
-      toast.error('Erro ao gerar insights')
+      toast.error('Não foi possível gerar os insights agora. Tente novamente em alguns minutos.')
     }
     setGenerating(false)
   }
@@ -114,7 +114,7 @@ export default function InsightsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Insights</h1>
-          <p className="text-sm text-muted-foreground">Análises inteligentes das suas finanças</p>
+          <p className="text-sm text-muted-foreground">Descubra para onde seu dinheiro está indo</p>
         </div>
         <Button
           onClick={handleGenerate}
@@ -126,7 +126,7 @@ export default function InsightsPage() {
           ) : (
             <Sparkles className="h-4 w-4" />
           )}
-          {generating ? 'Analisando...' : 'Gerar Insights'}
+          {generating ? 'Analisando...' : 'Analisar minhas finanças'}
         </Button>
       </div>
 
@@ -137,11 +137,12 @@ export default function InsightsPage() {
       ) : insights.length === 0 ? (
         <EmptyState
           icon={<Lightbulb className="h-12 w-12" />}
-          title="Nenhum insight ainda"
-          description="Clique em 'Gerar Insights' para a IA analisar suas finanças e dar dicas personalizadas."
+          title="Seus insights estão a um clique"
+          description="Deixe a IA analisar seus hábitos e revelar oportunidades de economia que você nem sabia que tinha."
           action={
-            <Button onClick={handleGenerate} disabled={generating}>
-              {generating ? 'Analisando...' : 'Gerar Insights'}
+            <Button onClick={handleGenerate} disabled={generating} className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              {generating ? 'Analisando...' : 'Analisar minhas finanças'}
             </Button>
           }
         />
@@ -171,7 +172,7 @@ export default function InsightsPage() {
                       onClick={() => handleDismiss(insight.id)}
                       className="shrink-0 text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      Dispensar
+                      Entendi
                     </button>
                   </div>
                 </CardContent>

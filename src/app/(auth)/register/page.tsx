@@ -23,12 +23,12 @@ export default function RegisterPage() {
     setError(null)
 
     if (password !== confirmPassword) {
-      setError('As senhas não coincidem')
+      setError('As senhas estão diferentes. Confira e tente de novo.')
       return
     }
 
     if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres')
+      setError('Sua senha precisa ter no mínimo 6 caracteres para manter sua conta segura.')
       return
     }
 
@@ -49,10 +49,10 @@ export default function RegisterPage() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500 text-white shadow-lg shadow-green-500/25">
             ✓
           </div>
-          <CardTitle className="text-2xl">Conta criada!</CardTitle>
+          <CardTitle className="text-2xl">Bem-vindo ao Finn!</CardTitle>
           <CardDescription>
             Enviamos um link de confirmação para <strong>{email}</strong>.
-            Verifique sua caixa de entrada.
+            Confirme seu e-mail para começar a usar.
           </CardDescription>
         </CardHeader>
         <CardFooter className="justify-center">
@@ -70,9 +70,9 @@ export default function RegisterPage() {
         <div className="lg:hidden mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary text-white font-bold text-2xl shadow-lg shadow-primary/25">
           F
         </div>
-        <CardTitle className="text-2xl">Criar conta</CardTitle>
+        <CardTitle className="text-2xl">Comece sua jornada financeira</CardTitle>
         <CardDescription>
-          Comece a controlar suas finanças agora
+          Crie sua conta e tenha controle total das suas finanças
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -131,7 +131,7 @@ export default function RegisterPage() {
             />
           </div>
           <Button type="submit" className="w-full h-11 rounded-xl gradient-primary shadow-md shadow-primary/25 border-0 font-semibold" disabled={loading}>
-            {loading ? 'Criando conta...' : 'Criar conta'}
+            {loading ? 'Criando sua conta...' : 'Começar agora'}
           </Button>
         </form>
 

@@ -46,7 +46,7 @@ export default function BudgetsPage() {
       setBudgets(budgetRes.data || [])
       setCategories((catRes.data || []).filter((c: any) => c.type === 'EXPENSE'))
     } catch {
-      toast.error('Erro ao carregar dados')
+      toast.error('Não conseguimos carregar seus orçamentos. Tente novamente em instantes.')
     }
     setLoading(false)
   }, [])
@@ -69,17 +69,17 @@ export default function BudgetsPage() {
         }),
       })
       if (res.ok) {
-        toast.success('Orçamento criado!')
+        toast.success('Orçamento criado! Acompanhe seus gastos por aqui.')
         setDialogOpen(false)
         setCategoryId('')
         setAmount('')
         fetchData()
       } else {
         const err = await res.json()
-        toast.error(err.error || 'Erro ao criar')
+        toast.error(err.error || 'Não foi possível criar o orçamento. Verifique os dados e tente novamente.')
       }
     } catch {
-      toast.error('Erro ao criar orçamento')
+      toast.error('Não foi possível criar o orçamento. Tente novamente em instantes.')
     }
   }
 
@@ -140,8 +140,8 @@ export default function BudgetsPage() {
       ) : budgets.length === 0 ? (
         <EmptyState
           icon={<PieChart className="h-12 w-12" />}
-          title="Nenhum orçamento configurado"
-          description="Defina limites de gastos por categoria para controlar seus gastos."
+          title="Comece a controlar seus gastos"
+          description="Crie seu primeiro orçamento e acompanhe para onde seu dinheiro está indo."
           action={<Button onClick={() => setDialogOpen(true)}>Novo Orçamento</Button>}
         />
       ) : (

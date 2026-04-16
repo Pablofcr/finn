@@ -133,7 +133,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erro ao criar conta')
       setCreatedAccountId(data.data.id)
-      toast.success('Conta criada com sucesso!')
+      toast.success('Conta criada! Agora vamos registrar sua primeira transação.')
       setStep(2)
     } catch (err: any) {
       toast.error(err.message)
@@ -265,10 +265,10 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
                   </p>
                 </div>
                 <p className="text-sm text-muted-foreground max-w-sm">
-                  Vamos configurar tudo em poucos passos para que você comece a ter total controle das suas finanças.
+                  Em 2 minutos você vai ter tudo pronto para nunca mais perder de vista pra onde seu dinheiro vai.
                 </p>
                 <Button onClick={() => setStep(1)} className="w-full">
-                  Começar
+                  Vamos lá!
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -280,7 +280,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
                 <div className="text-center space-y-1">
                   <h2 className="text-xl font-bold">Crie sua primeira conta</h2>
                   <p className="text-sm text-muted-foreground">
-                    Adicione sua conta bancária principal para começar a registrar transações.
+                    Qual conta você mais usa no dia a dia? Comece por ela.
                   </p>
                 </div>
                 <div className="space-y-4">
@@ -315,6 +315,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
                       value={accountBalance}
                       onChange={(e) => setAccountBalance(e.target.value)}
                     />
+                    <p className="text-xs text-muted-foreground">Quanto tem nessa conta hoje? Pode ser um valor aproximado.</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -344,7 +345,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
                 <div className="text-center space-y-1">
                   <h2 className="text-xl font-bold">Registre uma transação</h2>
                   <p className="text-sm text-muted-foreground">
-                    Adicione sua primeira receita ou despesa para começar o controle.
+                    Pode ser o cafézinho de hoje ou o salário do mês — o importante é começar.
                   </p>
                 </div>
                 <div className="space-y-4">
@@ -427,7 +428,10 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
                       )}
                     >
                       <Repeat className="h-4 w-4" />
-                      <span className="font-medium">Transação recorrente</span>
+                      <div className="text-left">
+                        <span className="font-medium">Transação recorrente</span>
+                        <p className="text-xs text-muted-foreground font-normal">Ative para despesas fixas como aluguel, streaming ou salário.</p>
+                      </div>
                     </button>
                     {txRecurring && (
                       <div className="space-y-2 animate-fade-in">
@@ -549,12 +553,12 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
                 <div className="space-y-2">
                   <h2 className="text-2xl font-bold">Tudo pronto!</h2>
                   <p className="text-muted-foreground">
-                    Seu Finn está configurado. Comece agora a ter total controle das suas finanças pessoais.
+                    A partir de agora, cada real que entra e sai está no seu radar.
                   </p>
                 </div>
                 <div className="w-full space-y-3">
                   <Button onClick={handleFinish} className="w-full">
-                    Ir para o Dashboard
+                    Explorar meu Finn
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>

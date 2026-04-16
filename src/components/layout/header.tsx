@@ -28,7 +28,7 @@ export function Header() {
           <SheetTrigger render={<Button variant="ghost" size="icon" className="lg:hidden" />}>
               <Menu className="h-5 w-5" />
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
+          <SheetContent side="left" className="w-[80vw] max-w-[320px] p-0">
             <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
             <MobileSidebar />
           </SheetContent>
@@ -53,15 +53,9 @@ export function Header() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem>
-            <Link href="/settings" className="gap-2">
+            <Link href="/settings" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Meu Perfil
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Link href="/settings" className="gap-2">
-              <Settings className="h-4 w-4" />
-              Configurações
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />

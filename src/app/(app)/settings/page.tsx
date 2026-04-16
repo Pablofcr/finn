@@ -94,7 +94,7 @@ export default function SettingsPage() {
         })
       }
     } catch {
-      toast.error('Erro ao carregar configurações')
+      toast.error('Não conseguimos carregar suas configurações. Tente novamente em instantes.')
     }
     setLoading(false)
   }, [])
@@ -112,12 +112,12 @@ export default function SettingsPage() {
         body: JSON.stringify({ name, phone: phone || null, defaultCurrency: currency, timezone }),
       })
       if (res.ok) {
-        toast.success('Perfil atualizado!')
+        toast.success('Perfil atualizado! Suas alterações já estão valendo.')
       } else {
-        toast.error('Erro ao salvar')
+        toast.error('Não foi possível salvar o perfil. Verifique os dados e tente novamente.')
       }
     } catch {
-      toast.error('Erro ao salvar perfil')
+      toast.error('Não foi possível salvar o perfil. Tente novamente em instantes.')
     }
     setSaving(false)
   }
@@ -131,12 +131,12 @@ export default function SettingsPage() {
         body: JSON.stringify(notifications),
       })
       if (res.ok) {
-        toast.success('Notificações atualizadas!')
+        toast.success('Notificações atualizadas! Você receberá alertas conforme configurado.')
       } else {
-        toast.error('Erro ao salvar')
+        toast.error('Não foi possível salvar as notificações. Tente novamente.')
       }
     } catch {
-      toast.error('Erro ao salvar notificações')
+      toast.error('Não foi possível salvar as notificações. Tente novamente em instantes.')
     }
     setSaving(false)
   }

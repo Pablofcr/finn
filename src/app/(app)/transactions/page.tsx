@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/shared/empty-state'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, groupByDate } from '@/lib/utils'
 import { TRANSACTION_TYPE_LABELS } from '@/lib/constants'
 import { Plus, Search, Trash2, Pencil, ArrowLeftRight } from 'lucide-react'
 import Link from 'next/link'
@@ -43,7 +43,7 @@ export default function TransactionsPage() {
         setTotalPages(result.totalPages)
       }
     } catch {
-      toast.error('Erro ao carregar transações')
+      toast.error('Não conseguimos carregar suas transações. Verifique sua conexão e tente novamente.')
     }
     setLoading(false)
   }, [page, search, typeFilter])
@@ -56,13 +56,13 @@ export default function TransactionsPage() {
     try {
       const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
       if (res.ok) {
-        toast.success('Transação excluída')
+        toast.success('Transação excluída e saldo atualizado.')
         fetchTransactions()
       } else {
-        toast.error('Erro ao excluir transação')
+        toast.error('A transação não foi excluída. Tente de novo em alguns instantes.')
       }
     } catch {
-      toast.error('Erro ao excluir transação')
+      toast.error('A transação não foi excluída. Tente de novo em alguns instantes.')
     }
   }
 
@@ -118,82 +118,90 @@ export default function TransactionsPage() {
             ) : transactions.length === 0 ? (
               <EmptyState
                 icon={<ArrowLeftRight className="h-12 w-12" />}
-                title="Nenhuma transação encontrada"
-                description="Registre sua primeira transação para começar a acompanhar suas finanças."
+                title="Sua linha do tempo financeira começa aqui"
+                description="Registre sua primeira receita ou despesa e veja suas finanças tomarem forma."
                 action={
                   <Link href="/transactions/new">
-                    <Button>Nova Transação</Button>
+                    <Button className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Registrar transação
+                    </Button>
                   </Link>
                 }
               />
             ) : (
-              <div className="space-y-2">
-                <Card>
-                  <CardContent className="p-0 divide-y divide-border/50">
-                    {transactions.map((t) => (
-                      <div key={t.id} className="flex items-center justify-between py-3 px-4 hover:bg-muted/30 transition-colors">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0 text-xs font-semibold"
-                            style={{
-                              backgroundColor: `${t.category?.color || '#94a3b8'}15`,
-                              color: t.category?.color || '#94a3b8',
-                            }}
-                          >
-                            {(t.category?.name || 'S')[0].toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{t.description}</p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>{t.category?.name || 'Sem categoria'}</span>
-                              <span>·</span>
-                              <span>{t.account?.name}</span>
-                              <span>·</span>
-                              <span>{formatDate(t.date)}</span>
+              <div className="space-y-4">
+                {groupByDate(transactions).map((group) => (
+                  <div key={group.label}>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
+                      {group.label}
+                    </h3>
+                    <Card>
+                      <CardContent className="p-0 divide-y divide-border/50">
+                        {group.items.map((t: any) => (
+                          <div key={t.id} className="flex items-center justify-between py-3 px-4 hover:bg-muted/30 transition-colors">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div
+                                className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0 text-xs font-semibold"
+                                style={{
+                                  backgroundColor: `${t.category?.color || '#94a3b8'}15`,
+                                  color: t.category?.color || '#94a3b8',
+                                }}
+                              >
+                                {(t.category?.name || 'S')[0].toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate">{t.description}</p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span>{t.category?.name || 'Sem categoria'}</span>
+                                  <span>·</span>
+                                  <span>{t.account?.name}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0">
+                              <div className="text-right">
+                                <p className={`text-sm font-semibold ${t.type === 'INCOME' ? 'text-income' : t.type === 'EXPENSE' ? 'text-expense' : 'text-transfer'}`}>
+                                  {t.type === 'INCOME' ? '+' : t.type === 'EXPENSE' ? '-' : ''}
+                                  {formatCurrency(Number(t.amount))}
+                                </p>
+                                <Badge variant="outline" className="text-xs">
+                                  {TRANSACTION_TYPE_LABELS[t.type]}
+                                </Badge>
+                              </div>
+                              <div className="flex gap-1">
+                                <Link href={`/transactions/new?edit=${t.id}`}>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                </Link>
+                                <AlertDialog>
+                                  <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" />}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir transação?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Esta ação não pode ser desfeita. O saldo da conta será ajustado.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDelete(t.id)}>
+                                        Excluir
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <div className="text-right">
-                            <p className={`text-sm font-semibold ${t.type === 'INCOME' ? 'text-income' : t.type === 'EXPENSE' ? 'text-expense' : 'text-transfer'}`}>
-                              {t.type === 'INCOME' ? '+' : t.type === 'EXPENSE' ? '-' : ''}
-                              {formatCurrency(Number(t.amount))}
-                            </p>
-                            <Badge variant="outline" className="text-xs">
-                              {TRANSACTION_TYPE_LABELS[t.type]}
-                            </Badge>
-                          </div>
-                          <div className="flex gap-1">
-                            <Link href={`/transactions/new?edit=${t.id}`}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                            </Link>
-                            <AlertDialog>
-                              <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" />}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir transação?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita. O saldo da conta será ajustado.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(t.id)}>
-                                    Excluir
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
 
                 {totalPages > 1 && (
                   <div className="flex justify-center gap-2 pt-4">

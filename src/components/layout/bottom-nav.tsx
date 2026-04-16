@@ -31,8 +31,10 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={isAdd ? 'Nova transação' : item.label}
               className={cn(
-                'flex flex-col items-center gap-1 px-3 py-1 text-xs transition-all',
+                'flex flex-col items-center gap-1 px-3 py-1 text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg',
                 isAdd && 'relative -top-3',
                 isActive
                   ? 'text-primary'
@@ -46,7 +48,7 @@ export function BottomNav() {
               ) : (
                 <div className="flex flex-col items-center gap-1">
                   {Icon && <Icon className="h-5 w-5" />}
-                  {isActive && <div className="h-1 w-1 rounded-full bg-primary" />}
+                  {isActive && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
                 </div>
               )}
               <span className={cn(isAdd && 'mt-1')}>{item.label}</span>

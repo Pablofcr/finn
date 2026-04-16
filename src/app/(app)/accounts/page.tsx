@@ -48,7 +48,7 @@ export default function AccountsPage() {
         setAccounts(result.data || [])
       }
     } catch {
-      toast.error('Erro ao carregar contas')
+      toast.error('Não conseguimos carregar suas contas. Tente novamente em instantes.')
     }
     setLoading(false)
   }, [])
@@ -89,15 +89,15 @@ export default function AccountsPage() {
       })
 
       if (res.ok) {
-        toast.success(editingId ? 'Conta atualizada!' : 'Conta criada!')
+        toast.success(editingId ? 'Conta atualizada! Suas alterações já estão valendo.' : 'Conta criada! Agora você pode registrar transações nela.')
         setDialogOpen(false)
         fetchAccounts()
       } else {
         const err = await res.json()
-        toast.error(err.error || 'Erro ao salvar')
+        toast.error(err.error || 'Não foi possível salvar a conta. Verifique os dados e tente novamente.')
       }
     } catch {
-      toast.error('Erro ao salvar conta')
+      toast.error('Não foi possível salvar a conta. Tente novamente em instantes.')
     }
   }
 
@@ -105,11 +105,11 @@ export default function AccountsPage() {
     try {
       const res = await fetch(`/api/accounts/${id}`, { method: 'DELETE' })
       if (res.ok) {
-        toast.success('Conta excluída')
+        toast.success('Conta excluída e saldos atualizados.')
         fetchAccounts()
       }
     } catch {
-      toast.error('Erro ao excluir conta')
+      toast.error('Não foi possível excluir a conta. Tente novamente em instantes.')
     }
   }
 
@@ -205,8 +205,8 @@ export default function AccountsPage() {
       ) : accounts.length === 0 ? (
         <EmptyState
           icon={<Wallet className="h-12 w-12" />}
-          title="Nenhuma conta cadastrada"
-          description="Adicione suas contas bancárias, cartões e carteiras."
+          title="Organize suas finanças em um só lugar"
+          description="Adicione suas contas bancárias, cartões e carteiras para ter uma visão completa."
           action={<Button onClick={openNew}>Nova Conta</Button>}
         />
       ) : (

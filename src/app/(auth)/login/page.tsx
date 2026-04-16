@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { toast } from 'sonner'
 import Link from 'next/link'
 
 export default function LoginPage() {
-  const { signIn, signInWithGoogle } = useAuth()
+  const { signIn, signInWithGoogle, resetPassword } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -35,7 +36,7 @@ export default function LoginPage() {
         </div>
         <CardTitle className="text-2xl">Entrar no Finn</CardTitle>
         <CardDescription>
-          Gerencie suas finanças de forma inteligente
+          Suas finanças sob controle, de forma inteligente
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -58,7 +59,27 @@ export default function LoginPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Senha</Label>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!email) {
+                    toast.error('Informe seu e-mail primeiro para redefinir a senha.')
+                    return
+                  }
+                  const result = await resetPassword(email)
+                  if (result.error) {
+                    toast.error('Não foi possível enviar o e-mail. Tente novamente.')
+                  } else {
+                    toast.success('Link de redefinição enviado! Verifique sua caixa de entrada.')
+                  }
+                }}
+                className="text-xs text-primary hover:underline"
+              >
+                Esqueceu a senha?
+              </button>
+            </div>
             <Input
               id="password"
               type="password"

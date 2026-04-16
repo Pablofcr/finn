@@ -29,7 +29,7 @@ export default function GoalsPage() {
         setGoals(result.data || [])
       }
     } catch {
-      toast.error('Erro ao carregar metas')
+      toast.error('Não conseguimos carregar suas metas. Tente novamente em instantes.')
     }
     setLoading(false)
   }, [])
@@ -53,7 +53,7 @@ export default function GoalsPage() {
         }),
       })
       if (res.ok) {
-        toast.success('Meta criada!')
+        toast.success('Meta criada! Agora acompanhe seu progresso por aqui.')
         setDialogOpen(false)
         setName('')
         setTargetAmount('')
@@ -61,7 +61,7 @@ export default function GoalsPage() {
         fetchGoals()
       }
     } catch {
-      toast.error('Erro ao criar meta')
+      toast.error('Não foi possível criar a meta. Tente novamente em instantes.')
     }
   }
 
@@ -104,8 +104,8 @@ export default function GoalsPage() {
       ) : goals.length === 0 ? (
         <EmptyState
           icon={<Target className="h-12 w-12" />}
-          title="Nenhuma meta definida"
-          description="Crie metas financeiras e acompanhe seu progresso."
+          title="Defina sua primeira meta financeira"
+          description="Planeje seus sonhos e acompanhe cada passo rumo à conquista."
           action={<Button onClick={() => setDialogOpen(true)}>Nova Meta</Button>}
         />
       ) : (

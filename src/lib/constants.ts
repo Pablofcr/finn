@@ -48,18 +48,40 @@ export const COLORS = [
   '#f43f5e', '#64748b',
 ]
 
-export const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
-  { href: '/transactions', label: 'Transações', icon: 'arrow-left-right' },
-  { href: '/accounts', label: 'Contas', icon: 'wallet' },
-  { href: '/categories', label: 'Categorias', icon: 'tags' },
-  { href: '/budgets', label: 'Orçamentos', icon: 'pie-chart' },
-  { href: '/goals', label: 'Metas', icon: 'target' },
-  { href: '/reports', label: 'Relatórios', icon: 'bar-chart-3' },
-  { href: '/bot', label: 'Assistente', icon: 'bot' },
-  { href: '/insights', label: 'Insights', icon: 'lightbulb' },
-  { href: '/settings', label: 'Configurações', icon: 'settings' },
+export const NAV_SECTIONS = [
+  {
+    label: 'Financeiro',
+    items: [
+      { href: '/dashboard', label: 'Início', icon: 'layout-dashboard' },
+      { href: '/transactions', label: 'Transações', icon: 'arrow-left-right' },
+      { href: '/accounts', label: 'Contas', icon: 'wallet' },
+      { href: '/categories', label: 'Categorias', icon: 'tags' },
+    ],
+  },
+  {
+    label: 'Planejamento',
+    items: [
+      { href: '/budgets', label: 'Orçamentos', icon: 'pie-chart' },
+      { href: '/goals', label: 'Metas', icon: 'target' },
+    ],
+  },
+  {
+    label: 'Análise',
+    items: [
+      { href: '/reports', label: 'Relatórios', icon: 'bar-chart-3' },
+      { href: '/insights', label: 'Insights', icon: 'lightbulb' },
+      { href: '/bot', label: 'Assistente', icon: 'bot' },
+    ],
+  },
+  {
+    label: 'Conta',
+    items: [
+      { href: '/settings', label: 'Configurações', icon: 'settings' },
+    ],
+  },
 ]
+
+export const NAV_ITEMS = NAV_SECTIONS.flatMap(section => section.items)
 
 export const MOBILE_NAV_ITEMS = [
   { href: '/dashboard', label: 'Início', icon: 'layout-dashboard' },

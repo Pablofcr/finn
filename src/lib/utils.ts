@@ -39,6 +39,34 @@ export function getInitials(name: string): string {
     .slice(0, 2)
 }
 
+export function getRelativeDateLabel(date: string | Date): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  const today = new Date()
+  // Compare using UTC dates to avoid timezone issues
+  const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()))
+  const dateUTC = new Date(Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate()))
+  const diffDays = Math.floor((todayUTC.getTime() - dateUTC.getTime()) / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return 'Hoje'
+  if (diffDays === 1) return 'Ontem'
+  if (diffDays < 7) return new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' }).format(dateObj)
+  return new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(dateObj)
+}
+
+export function groupByDate<T extends { date: string }>(items: T[]): { label: string; items: T[] }[] {
+  const groups: Map<string, { label: string; items: T[] }> = new Map()
+  for (const item of items) {
+    const label = getRelativeDateLabel(item.date)
+    const existing = groups.get(label)
+    if (existing) {
+      existing.items.push(item)
+    } else {
+      groups.set(label, { label, items: [item] })
+    }
+  }
+  return Array.from(groups.values())
+}
+
 export function formatPhone(phone: string): string {
   const cleaned = phone.replace(/\D/g, '')
   if (cleaned.length === 11) {
