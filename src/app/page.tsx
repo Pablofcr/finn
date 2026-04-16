@@ -71,10 +71,11 @@ export default async function LandingPage() {
             </Link>
           </div>
 
-          <div className="mt-12 flex items-center justify-center gap-8 text-sm text-slate-400">
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-slate-400">
             <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> Sem cartao</span>
             <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> Sem pegadinha</span>
             <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> Dados protegidos</span>
+            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> Instale como app no celular</span>
           </div>
         </div>
       </section>

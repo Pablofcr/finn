@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/header'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { Skeleton } from '@/components/ui/skeleton'
 import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard'
+import { InstallPrompt } from '@/components/install-prompt'
 
 function AppContent({ children }: { children: React.ReactNode }) {
   const { loading, user } = useAuth()
@@ -55,6 +56,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
           {children}
         </main>
         <BottomNav />
+        <InstallPrompt />
       </div>
     </div>
   )
