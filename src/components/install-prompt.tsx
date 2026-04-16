@@ -93,7 +93,7 @@ export function InstallPrompt() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Rapido e facil — so 3 toques:</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Rápido e fácil — só 3 toques:</p>
             <div className="flex items-center justify-between gap-2">
               {/* Step 1 - Three dots */}
               <div className="flex flex-col items-center gap-1.5 flex-1">
@@ -104,7 +104,7 @@ export function InstallPrompt() {
                     <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
                   </svg>
                 </div>
-                <span className="text-[10px] text-center text-slate-500 leading-tight">Tres<br/>pontinhos</span>
+                <span className="text-[10px] text-center text-slate-500 leading-tight">Três<br/>pontinhos</span>
               </div>
 
               <span className="text-slate-300 dark:text-slate-600 text-xs mt-[-12px]">›</span>
@@ -132,7 +132,7 @@ export function InstallPrompt() {
                     <path d="M8 12h8"/>
                   </svg>
                 </div>
-                <span className="text-[10px] text-center text-slate-500 leading-tight">Tela de<br/>inicio</span>
+                <span className="text-[10px] text-center text-slate-500 leading-tight">Tela de<br/>início</span>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={handleDismiss} className="w-full">
@@ -150,7 +150,7 @@ export function InstallPrompt() {
                 <div>
                   <p className="font-semibold text-sm">Instale o Finn</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Acesse rapido direto da sua tela inicial. Funciona como um app!
+                    Acesse rápido direto da sua tela inicial. Funciona como um app!
                   </p>
                 </div>
                 <button onClick={handleDismiss} className="text-slate-400 hover:text-slate-600 p-1 shrink-0">
@@ -167,7 +167,7 @@ export function InstallPrompt() {
                   Instalar
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleDismiss} className="text-xs text-slate-400">
-                  Agora nao
+                  Agora não
                 </Button>
               </div>
             </div>

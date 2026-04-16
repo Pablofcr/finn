@@ -13,17 +13,17 @@ import { toast } from 'sonner'
 
 const FEATURES = [
   { name: 'Dashboard completo', free: true, pro: true, icon: BarChart3 },
-  { name: 'Transacoes por mes', free: '50', pro: 'Ilimitadas', icon: Wallet },
-  { name: 'Contas bancarias', free: '2', pro: 'Ilimitadas', icon: Wallet },
-  { name: 'Orcamentos', free: '3', pro: 'Ilimitados', icon: PieChart },
+  { name: 'Transações por mês', free: '50', pro: 'Ilimitadas', icon: Wallet },
+  { name: 'Contas bancárias', free: '2', pro: 'Ilimitadas', icon: Wallet },
+  { name: 'Orçamentos', free: '3', pro: 'Ilimitados', icon: PieChart },
   { name: 'Metas financeiras', free: '1', pro: 'Ilimitadas', icon: Target },
   { name: 'Alertas de pagamento', free: '5 contas', pro: 'Ilimitados', icon: MessageCircle },
   { name: 'Bot Telegram — texto', free: true, pro: true, icon: MessageCircle },
-  { name: 'Bot Telegram — audio', free: false, pro: true, icon: Mic },
+  { name: 'Bot Telegram — áudio', free: false, pro: true, icon: Mic },
   { name: 'Bot Telegram — foto de cupom', free: false, pro: true, icon: Camera },
   { name: 'Insights com IA', free: false, pro: true, icon: Lightbulb },
-  { name: 'Categorizacao automatica', free: false, pro: true, icon: Sparkles },
-  { name: 'Relatorios historicos (12 meses)', free: false, pro: true, icon: BarChart3 },
+  { name: 'Categorização automática', free: false, pro: true, icon: Sparkles },
+  { name: 'Relatórios históricos (12 meses)', free: false, pro: true, icon: BarChart3 },
   { name: 'Exportar dados', free: false, pro: true, icon: Download },
   { name: 'Dados protegidos (LGPD)', free: true, pro: true, icon: Shield },
 ]
@@ -49,7 +49,7 @@ export default function PricingPage() {
       <div className="text-center">
         <h1 className="text-3xl font-bold">Escolha seu plano</h1>
         <p className="text-muted-foreground mt-2">
-          Comece gratis. Evolua quando quiser.
+          Comece grátis. Evolua quando quiser.
         </p>
       </div>
 
@@ -62,9 +62,9 @@ export default function PricingPage() {
               <h2 className="text-xl font-bold">Free</h2>
               <div className="mt-3">
                 <span className="text-4xl font-extrabold">R$ 0</span>
-                <span className="text-muted-foreground">/mes</span>
+                <span className="text-muted-foreground">/mês</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">Para comecar a organizar</p>
+              <p className="text-sm text-muted-foreground mt-2">Para começar a organizar</p>
             </div>
             {plan === 'FREE' ? (
               <Button disabled className="w-full" variant="outline">Plano atual</Button>
@@ -90,7 +90,7 @@ export default function PricingPage() {
               <div className="mt-3">
                 <span className="text-4xl font-extrabold">R$ 14</span>
                 <span className="text-xl font-bold">,90</span>
-                <span className="text-muted-foreground">/mes</span>
+                <span className="text-muted-foreground">/mês</span>
               </div>
               <p className="text-sm text-muted-foreground mt-1">Menos de R$ 0,50 por dia</p>
               <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">Assistente financeiro com IA completa</p>
@@ -100,7 +100,7 @@ export default function PricingPage() {
             ) : (
               <Button
                 className="w-full gap-2 gradient-primary shadow-md shadow-primary/25 border-0"
-                onClick={() => toast.info('Pagamento sera ativado em breve. Aguarde!')}
+                onClick={() => toast.info('Pagamento será ativado em breve. Aguarde!')}
               >
                 <Zap className="h-4 w-4" />
                 Fazer upgrade
@@ -140,15 +140,15 @@ export default function PricingPage() {
       {plan !== 'PRO' && (
         <div className="text-center py-6">
           <p className="text-sm text-muted-foreground mb-4">
-            O Finn Pro se paga sozinho. Um unico insight de economia ja cobre meses de assinatura.
+            O Finn Pro se paga sozinho. Um único insight de economia já cobre meses de assinatura.
           </p>
           <Button
             size="lg"
             className="gap-2 gradient-primary shadow-lg shadow-primary/25 border-0 px-8"
-            onClick={() => toast.info('Pagamento sera ativado em breve. Aguarde!')}
+            onClick={() => toast.info('Pagamento será ativado em breve. Aguarde!')}
           >
             <Crown className="h-5 w-5" />
-            Comecar com o Pro
+            Começar com o Pro
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
