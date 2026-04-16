@@ -11,8 +11,14 @@ import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { getInitials, formatPhone } from '@/lib/utils'
-import { User, Bell, Globe, LogOut, Save } from 'lucide-react'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { User, Bell, Globe, LogOut, Save, Download, Trash2, Shield } from 'lucide-react'
 import { toast } from 'sonner'
+import Link from 'next/link'
 
 const CURRENCIES = [
   { value: 'BRL', label: 'Real (R$)' },
@@ -291,6 +297,78 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Data & Privacy */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Privacidade e Dados
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Export data */}
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="text-sm font-medium">Exportar meus dados</p>
+              <p className="text-xs text-muted-foreground">Baixe todas as suas informações financeiras em formato JSON.</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={async () => {
+                toast.info('Preparando seus dados...')
+                try {
+                  const res = await fetch('/api/user/export')
+                  if (!res.ok) throw new Error()
+                  const blob = await res.blob()
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = 'finn-dados-export.json'
+                  a.click()
+                  URL.revokeObjectURL(url)
+                  toast.success('Dados exportados com sucesso!')
+                } catch {
+                  toast.error('Não foi possível exportar seus dados. Tente novamente.')
+                }
+              }}
+            >
+              <Download className="h-4 w-4" />
+              Exportar
+            </Button>
+          </div>
+
+          {/* Privacy policy link */}
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="text-sm font-medium">Política de Privacidade</p>
+              <p className="text-xs text-muted-foreground">Veja como tratamos e protegemos seus dados.</p>
+            </div>
+            <Link href="/privacy">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Shield className="h-4 w-4" />
+                Ver política
+              </Button>
+            </Link>
+          </div>
+
+          {/* Security page link */}
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="text-sm font-medium">Sua Segurança</p>
+              <p className="text-xs text-muted-foreground">Entenda como protegemos suas informações.</p>
+            </div>
+            <Link href="/security">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Shield className="h-4 w-4" />
+                Ver segurança
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Sign Out */}
       <Card className="border-red-200 dark:border-red-900/30">
         <CardContent className="pt-6">
@@ -303,6 +381,55 @@ export default function SettingsPage() {
               <LogOut className="h-4 w-4" />
               Sair
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Delete account */}
+      <Card className="border-red-200 dark:border-red-900/30">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-destructive">Excluir minha conta</p>
+              <p className="text-xs text-muted-foreground">
+                Todos os seus dados serão removidos permanentemente. Esta ação não pode ser desfeita.
+              </p>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger render={<Button variant="outline" size="sm" className="gap-2 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-950/20" />}>
+                <Trash2 className="h-4 w-4" />
+                Excluir
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Tem certeza que deseja excluir sua conta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação é permanente e irreversível. Todos os seus dados financeiros,
+                    transações, contas, metas e configurações serão excluídos definitivamente.
+                    Recomendamos exportar seus dados antes de continuar.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-white hover:bg-destructive/90"
+                    onClick={async () => {
+                      toast.info('Excluindo sua conta...')
+                      try {
+                        const res = await fetch('/api/user/delete', { method: 'DELETE' })
+                        if (!res.ok) throw new Error()
+                        toast.success('Conta excluída. Sentiremos sua falta.')
+                        signOut()
+                      } catch {
+                        toast.error('Não foi possível excluir a conta. Tente novamente.')
+                      }
+                    }}
+                  >
+                    Sim, excluir tudo
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>
