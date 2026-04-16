@@ -14,6 +14,52 @@ interface ParsedReceipt {
   items: string[]
 }
 
+// Fast regex parser for common patterns — no API call needed
+function regexParseTransaction(text: string): ParsedTransaction | null {
+  const normalized = text.toLowerCase().trim().replace(/[.!?]+$/, '')
+
+  // Extract amount: "300", "R$ 300", "R$ 300,00", "300 reais", "1.500,00"
+  const amountMatch = normalized.match(/r?\$?\s*(\d[\d.,]*\d|\d+)\s*(?:reais|real)?/)
+  if (!amountMatch) return null
+
+  let amountStr = amountMatch[1]
+    .replace(/\./g, '')   // remove thousand separator
+    .replace(',', '.')     // convert decimal comma to dot
+  const amount = parseFloat(amountStr)
+  if (!amount || amount <= 0) return null
+
+  // Determine type
+  const incomePatterns = /^(recebi|ganhei|entrou|me\s+pag|pix\s+de|transfer[eê]ncia\s+de|receb)/
+  const expensePatterns = /^(gastei|paguei|comprei|sa[ií]u?|d[eé]bito|pag)/
+
+  let type: 'INCOME' | 'EXPENSE'
+  if (incomePatterns.test(normalized)) {
+    type = 'INCOME'
+  } else if (expensePatterns.test(normalized)) {
+    type = 'EXPENSE'
+  } else {
+    return null
+  }
+
+  // Extract description: everything after the amount and connectors
+  let description = normalized
+    .replace(amountMatch[0], '')           // remove amount
+    .replace(incomePatterns, '')            // remove action verb
+    .replace(expensePatterns, '')           // remove action verb
+    .replace(/^[\s,]+|[\s,]+$/g, '')       // trim
+    .replace(/^(de|do|da|dos|das|no|na|nos|nas|em|pra|para|com|pelo|pela|um|uma)\s+/i, '') // remove prepositions
+    .trim()
+
+  if (!description) {
+    description = type === 'INCOME' ? 'Receita' : 'Despesa'
+  }
+
+  // Capitalize first letter
+  description = description.charAt(0).toUpperCase() + description.slice(1)
+
+  return { type, amount, description }
+}
+
 function extractJson<T extends { amount: number; description: string }>(raw: string): T | null {
   const text = raw.trim()
   if (text === 'null' || text === 'nulo') return null
@@ -37,18 +83,24 @@ function extractJson<T extends { amount: number; description: string }>(raw: str
 }
 
 export async function parseTransactionMessage(text: string): Promise<ParsedTransaction | null> {
-  const client = new Anthropic()
+  // Try fast regex parser first (handles 90% of cases instantly)
+  const regexResult = regexParseTransaction(text)
+  if (regexResult) return regexResult
 
-  const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 200,
-    messages: [
-      {
-        role: 'user',
-        content: text,
-      },
-    ],
-    system: `Você é um parser de transações financeiras. O usuário vai enviar uma mensagem em português descrevendo uma transação financeira.
+  // Fall back to Claude AI for complex/ambiguous messages
+  try {
+    const client = new Anthropic()
+
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 200,
+      messages: [
+        {
+          role: 'user',
+          content: text,
+        },
+      ],
+      system: `Você é um parser de transações financeiras. O usuário vai enviar uma mensagem em português descrevendo uma transação financeira.
 
 Extraia as informações e responda APENAS com um JSON válido, sem markdown, sem explicação:
 {"type": "INCOME" ou "EXPENSE", "amount": número, "description": "descrição curta"}
@@ -66,12 +118,16 @@ Exemplos:
 "pix de 1200 da empresa" → {"type":"INCOME","amount":1200,"description":"Pix da empresa"}
 "paguei 89,90 na farmácia" → {"type":"EXPENSE","amount":89.90,"description":"Farmácia"}
 "bom dia" → null`,
-  })
+    })
 
-  const content = response.content[0]
-  if (content.type !== 'text') return null
+    const content = response.content[0]
+    if (content.type !== 'text') return null
 
-  return extractJson<ParsedTransaction>(content.text)
+    return extractJson<ParsedTransaction>(content.text)
+  } catch (err) {
+    console.error('Claude parse fallback error:', err)
+    return null
+  }
 }
 
 export async function parseReceiptImage(imageBase64: string, mimeType: string): Promise<ParsedReceipt | null> {
