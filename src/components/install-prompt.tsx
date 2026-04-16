@@ -16,9 +16,14 @@ export function InstallPrompt() {
   const [showIOSGuide, setShowIOSGuide] = useState(false)
 
   useEffect(() => {
-    // Check if already dismissed
+    // Check if dismissed recently (expires after 7 days)
     const dismissed = localStorage.getItem('finn-install-dismissed')
-    if (dismissed) return
+    if (dismissed) {
+      const dismissedAt = parseInt(dismissed, 10)
+      const sevenDays = 7 * 24 * 60 * 60 * 1000
+      if (Date.now() - dismissedAt < sevenDays) return
+      localStorage.removeItem('finn-install-dismissed')
+    }
 
     // Check if already installed (standalone mode)
     if (window.matchMedia('(display-mode: standalone)').matches) return
@@ -64,7 +69,7 @@ export function InstallPrompt() {
   function handleDismiss() {
     setShowBanner(false)
     setShowIOSGuide(false)
-    localStorage.setItem('finn-install-dismissed', 'true')
+    localStorage.setItem('finn-install-dismissed', String(Date.now()))
   }
 
   if (!showBanner) return null

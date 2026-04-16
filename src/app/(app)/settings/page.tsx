@@ -339,6 +339,26 @@ export default function SettingsPage() {
             </Button>
           </div>
 
+          {/* Install app */}
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="text-sm font-medium">Instalar o Finn</p>
+              <p className="text-xs text-muted-foreground">Adicione o Finn na tela inicial do seu celular.</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                localStorage.removeItem('finn-install-dismissed')
+                window.location.reload()
+              }}
+            >
+              <Download className="h-4 w-4" />
+              Instalar
+            </Button>
+          </div>
+
           {/* Privacy policy link */}
           <div className="flex items-center justify-between py-1">
             <div>
