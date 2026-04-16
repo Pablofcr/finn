@@ -141,6 +141,91 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* AI Assistant Section */}
+      <section className="py-20 lg:py-28 bg-slate-50/50 dark:bg-white/[0.02]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left — Copy */}
+              <div>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-sm font-medium mb-6">
+                  <Sparkles className="h-4 w-4" />
+                  Inteligência artificial integrada
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-6 leading-tight">
+                  Um consultor financeiro{' '}
+                  <span className="bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
+                    que trabalha pra você
+                  </span>{' '}
+                  24 horas por dia.
+                </h2>
+                <p className="text-lg text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+                  A IA do Finn analisa seus hábitos financeiros em tempo real, identifica onde você está gastando demais e entrega recomendações personalizadas para economizar — tudo de forma automática, sem você precisar pedir.
+                </p>
+                <div className="space-y-4">
+                  {[
+                    { icon: '🔍', text: 'Analisa seus gastos por categoria e compara mês a mês' },
+                    { icon: '🚨', text: 'Alerta quando um orçamento está prestes a estourar' },
+                    { icon: '💡', text: 'Sugere cortes inteligentes que você nem percebeu' },
+                    { icon: '📈', text: 'Acompanha suas metas e celebra cada conquista' },
+                    { icon: '📲', text: 'Envia os insights mais importantes direto no seu Telegram' },
+                  ].map((item) => (
+                    <div key={item.text} className="flex items-start gap-3">
+                      <span className="text-lg shrink-0 mt-0.5">{item.icon}</span>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right — Visual example */}
+              <div className="space-y-4">
+                {/* Simulated insight cards */}
+                {[
+                  {
+                    severity: 'warning',
+                    emoji: '🟡',
+                    title: 'Gastos com delivery subiram 40%',
+                    body: 'Você gastou R$ 680 com delivery este mês, contra R$ 485 no mês passado. Considere cozinhar mais em casa.',
+                    border: 'border-amber-200 dark:border-amber-900/30',
+                    bg: 'bg-amber-50/50 dark:bg-amber-500/5',
+                  },
+                  {
+                    severity: 'alert',
+                    emoji: '🔴',
+                    title: 'Orçamento de transporte a 92%',
+                    body: 'Restam apenas R$ 48 do seu limite de R$ 600. Faltam 12 dias para o fim do mês.',
+                    border: 'border-red-200 dark:border-red-900/30',
+                    bg: 'bg-red-50/50 dark:bg-red-500/5',
+                  },
+                  {
+                    severity: 'success',
+                    emoji: '🟢',
+                    title: 'Meta "Viagem" progredindo bem!',
+                    body: 'Você já juntou R$ 3.200 de R$ 5.000. No ritmo atual, vai atingir a meta em 2 meses.',
+                    border: 'border-emerald-200 dark:border-emerald-900/30',
+                    bg: 'bg-emerald-50/50 dark:bg-emerald-500/5',
+                  },
+                ].map((card) => (
+                  <div key={card.title} className={`p-4 rounded-xl border ${card.border} ${card.bg}`}>
+                    <div className="flex items-start gap-3">
+                      <span className="text-lg shrink-0">{card.emoji}</span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{card.title}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{card.body}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <p className="text-xs text-slate-400 text-center italic">
+                  Exemplos reais de insights gerados pela IA do Finn
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Telegram Bot */}
       <section className="py-20 lg:py-28 bg-gradient-to-br from-indigo-500 to-purple-600 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
