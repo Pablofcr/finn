@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Download, X, Smartphone } from 'lucide-react'
+import { Download, X } from 'lucide-react'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -33,12 +33,11 @@ export function InstallPrompt() {
     setIsIOS(isIOSDevice)
 
     if (isIOSDevice) {
-      // iOS doesn't support beforeinstallprompt — show manual guide after delay
       const timer = setTimeout(() => setShowBanner(true), 3000)
       return () => clearTimeout(timer)
     }
 
-    // Android/Desktop — listen for install prompt
+    // Android/Desktop
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
@@ -75,100 +74,124 @@ export function InstallPrompt() {
   if (!showBanner) return null
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 lg:bottom-6 lg:left-auto lg:right-6 lg:w-[380px] z-50 animate-fade-in">
-      <div className="bg-white dark:bg-[#1a1a22] rounded-2xl shadow-2xl shadow-black/20 border border-slate-200 dark:border-white/10 p-4">
+    <div className="fixed bottom-20 left-3 right-3 lg:bottom-6 lg:left-auto lg:right-6 lg:w-[400px] z-50 animate-fade-in">
+      <div className="bg-white dark:bg-[#1a1a22] rounded-2xl shadow-2xl shadow-black/20 border border-slate-200 dark:border-white/10 overflow-hidden">
         {showIOSGuide ? (
-          /* iOS manual install guide */
-          <div className="space-y-3">
-            <div className="flex items-start justify-between">
+          /* iOS manual install guide — friendly and visual */
+          <div>
+            {/* Header with gradient */}
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold shrink-0">
-                  F
-                </div>
-                <div>
-                  <p className="font-semibold text-sm">Como instalar no iPhone</p>
+                <img src="/icons/icon-192.png" alt="Finn" className="h-10 w-10 rounded-xl shadow-md" />
+                <div className="text-white">
+                  <p className="font-bold text-sm">Instale o Finn no seu celular</p>
+                  <p className="text-[11px] text-white/80">É rápido! Siga os 3 passos abaixo:</p>
                 </div>
               </div>
-              <button onClick={handleDismiss} className="text-slate-400 hover:text-slate-600 p-1">
+              <button onClick={handleDismiss} className="text-white/60 hover:text-white p-1">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Rápido e fácil — só 3 toques:</p>
-            <div className="flex items-center justify-between gap-2">
-              {/* Step 1 - Three dots */}
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-slate-600 dark:text-slate-300">
-                    <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
-                    <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
-                    <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
+
+            {/* Steps */}
+            <div className="px-5 py-5 space-y-4">
+              {/* Step 1 — Three dots HORIZONTAL */}
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-500/10 shrink-0">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-indigo-500">
+                    <circle cx="5" cy="12" r="2" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                    <circle cx="19" cy="12" r="2" fill="currentColor"/>
                   </svg>
                 </div>
-                <span className="text-[10px] text-center text-slate-500 leading-tight">Três<br/>pontinhos</span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    <span className="text-indigo-500 mr-1">1.</span>
+                    Toque nos três pontinhos
+                  </p>
+                  <p className="text-[11px] text-slate-400">No canto do navegador (menu de opções)</p>
+                </div>
               </div>
 
-              <span className="text-slate-300 dark:text-slate-600 text-xs mt-[-12px]">›</span>
-
-              {/* Step 2 - Share */}
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-slate-300">
+              {/* Step 2 — Share icon (iOS style: square with arrow up) */}
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-500/10 shrink-0">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500">
                     <rect x="4" y="8" width="16" height="14" rx="2"/>
                     <path d="M12 2v12"/>
                     <path d="M8 6l4-4 4 4"/>
                   </svg>
                 </div>
-                <span className="text-[10px] text-center text-slate-500 leading-tight">Compar-<br/>tilhar</span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    <span className="text-indigo-500 mr-1">2.</span>
+                    Toque em Compartilhar
+                  </p>
+                  <p className="text-[11px] text-slate-400">O ícone de quadrado com seta para cima</p>
+                </div>
               </div>
 
-              <span className="text-slate-300 dark:text-slate-600 text-xs mt-[-12px]">›</span>
-
-              {/* Step 3 - Add to home */}
-              <div className="flex flex-col items-center gap-1.5 flex-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-slate-300">
+              {/* Step 3 — Add to home screen (plus in square) */}
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-500/10 shrink-0">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500">
                     <rect x="3" y="3" width="18" height="18" rx="3"/>
                     <path d="M12 8v8"/>
                     <path d="M8 12h8"/>
                   </svg>
                 </div>
-                <span className="text-[10px] text-center text-slate-500 leading-tight">Tela de<br/>início</span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    <span className="text-indigo-500 mr-1">3.</span>
+                    Adicionar à Tela de Início
+                  </p>
+                  <p className="text-[11px] text-slate-400">Toque e confirme — é só isso!</p>
+                </div>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={handleDismiss} className="w-full">
-              Entendi
-            </Button>
+
+            {/* Friendly closing message */}
+            <div className="px-5 pb-5">
+              <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-3 text-center mb-3">
+                <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">
+                  Prontinho! Agora você já terá o Finn no seu celular, igualzinho a um app.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleDismiss} className="w-full">
+                Entendi, obrigado!
+              </Button>
+            </div>
           </div>
         ) : (
-          /* Install prompt */
-          <div className="flex items-start gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-lg shrink-0 shadow-lg shadow-indigo-500/25">
-              F
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-semibold text-sm">Instale o Finn</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Acesse rápido direto da sua tela inicial. Funciona como um app!
-                  </p>
+          /* Install prompt — friendly */
+          <div className="p-5">
+            <div className="flex items-start gap-3">
+              <img src="/icons/icon-192.png" alt="Finn" className="h-12 w-12 rounded-xl shadow-lg shadow-indigo-500/25 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-bold text-sm text-slate-900 dark:text-white">Leve o Finn com você!</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                      Instale na sua tela inicial e acesse suas finanças com um toque. Rápido e prático!
+                    </p>
+                  </div>
+                  <button onClick={handleDismiss} className="text-slate-400 hover:text-slate-600 p-1 shrink-0 ml-2">
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-                <button onClick={handleDismiss} className="text-slate-400 hover:text-slate-600 p-1 shrink-0">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="flex gap-2 mt-3">
-                <Button
-                  size="sm"
-                  onClick={handleInstall}
-                  className="gap-1.5 gradient-primary shadow-md shadow-primary/25 border-0 text-xs"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  Instalar
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleDismiss} className="text-xs text-slate-400">
-                  Agora não
-                </Button>
+                <div className="flex gap-2 mt-3">
+                  <Button
+                    size="sm"
+                    onClick={handleInstall}
+                    className="gap-1.5 gradient-primary shadow-md shadow-primary/25 border-0 text-xs"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Instalar agora
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleDismiss} className="text-xs text-slate-400">
+                    Depois
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
