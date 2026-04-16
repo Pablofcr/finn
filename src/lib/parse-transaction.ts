@@ -141,7 +141,7 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
     { pattern: /\b(todo\s+dia|di[aá]ri[oa]|diariamente)\b/, frequency: 'DAILY', label: 'Diário' },
     { pattern: /\b(toda\s+semana|semanal|semanalmente)\b/, frequency: 'WEEKLY', label: 'Semanal' },
     { pattern: /\b(quinzenal|quinzenalmente|a\s+cada\s+15\s+dias)\b/, frequency: 'BIWEEKLY', label: 'Quinzenal' },
-    { pattern: /\b(todo\s+m[eê]s|mensal|mensalmente|todos\s+os\s+meses)\b/, frequency: 'MONTHLY', label: 'Mensal' },
+    { pattern: /\b(todo\s+m[eê]s|mensal|mensalmente|todos\s+os\s+meses|assinatura)\b/, frequency: 'MONTHLY', label: 'Mensal' },
     { pattern: /\b(trimestral|trimestralmente|a\s+cada\s+3\s+meses)\b/, frequency: 'QUARTERLY', label: 'Trimestral' },
     { pattern: /\b(todo\s+ano|anual|anualmente|todos\s+os\s+anos)\b/, frequency: 'YEARLY', label: 'Anual' },
   ]

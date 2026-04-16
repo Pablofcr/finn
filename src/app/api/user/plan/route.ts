@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import { PLAN_LIMITS, PLAN_PRICES } from '@/lib/plan-limits'
@@ -33,6 +34,106 @@ export async function GET() {
         goals: goalsCount,
         recurringTransactions: recurringCount,
       },
+    },
+  })
+}
+
+export async function PUT(request: NextRequest) {
+  const user = await getAuthUser()
+  if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const body = await request.json()
+  const { plan, billingCycle } = body as { plan: 'PRO' | 'FREE'; billingCycle?: 'MONTHLY' | 'YEARLY' }
+
+  if (plan !== 'PRO' && plan !== 'FREE') {
+    return Response.json({ error: 'Plano inválido' }, { status: 400 })
+  }
+
+  // Update user plan
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { plan },
+  })
+
+  // If upgrading to Pro, auto-register Finn subscription as recurring expense
+  if (plan === 'PRO') {
+    const cycle = billingCycle || 'MONTHLY'
+    const amount = cycle === 'YEARLY' ? 178.80 : 14.90 // R$14,90/mês ou R$178,80/ano
+    const frequency = cycle === 'YEARLY' ? 'YEARLY' : 'MONTHLY'
+
+    // Get user's default account
+    const defaultAccount = await prisma.account.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    if (defaultAccount) {
+      // Check if already has a Finn subscription recurring
+      const existingFinnSub = await prisma.recurringTransaction.findFirst({
+        where: {
+          userId: user.id,
+          description: { contains: 'Finn Pro' },
+          status: 'ACTIVE',
+        },
+      })
+
+      if (!existingFinnSub) {
+        const now = new Date()
+
+        // Create the first transaction
+        await prisma.transaction.create({
+          data: {
+            userId: user.id,
+            description: `Assinatura Finn Pro (${cycle === 'YEARLY' ? 'Anual' : 'Mensal'})`,
+            amount,
+            type: 'EXPENSE',
+            date: now,
+            accountId: defaultAccount.id,
+          },
+        })
+
+        // Create recurring transaction for future charges
+        await prisma.recurringTransaction.create({
+          data: {
+            userId: user.id,
+            description: `Assinatura Finn Pro (${cycle === 'YEARLY' ? 'Anual' : 'Mensal'})`,
+            amount,
+            type: 'EXPENSE',
+            frequency,
+            startDate: now,
+            nextDueDate: now,
+            accountId: defaultAccount.id,
+            autoConfirm: false,
+          },
+        })
+
+        // Update account balance
+        await prisma.account.update({
+          where: { id: defaultAccount.id },
+          data: { balance: { decrement: amount } },
+        })
+      }
+    }
+  }
+
+  // If downgrading to Free, cancel Finn subscription recurring
+  if (plan === 'FREE') {
+    await prisma.recurringTransaction.updateMany({
+      where: {
+        userId: user.id,
+        description: { contains: 'Finn Pro' },
+        status: 'ACTIVE',
+      },
+      data: { status: 'CANCELLED' },
+    })
+  }
+
+  return Response.json({
+    data: {
+      plan,
+      message: plan === 'PRO'
+        ? 'Bem-vindo ao Finn Pro! Assinatura registrada automaticamente.'
+        : 'Plano alterado para Free.',
     },
   })
 }
