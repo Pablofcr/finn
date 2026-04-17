@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Check } from 'lucide-react'
 import Link from 'next/link'
 
 export default function RegisterPage() {
@@ -44,139 +44,130 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <Card className="card-elevated-lg border-0">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500 text-white shadow-lg shadow-green-500/25">
-            ✓
-          </div>
-          <CardTitle className="text-2xl">Bem-vindo ao Finn!</CardTitle>
-          <CardDescription>
-            Enviamos um link de confirmação para <strong>{email}</strong>.
-            Confirme seu e-mail para começar a usar.
-          </CardDescription>
-        </CardHeader>
-        <CardFooter className="justify-center">
-          <Link href="/login">
-            <Button variant="outline" className="rounded-xl">Voltar para o login</Button>
-          </Link>
-        </CardFooter>
-      </Card>
+      <div className="animate-fade-in text-center py-8">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/20">
+          <Check className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Bem-vindo ao Finn!</h1>
+        <p className="text-slate-500 dark:text-slate-400 mb-8">
+          Enviamos um link de confirmação para <strong>{email}</strong>.<br />
+          Verifique sua caixa de entrada para ativar sua conta.
+        </p>
+        <Link href="/login">
+          <Button variant="outline" className="rounded-xl">Ir para o login</Button>
+        </Link>
+      </div>
     )
   }
 
   return (
-    <Card className="card-elevated-lg border-0">
-      <CardHeader className="text-center">
-        <img src="/icons/icon-192.svg" alt="Finn" className="lg:hidden mx-auto mb-4 h-14 w-14 rounded-2xl shadow-lg shadow-primary/25" />
-        <CardTitle className="text-2xl">Comece sua jornada financeira</CardTitle>
-        <CardDescription>
-          Crie sua conta e tenha controle total das suas finanças
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Seu nome"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="h-11 rounded-xl"
-              required
-            />
+    <div className="animate-fade-in">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Crie sua conta grátis</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">
+          Comece a controlar suas finanças em menos de 2 minutos.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-3.5 text-sm text-red-600 dark:text-red-400">
+            {error}
           </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="name" className="text-slate-700 dark:text-slate-300">Nome</Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Seu nome"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="h-12 rounded-xl bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 focus-visible:ring-indigo-500/30"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-slate-700 dark:text-slate-300">E-mail</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="seu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-12 rounded-xl bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 focus-visible:ring-indigo-500/30"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-11 rounded-xl"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
+            <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">Senha</Label>
             <Input
               id="password"
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-11 rounded-xl"
+              className="h-12 rounded-xl bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 focus-visible:ring-indigo-500/30"
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmar senha</Label>
+            <Label htmlFor="confirmPassword" className="text-slate-700 dark:text-slate-300">Confirmar</Label>
             <Input
               id="confirmPassword"
               type="password"
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="h-11 rounded-xl"
+              className="h-12 rounded-xl bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 focus-visible:ring-indigo-500/30"
               required
             />
-          </div>
-          <Button type="submit" className="w-full h-11 rounded-xl gradient-primary shadow-md shadow-primary/25 border-0 font-semibold" disabled={loading}>
-            {loading ? 'Criando sua conta...' : 'Começar agora'}
-          </Button>
-        </form>
-
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">ou</span>
           </div>
         </div>
 
         <Button
-          variant="outline"
-          className="w-full h-11 rounded-xl"
-          onClick={signInWithGoogle}
-          type="button"
+          type="submit"
+          className="w-full h-12 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.01] transition-all border-0 text-base"
+          disabled={loading}
         >
-          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-            <path
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-              fill="#4285F4"
-            />
-            <path
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              fill="#34A853"
-            />
-            <path
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              fill="#FBBC05"
-            />
-            <path
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              fill="#EA4335"
-            />
-          </svg>
-          Continuar com Google
+          {loading ? 'Criando sua conta...' : 'Começar agora — é grátis'}
         </Button>
-      </CardContent>
-      <CardFooter className="justify-center">
-        <p className="text-sm text-muted-foreground">
-          Já tem conta?{' '}
-          <Link href="/login" className="text-primary hover:underline font-medium">
-            Entrar
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+      </form>
+
+      <div className="relative my-7">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-200 dark:border-white/10" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-slate-50 dark:bg-[#0f0f12] px-3 text-slate-400">ou continue com</span>
+        </div>
+      </div>
+
+      <Button
+        variant="outline"
+        className="w-full h-12 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-all"
+        onClick={signInWithGoogle}
+        type="button"
+      >
+        <svg className="mr-2.5 h-5 w-5" viewBox="0 0 24 24">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+        </svg>
+        Continuar com Google
+      </Button>
+
+      <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-8">
+        Já tem conta?{' '}
+        <Link href="/login" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
+          Entrar
+        </Link>
+      </p>
+    </div>
   )
 }

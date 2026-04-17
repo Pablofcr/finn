@@ -403,6 +403,92 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* Finn se paga — Financial Examples */}
+      <section className="py-20 lg:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              R$ 14,90 que{' '}
+              <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
+                se pagam sozinhos.
+              </span>
+            </h2>
+            <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
+              Veja como um único descuido financeiro custa mais do que meses inteiros de Finn.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {[
+              {
+                emoji: '🏠',
+                scenario: 'Você esquece de pagar o condomínio de R$ 800 e percebe 5 dias depois.',
+                math: 'Multa de 2% (R$ 16,00) + juros de 1% ao dia por 5 dias (R$ 40,00) = R$ 56,00 jogados fora.',
+                conclusion: 'O Finn te avisa antes do vencimento pelo Telegram. Você paga em dia e não perde nada.',
+                saving: 'R$ 56,00 economizados — paga quase 4 meses de Finn.',
+                color: 'from-red-500 to-rose-500',
+                bg: 'bg-red-50/50 dark:bg-red-500/5',
+                border: 'border-red-200 dark:border-red-900/30',
+              },
+              {
+                emoji: '💰',
+                scenario: 'Você ganha R$ 3.000 por mês e nunca sobra nada no fim do mês.',
+                math: 'A IA identifica R$ 30/mês em gastos que podem ser cortados — apenas 1% do seu salário.',
+                conclusion: 'Finn mostra exatamente onde seu dinheiro está indo e sugere cortes que você nem percebeu.',
+                saving: 'R$ 30,00/mês de economia — 2x o custo do app. Em 1 ano, são R$ 360.',
+                color: 'from-emerald-500 to-teal-500',
+                bg: 'bg-emerald-50/50 dark:bg-emerald-500/5',
+                border: 'border-emerald-200 dark:border-emerald-900/30',
+              },
+              {
+                emoji: '💳',
+                scenario: 'Você perde a data de vencimento do cartão de crédito com fatura de R$ 2.500.',
+                math: 'Multa por atraso: R$ 40,00 + juros rotativos de ~14% ao mês: R$ 350,00. Total: R$ 390,00 de prejuízo.',
+                conclusion: 'Os alertas do Finn garantem que você nunca mais pague um centavo de juros por esquecimento.',
+                saving: 'R$ 390,00 salvos — isso paga 26 meses de Finn (mais de 2 anos!).',
+                color: 'from-amber-500 to-orange-500',
+                bg: 'bg-amber-50/50 dark:bg-amber-500/5',
+                border: 'border-amber-200 dark:border-amber-900/30',
+              },
+              {
+                emoji: '📱',
+                scenario: 'Você nem percebe quanto gasta com delivery e assinaturas que não usa mais.',
+                math: 'iFood: R$ 480/mês + 3 streamings esquecidos: R$ 95/mês = R$ 575/mês no automático.',
+                conclusion: 'A IA do Finn identifica esses gastos invisíveis e te mostra o impacto real no seu bolso.',
+                saving: 'Cortar 30% disso = R$ 172/mês — 11x o custo do Finn.',
+                color: 'from-indigo-500 to-purple-500',
+                bg: 'bg-indigo-50/50 dark:bg-indigo-500/5',
+                border: 'border-indigo-200 dark:border-indigo-900/30',
+              },
+            ].map((example) => (
+              <div key={example.scenario} className={`p-6 rounded-2xl border ${example.border} ${example.bg} space-y-3`}>
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl shrink-0">{example.emoji}</span>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white leading-snug">{example.scenario}</p>
+                </div>
+                <div className="ml-11 space-y-2">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    <span className="font-semibold text-red-600 dark:text-red-400">A conta: </span>
+                    {example.math}
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">Com o Finn: </span>
+                    {example.conclusion}
+                  </p>
+                  <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r ${example.color} text-white text-xs font-bold shadow-sm`}>
+                    {example.saving}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-10 max-w-lg mx-auto">
+            Cada real que o Finn te impede de perder é um real que volta pro seu bolso. A assinatura se paga no primeiro mês.
+          </p>
+        </div>
+      </section>
+
       {/* Testimonials */}
       <section className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
