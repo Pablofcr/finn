@@ -40,13 +40,13 @@ export function LandingPricing() {
       </button>
 
       {/* Pro */}
-      <button type="button" onClick={() => setSelected('PRO')} className="text-left w-full">
-        <div className={`p-7 rounded-2xl bg-white dark:bg-white/5 flex flex-col h-full transition-all duration-200 cursor-pointer ${
+      <button type="button" onClick={() => setSelected('PRO')} className="text-left w-full pt-3">
+        <div className={`p-7 pt-10 rounded-2xl bg-white dark:bg-white/5 flex flex-col h-full transition-all duration-200 cursor-pointer overflow-visible ${
           selected === 'PRO'
             ? 'ring-2 ring-indigo-500 shadow-xl shadow-indigo-500/10 scale-[1.02]'
             : 'border border-slate-200 dark:border-white/10 hover:shadow-lg hover:scale-[1.01]'
         }`}>
-          <div className="flex justify-center mb-3">
+          <div className="flex justify-center -mt-10 mb-3">
             <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-semibold shadow-lg">
               <Sparkles className="h-3 w-3" />
               Mais popular
@@ -77,13 +77,13 @@ export function LandingPricing() {
       </button>
 
       {/* Família */}
-      <button type="button" onClick={() => setSelected('FAMILIA')} className="text-left w-full">
-        <div className={`p-7 rounded-2xl bg-white dark:bg-white/5 flex flex-col h-full transition-all duration-200 cursor-pointer ${
+      <button type="button" onClick={() => setSelected('FAMILIA')} className="text-left w-full pt-3">
+        <div className={`p-7 pt-10 rounded-2xl bg-white dark:bg-white/5 flex flex-col h-full transition-all duration-200 cursor-pointer overflow-visible ${
           selected === 'FAMILIA'
             ? 'ring-2 ring-amber-500 shadow-xl shadow-amber-500/10 scale-[1.02]'
             : 'border border-slate-200 dark:border-white/10 hover:shadow-lg hover:scale-[1.01]'
         }`}>
-          <div className="flex justify-center mb-3">
+          <div className="flex justify-center -mt-10 mb-3">
             <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold shadow-lg">
               Melhor custo-benefício
             </span>
