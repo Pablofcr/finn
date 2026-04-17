@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/auth-context'
-import { BalanceCard } from '@/components/dashboard/balance-card'
+import { KpiCards } from '@/components/dashboard/kpi-cards'
 import { MonthlyChart } from '@/components/dashboard/monthly-chart'
 import { CategoryDonut } from '@/components/dashboard/category-donut'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
@@ -54,19 +54,21 @@ export default function DashboardPage() {
       <div className="space-y-6 stagger-children">
         <div className="flex items-center justify-between">
           <div>
-            <Skeleton className="h-4 w-40 mb-1" />
-            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-8 w-56 mb-1" />
+            <Skeleton className="h-4 w-40" />
           </div>
           <Skeleton className="h-10 w-48 rounded-xl" />
         </div>
-        <Skeleton className="h-48 rounded-2xl" />
-        <div className="grid gap-6 md:grid-cols-2">
-          <Skeleton className="h-72" />
-          <Skeleton className="h-72" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
-          <Skeleton className="h-64" />
-          <Skeleton className="h-64" />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Skeleton className="lg:col-span-2 h-80 rounded-xl" />
+          <Skeleton className="h-80 rounded-xl" />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-5">
+          <Skeleton className="lg:col-span-3 h-72 rounded-xl" />
+          <Skeleton className="lg:col-span-2 h-72 rounded-xl" />
         </div>
       </div>
     )
@@ -94,6 +96,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{getGreeting(displayName)}</h1>
@@ -102,20 +105,34 @@ export default function DashboardPage() {
         <PeriodSelector month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y) }} />
       </div>
 
-      <BalanceCard
+      {/* KPI Cards — 4 columns */}
+      <KpiCards
         totalBalance={data?.totalBalance ?? 0}
-        income={data?.totalIncome ?? 0}
-        expense={data?.totalExpense ?? 0}
+        totalIncome={data?.totalIncome ?? 0}
+        totalExpense={data?.totalExpense ?? 0}
+        incomeChange={data?.incomeChange ?? 0}
+        expenseChange={data?.expenseChange ?? 0}
+        savingsRate={data?.savingsRate ?? 0}
+        incomeSpark={data?.incomeSpark ?? []}
+        expenseSpark={data?.expenseSpark ?? []}
       />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <MonthlyChart data={data?.monthlyData ?? []} />
+      {/* Charts — AreaChart 2/3 + Donut 1/3 */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <MonthlyChart data={data?.monthlyData ?? []} />
+        </div>
         <CategoryDonut data={data?.categoryData ?? []} />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <RecentTransactions transactions={data?.recentTransactions ?? []} />
-        <BudgetProgressList budgets={data?.budgetProgress ?? []} />
+      {/* Transactions 3/5 + Budgets 2/5 */}
+      <div className="grid gap-6 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <RecentTransactions transactions={data?.recentTransactions ?? []} />
+        </div>
+        <div className="lg:col-span-2">
+          <BudgetProgressList budgets={data?.budgetProgress ?? []} />
+        </div>
       </div>
     </div>
   )

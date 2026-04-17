@@ -145,11 +145,34 @@ export async function GET(request: NextRequest) {
     })
   )
 
+  // Calculate deltas vs previous month
+  const prevMonth = monthlyData.length >= 2 ? monthlyData[monthlyData.length - 2] : null
+  const currentMonth = monthlyData[monthlyData.length - 1]
+
+  const incomeChange = prevMonth && prevMonth.income > 0
+    ? Math.round(((currentMonth.income - prevMonth.income) / prevMonth.income) * 100)
+    : 0
+  const expenseChange = prevMonth && prevMonth.expense > 0
+    ? Math.round(((currentMonth.expense - prevMonth.expense) / prevMonth.expense) * 100)
+    : 0
+  const savingsRate = totalIncome > 0
+    ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100)
+    : 0
+
+  // Sparkline data (6 months)
+  const incomeSpark = monthlyData.map(m => ({ v: m.income }))
+  const expenseSpark = monthlyData.map(m => ({ v: m.expense }))
+
   return Response.json({
     data: {
       totalBalance,
       totalIncome,
       totalExpense,
+      incomeChange,
+      expenseChange,
+      savingsRate,
+      incomeSpark,
+      expenseSpark,
       categoryData: categorySummary,
       monthlyData,
       recentTransactions: recent,
