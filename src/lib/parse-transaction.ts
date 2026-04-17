@@ -65,34 +65,69 @@ function parseWrittenNumber(text: string): number | null {
   return hasNumber && total > 0 ? total : null
 }
 
+function normalizeStr(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
 // Fast regex parser — position-independent
 function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
   let normalized = text.toLowerCase().trim().replace(/[.!?]+$/, '')
 
   // 1. Extract DATE from anywhere
   let dateStr: string | null = null
-  const timePatterns: { pattern: RegExp; daysAgo: number }[] = [
-    { pattern: /\b(anteontem|antes\s+de\s+ontem)\b/, daysAgo: 2 },
-    { pattern: /\b(ontem)\b/, daysAgo: 1 },
-    { pattern: /\b(hoje)\b/, daysAgo: 0 },
-  ]
 
-  for (const { pattern, daysAgo } of timePatterns) {
-    const match = normalized.match(pattern)
-    if (match) {
-      const d = new Date()
-      d.setDate(d.getDate() - daysAgo)
+  // Specific dates: "dia 1 de abril", "1º de março", "dia 15/04", "dia 15"
+  const monthNames: Record<string, number> = {
+    janeiro: 0, fevereiro: 1, marco: 2, abril: 3, maio: 4, junho: 5,
+    julho: 6, agosto: 7, setembro: 8, outubro: 9, novembro: 10, dezembro: 11,
+  }
+  const specificDateMatch = normalized.match(/(?:dia|no dia)\s+(\d{1,2})[°ºª]?\s+(?:de\s+)?(\w+)/)
+  if (specificDateMatch) {
+    const day = parseInt(specificDateMatch[1])
+    const monthStr = normalizeStr(specificDateMatch[2])
+    const monthNum = monthNames[monthStr]
+    if (monthNum !== undefined && day >= 1 && day <= 31) {
+      const year = new Date().getFullYear()
+      const d = new Date(year, monthNum, day)
       dateStr = d.toISOString().split('T')[0]
-      normalized = normalized.replace(match[0], ' ').trim()
-      break
+      normalized = normalized.replace(specificDateMatch[0], ' ').trim()
     }
   }
 
-  // 2. Extract AMOUNT from anywhere (try digits first, then written numbers)
+  // Relative dates: ontem, hoje, anteontem
+  if (!dateStr) {
+    const timePatterns: { pattern: RegExp; daysAgo: number }[] = [
+      { pattern: /\b(anteontem|antes\s+de\s+ontem)\b/, daysAgo: 2 },
+      { pattern: /\b(ontem)\b/, daysAgo: 1 },
+      { pattern: /\b(hoje)\b/, daysAgo: 0 },
+    ]
+
+    for (const { pattern, daysAgo } of timePatterns) {
+      const match = normalized.match(pattern)
+      if (match) {
+        const d = new Date()
+        d.setDate(d.getDate() - daysAgo)
+        dateStr = d.toISOString().split('T')[0]
+        normalized = normalized.replace(match[0], ' ').trim()
+        break
+      }
+    }
+  }
+
+  // Remove ordinal markers to avoid confusing "1º" with amount
+  normalized = normalized.replace(/(\d)[°ºª]/g, '$1_ord').trim()
+
+  // 2. Extract AMOUNT from anywhere (try explicit R$ first, then others)
   let amount: number | null = null
 
-  // Try numeric amounts: "300", "R$ 300", "R$ 300,00", "1.500,00", "300 reais"
-  const numMatch = normalized.match(/r?\$?\s*(\d[\d.,]*\d|\d+)\s*(?:reais|real|conto[s]?)?/)
+  // Priority 1: "R$ 95,85" or "valor de R$ 95,85" (explicit currency marker)
+  const explicitMatch = normalized.match(/(?:valor\s+(?:de\s+)?)?r\$\s*(\d[\d.,]*\d|\d+)/)
+  // Priority 2: "95,85 reais" or "95 reais"
+  const reaisMatch = !explicitMatch ? normalized.match(/(\d[\d.,]*\d|\d+)\s*(?:reais|real)/) : null
+  // Priority 3: any number (but not ordinals marked with _ord)
+  const anyNumMatch = !explicitMatch && !reaisMatch ? normalized.match(/(?<!\d_ord\s*)(\d[\d.,]*\d|\d+)(?!_ord)/) : null
+
+  const numMatch = explicitMatch || reaisMatch || anyNumMatch
   if (numMatch) {
     const amountStr = numMatch[1].replace(/\./g, '').replace(',', '.')
     amount = parseFloat(amountStr)
@@ -187,6 +222,9 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
   let description = normalized
     .replace(/\b(reais|real|conto[s]?|r\$)\b/g, '')  // remove currency words
     .replace(/\b(pagamento|recorrente|recorr[eê]ncia|valor|cadastr\w*|registr\w*|lan[cç]\w*|anot\w*|inclu\w*|adicion\w*|cri\w*|coloc\w*|bot\w*|marc\w*)\b/g, '')  // remove action/noise words
+    .replace(/\d+_ord/g, '')  // remove ordinal markers
+    .replace(/\b(janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/g, '')  // remove month names
+    .replace(/\b(dia|mes|ano)\b/g, '')  // remove date words
     .replace(/\b(de|do|da|dos|das|no|na|nos|nas|em|pra|para|com|pelo|pela|um|uma|uns|umas|o|a|os|as|e|que)\b/g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim()
