@@ -120,7 +120,10 @@ export default function DashboardPage() {
       {/* Charts — AreaChart 2/3 + Donut 1/3 */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <MonthlyChart data={data?.monthlyData ?? []} />
+          <MonthlyChart
+            data={data?.monthlyData ?? []}
+            onMonthClick={(monthIndex) => { setMonth(monthIndex); }}
+          />
         </div>
         <CategoryDonut data={data?.categoryData ?? []} />
       </div>

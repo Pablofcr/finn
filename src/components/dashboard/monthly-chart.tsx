@@ -4,19 +4,23 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
+import { ChevronLeft } from 'lucide-react'
 
 interface MonthlyData {
   month: string
   income: number
   expense: number
+  // Daily breakdown (when drilling into a month)
+  dailyData?: { day: string; income: number; expense: number }[]
 }
 
 interface MonthlyChartProps {
   data: MonthlyData[]
+  onMonthClick?: (monthIndex: number) => void
 }
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -35,9 +39,11 @@ function CustomTooltip({ active, payload, label }: any) {
   )
 }
 
-export function MonthlyChart({ data }: MonthlyChartProps) {
+export function MonthlyChart({ data, onMonthClick }: MonthlyChartProps) {
   const [showIncome, setShowIncome] = useState(true)
   const [showExpense, setShowExpense] = useState(true)
+  const [drillMonth, setDrillMonth] = useState<string | null>(null)
+  const [drillData, setDrillData] = useState<MonthlyData | null>(null)
 
   if (data.length === 0) {
     return (
@@ -49,6 +55,98 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
           <div className="flex h-48 items-center justify-center text-muted-foreground text-sm">
             Sem dados para exibir
           </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  function handleChartClick(chartData: any) {
+    if (drillMonth || !chartData?.activePayload?.[0]) return
+    const clicked = chartData.activePayload[0].payload as MonthlyData
+    if (!clicked) return
+
+    setDrillMonth(clicked.month)
+    setDrillData(clicked)
+
+    // Also trigger parent callback to update period selector
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    const idx = monthNames.indexOf(clicked.month)
+    if (idx >= 0 && onMonthClick) {
+      onMonthClick(idx)
+    }
+  }
+
+  function handleBack() {
+    setDrillMonth(null)
+    setDrillData(null)
+  }
+
+  // Drill-down view — show income vs expense as bar comparison for that month
+  if (drillMonth && drillData) {
+    const barData = [
+      { name: 'Receitas', value: drillData.income, fill: '#22c55e' },
+      { name: 'Despesas', value: drillData.expense, fill: '#ef4444' },
+      { name: 'Saldo', value: drillData.income - drillData.expense, fill: drillData.income - drillData.expense >= 0 ? '#6366f1' : '#f59e0b' },
+    ]
+
+    const savingsRate = drillData.income > 0
+      ? Math.round(((drillData.income - drillData.expense) / drillData.income) * 100)
+      : 0
+
+    return (
+      <Card className="h-full">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={handleBack} className="h-7 w-7 p-0">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <CardTitle className="text-base">Detalhes — {drillMonth}</CardTitle>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Summary cards */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/10 p-3 text-center">
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-1">Receitas</p>
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(drillData.income)}</p>
+            </div>
+            <div className="rounded-xl bg-red-50 dark:bg-red-500/10 p-3 text-center">
+              <p className="text-xs text-red-600 dark:text-red-400 font-medium mb-1">Despesas</p>
+              <p className="text-lg font-bold text-red-700 dark:text-red-300">{formatCurrency(drillData.expense)}</p>
+            </div>
+            <div className={`rounded-xl p-3 text-center ${drillData.income >= drillData.expense ? 'bg-indigo-50 dark:bg-indigo-500/10' : 'bg-amber-50 dark:bg-amber-500/10'}`}>
+              <p className={`text-xs font-medium mb-1 ${drillData.income >= drillData.expense ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                Saldo ({savingsRate}%)
+              </p>
+              <p className={`text-lg font-bold ${drillData.income >= drillData.expense ? 'text-indigo-700 dark:text-indigo-300' : 'text-amber-700 dark:text-amber-300'}`}>
+                {formatCurrency(drillData.income - drillData.expense)}
+              </p>
+            </div>
+          </div>
+
+          {/* Bar chart comparison */}
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={barData} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" horizontal={false} />
+              <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} className="text-xs" tickLine={false} axisLine={false} />
+              <YAxis type="category" dataKey="name" className="text-xs" tickLine={false} axisLine={false} width={70} />
+              <Tooltip
+                formatter={(value: any) => formatCurrency(Number(value))}
+                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+              />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} animationDuration={600}>
+                {barData.map((entry, i) => (
+                  <Bar key={i} dataKey="value" fill={entry.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+
+          <p className="text-xs text-muted-foreground text-center mt-3">
+            Clique em ← para voltar à visão geral
+          </p>
         </CardContent>
       </Card>
     )
@@ -78,10 +176,11 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
             </Button>
           </div>
         </div>
+        <p className="text-xs text-muted-foreground mt-1">Clique em um mês para ver detalhes</p>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={280}>
-          <AreaChart data={data}>
+          <AreaChart data={data} onClick={handleChartClick} className="cursor-pointer">
             <defs>
               <linearGradient id="incomeArea" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
