@@ -74,12 +74,16 @@ export function TelegramPrompt() {
             ))}
           </div>
 
-          <Link href="/bot">
-            <Button className="w-full gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-md shadow-blue-500/25 hover:shadow-blue-500/40">
-              Conectar agora — leva 30 segundos
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button
+            className="w-full gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-md shadow-blue-500/25 hover:shadow-blue-500/40"
+            onClick={() => {
+              setShow(false)
+              window.location.href = '/bot'
+            }}
+          >
+            Conectar agora — leva 30 segundos
+            <ChevronRight className="h-4 w-4" />
+          </Button>
 
           <p className="text-[10px] text-slate-400 text-center mt-2">
             Você pode conectar depois em Assistente no menu lateral.
