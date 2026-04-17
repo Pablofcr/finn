@@ -326,7 +326,7 @@ export default async function LandingPage() {
                 </Link>
               </div>
               <ul className="mt-6 space-y-2.5 text-sm text-slate-600 dark:text-slate-400">
-                {['Dashboard completo', '50 transações/mês', '2 contas bancárias', '3 orçamentos', '1 meta financeira', 'Bot Telegram por texto', '5 alertas de pagamento', 'Dados protegidos (LGPD)'].map((item) => (
+                {['Dashboard completo', '40 transações/mês', '1 conta bancária', '2 orçamentos', '1 meta financeira', 'Bot por texto, 2 áudios e 2 fotos/mês', '5 alertas de pagamento', 'Dados protegidos (LGPD)'].map((item) => (
                   <li key={item} className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
                     {item}

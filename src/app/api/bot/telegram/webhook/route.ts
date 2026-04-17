@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma'
 import { sendMessage, answerCallbackQuery, editMessageText, downloadFileAsBase64, downloadFileAsBuffer } from '@/lib/telegram'
 import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
 import { transcribeAudio } from '@/lib/transcribe-audio'
-import { canUseFeature } from '@/lib/plan-limits'
+import { canUseFeature, getFeatureUsage } from '@/lib/plan-limits'
 
 export const maxDuration = 60
 
@@ -47,17 +47,13 @@ async function handleMessage(message: any) {
       chatId,
       text:
         '<b>Olá! Eu sou o Finn 🤖</b>\n\n' +
-        'Sou seu assistente financeiro. Através de mim você pode:\n\n' +
-        '💬 Registrar transações por texto\n' +
-        '🎙️ Registrar transações por áudio\n' +
-        '🧾 Ler cupons fiscais por foto\n' +
-        '🔔 Receber lembretes de pagamento\n' +
-        '✅ Confirmar pagamentos com um toque\n\n' +
-        'Exemplos:\n' +
-        '• Texto: <i>"Recebi 500 do João"</i>\n' +
-        '• Áudio: <i>"Gastei 50 no mercado"</i>\n' +
-        '• Foto: envie um cupom fiscal\n\n' +
-        'Para me conectar à sua conta, acesse <b>Assistente</b> no app Finn e siga as instruções.',
+        'Sou seu assistente financeiro pessoal com inteligência artificial.\n\n' +
+        '💬 Registre transações por <b>texto</b>\n' +
+        '🎙 Registre por <b>áudio</b> — eu entendo!\n' +
+        '📸 Envie <b>foto do cupom</b> — leio tudo\n' +
+        '🔔 Receba <b>alertas antes do vencimento</b>\n' +
+        '📊 Receba <b>análises semanais</b> da IA\n\n' +
+        'Para começar, conecte sua conta no app Finn → <b>Assistente</b>.',
     })
     return
   }
@@ -224,11 +220,19 @@ async function handleVerification(chatId: string, code: string) {
   await sendMessage({
     chatId,
     text:
-      `<b>✅ Conectado com sucesso!</b>\n\n` +
-      `Olá, ${name}! Agora você vai receber:\n\n` +
-      `🔔 Lembretes antes do vencimento\n` +
-      `✅ Botões para confirmar pagamentos\n\n` +
-      `Pode voltar ao app Finn — está tudo pronto!`,
+      `Oi, ${name}! 👋 Bem-vindo ao <b>Finn</b>, seu assistente financeiro.\n\n` +
+      `Agora você pode registrar transações direto aqui no Telegram, de três formas:\n\n` +
+      `💬 <b>Texto</b> — escreva naturalmente\n` +
+      `🎙 <b>Áudio</b> — mande um áudio descrevendo\n` +
+      `📸 <b>Foto</b> — envie foto de cupons ou notas\n\n` +
+      `O Finn entende <b>datas</b> ("ontem", "dia 10") e detecta <b>gastos recorrentes</b> automaticamente.\n\n` +
+      `<b>Exemplos de mensagens:</b>\n` +
+      `<code>Gastei 50 no mercado</code>\n` +
+      `<code>Condomínio 620 todo mês</code>\n` +
+      `<code>Ontem paguei 30 na farmácia</code>\n\n` +
+      `🔔 Você também vai receber <b>alertas de vencimento</b> antes das datas de pagamento — é só tocar em <b>"Paguei"</b> pra confirmar.\n\n` +
+      `📊 Toda semana, o Finn envia uma <b>análise inteligente</b> dos seus gastos com dicas personalizadas.\n\n` +
+      `Manda sua primeira transação e vamos começar!`,
   })
 }
 
@@ -387,9 +391,16 @@ async function handleVoiceMessage(
 ) {
   const canVoice = await canUseFeature(connection.userId, 'botVoice')
   if (!canVoice) {
+    const usage = await getFeatureUsage(connection.userId, 'botVoice')
     await sendMessage({
       chatId,
-      text: '🔒 Áudio é exclusivo do Finn Pro. Faça upgrade em finn-steel.vercel.app/pricing',
+      text:
+        `🎙 <b>Seus áudios do mês acabaram</b> (${usage.used}/${usage.limit} usados)\n\n` +
+        `No plano <b>Free</b> você tem 2 áudios por mês. ` +
+        `Com o <b>Finn Pro</b> são ilimitados!\n\n` +
+        `💡 Enquanto isso, você pode registrar por texto:\n` +
+        `<code>Gastei 50 no mercado</code>\n\n` +
+        `👉 Faça upgrade: finn-steel.vercel.app/pricing`,
     })
     return
   }
@@ -521,9 +532,16 @@ async function handleReceiptPhoto(
 ) {
   const canPhoto = await canUseFeature(connection.userId, 'botPhoto')
   if (!canPhoto) {
+    const usage = await getFeatureUsage(connection.userId, 'botPhoto')
     await sendMessage({
       chatId,
-      text: '🔒 Leitura de cupom por foto é exclusiva do Finn Pro. Faça upgrade em finn-steel.vercel.app/pricing',
+      text:
+        `📸 <b>Suas fotos do mês acabaram</b> (${usage.used}/${usage.limit} usadas)\n\n` +
+        `No plano <b>Free</b> você tem 2 fotos de cupom por mês. ` +
+        `Com o <b>Finn Pro</b> são ilimitadas!\n\n` +
+        `💡 Enquanto isso, você pode registrar por texto:\n` +
+        `<code>Gastei 50 no mercado</code>\n\n` +
+        `👉 Faça upgrade: finn-steel.vercel.app/pricing`,
     })
     return
   }

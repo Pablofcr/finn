@@ -2,14 +2,14 @@ import prisma from '@/lib/prisma'
 
 export const PLAN_LIMITS = {
   FREE: {
-    transactionsPerMonth: 50,
-    accounts: 2,
-    budgets: 3,
+    transactionsPerMonth: 40,
+    accounts: 1,
+    budgets: 2,
     goals: 1,
     recurringTransactions: 5,
     aiInsights: false,
-    botVoice: false,
-    botPhoto: false,
+    botVoice: 2,
+    botPhoto: 2,
     autoCategory: false,
     exportData: false,
     fullReports: false,
@@ -111,5 +111,66 @@ export async function canUseFeature(
   feature: 'aiInsights' | 'botVoice' | 'botPhoto' | 'autoCategory' | 'exportData' | 'fullReports'
 ): Promise<boolean> {
   const plan = await getUserPlan(userId)
-  return PLAN_LIMITS[plan][feature]
+  const value = PLAN_LIMITS[plan][feature]
+
+  // Boolean features (true/false)
+  if (typeof value === 'boolean') return value
+
+  // Numeric features (limited uses per month) — 0 means blocked
+  if (typeof value === 'number') {
+    const numValue = value as number
+    if (numValue === 0) return false
+    if (!isFinite(numValue)) return true // Infinity = unlimited
+
+    // Count confirmed uses this month
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+    const mediaType = feature === 'botVoice' ? 'audio/ogg' : 'image'
+
+    const usedCount = await prisma.botMessage.count({
+      where: {
+        userId,
+        mediaType: feature === 'botVoice'
+          ? 'audio/ogg'
+          : { not: null, startsWith: 'image' } as any,
+        status: 'CONFIRMED',
+        createdAt: { gte: startOfMonth },
+      },
+    })
+
+    return usedCount < value
+  }
+
+  return false
+}
+
+export async function getFeatureUsage(
+  userId: string,
+  feature: 'botVoice' | 'botPhoto'
+): Promise<{ used: number; limit: number | true; plan: PlanType }> {
+  const plan = await getUserPlan(userId)
+  const value = PLAN_LIMITS[plan][feature]
+
+  if (typeof value === 'boolean') {
+    return { used: 0, limit: value ? Infinity : 0, plan }
+  }
+
+  if (!isFinite(value as number)) {
+    return { used: 0, limit: Infinity, plan }
+  }
+
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const used = await prisma.botMessage.count({
+    where: {
+      userId,
+      mediaType: feature === 'botVoice' ? 'audio/ogg' : { not: null },
+      status: 'CONFIRMED',
+      createdAt: { gte: startOfMonth },
+    },
+  })
+
+  return { used, limit: value as number, plan }
 }
