@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
     include: {
       category: { select: { name: true, color: true } },
     },
-    orderBy: { date: 'desc' },
+    orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     take: 5,
   })
 

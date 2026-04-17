@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         account: { select: { id: true, name: true, type: true, color: true } },
         installment: true,
       },
-      orderBy: { date: 'desc' },
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
