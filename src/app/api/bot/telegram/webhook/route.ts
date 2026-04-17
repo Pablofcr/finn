@@ -41,6 +41,10 @@ const KEYWORD_MAP: Record<string, { categoryName: string; type: 'EXPENSE' | 'INC
   trem: { categoryName: 'Transporte', type: 'EXPENSE' },
   moto: { categoryName: 'Transporte', type: 'EXPENSE' },
   // Moradia
+  diarista: { categoryName: 'Moradia', type: 'EXPENSE' },
+  faxina: { categoryName: 'Moradia', type: 'EXPENSE' },
+  limpeza: { categoryName: 'Moradia', type: 'EXPENSE' },
+  empregada: { categoryName: 'Moradia', type: 'EXPENSE' },
   aluguel: { categoryName: 'Moradia', type: 'EXPENSE' },
   condominio: { categoryName: 'Moradia', type: 'EXPENSE' },
   iptu: { categoryName: 'Moradia', type: 'EXPENSE' },

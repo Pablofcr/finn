@@ -118,12 +118,18 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
   if (!amount) return null
 
   // 3. Determine TYPE from anywhere
-  const incomeWords = /(recebi|recebemos|ganhei|ganhamos|entrou|me\s+pag\w*|me\s+deu|me\s+enviou|me\s+transferi\w*|pix\s+de|transfer[eê]ncia\s+de)/
-  const expenseWords = /(gastei|gastamos|paguei|pagamos|comprei|compramos|sa[ií]\w*|d[eé]bito|abasteci|abastecemos|almocei|jantei|almocamos|jantamos|tomei|bebi|comi|assinei|renovei|carreguei|recarreguei|depositei)/
+  const incomeWords = /(recebi|recebemos|ganhei|ganhamos|entrou|me\s+pag\w*|me\s+deu|me\s+enviou|me\s+transferi\w*|pix\s+de|transfer[eê]ncia\s+de|faturei|vendi|cobrei)/
+  const expenseWords = /(gastei|gastamos|paguei|pagamos|comprei|compramos|sa[ií]\w*|d[eé]bito|abasteci|abastecemos|almocei|jantei|almocamos|jantamos|tomei|bebi|comi|assinei|renovei|carreguei|recarreguei|depositei|contratei|aluguei)/
+
+  // "Cadastrar/registrar/lançar/anotar/incluir" + context words determine type
+  const actionWords = /(cadastr\w*|registr\w*|lan[cç]\w*|anot\w*|inclu\w*|adicion\w*|cri\w*|coloc\w*|bot\w*|marc\w*)/
+  const expenseContext = /(pagamento|gasto|despesa|conta|d[ií]vida|boleto|fatura|parcela|presta[cç][aã]o|diarista|faxina|limpeza|empregad[ao]|mensalidade|anuidade|seguro|imposto|taxa|multa|reparo|conserto|manuten[cç][aã]o|obra)/
+  const incomeContext = /(recebimento|receita|entrada|renda|sal[aá]rio|ganho|lucro|rendimento|comiss[aã]o|b[oô]nus|pr[eê]mio|reembolso|devolu[cç][aã]o)/
 
   let type: 'INCOME' | 'EXPENSE'
   const incomeMatch = normalized.match(incomeWords)
   const expenseMatch = normalized.match(expenseWords)
+  const actionMatch = normalized.match(actionWords)
 
   if (incomeMatch && !expenseMatch) {
     type = 'INCOME'
@@ -131,6 +137,19 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
   } else if (expenseMatch && !incomeMatch) {
     type = 'EXPENSE'
     normalized = normalized.replace(expenseMatch[0], ' ').trim()
+  } else if (actionMatch) {
+    // Determine type by context words
+    const hasExpenseCtx = expenseContext.test(normalized)
+    const hasIncomeCtx = incomeContext.test(normalized)
+    if (hasExpenseCtx && !hasIncomeCtx) {
+      type = 'EXPENSE'
+    } else if (hasIncomeCtx && !hasExpenseCtx) {
+      type = 'INCOME'
+    } else {
+      // Default: if has action word but no clear context, assume expense (most common)
+      type = 'EXPENSE'
+    }
+    normalized = normalized.replace(actionMatch[0], ' ').trim()
   } else {
     return null
   }
@@ -138,12 +157,20 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
   // 4. Detect RECURRENCE from anywhere
   let recurring: ParsedTransactionWithDate['recurring'] = null
   const recurrencePatterns: { pattern: RegExp; frequency: RecurrenceFrequency; label: string }[] = [
-    { pattern: /\b(todo\s+dia|di[aá]ri[oa]|diariamente)\b/, frequency: 'DAILY', label: 'Diário' },
-    { pattern: /\b(toda\s+semana|semanal|semanalmente)\b/, frequency: 'WEEKLY', label: 'Semanal' },
-    { pattern: /\b(quinzenal|quinzenalmente|a\s+cada\s+15\s+dias)\b/, frequency: 'BIWEEKLY', label: 'Quinzenal' },
-    { pattern: /\b(todo\s+m[eê]s|mensal|mensalmente|todos\s+os\s+meses|assinatura)\b/, frequency: 'MONTHLY', label: 'Mensal' },
-    { pattern: /\b(trimestral|trimestralmente|a\s+cada\s+3\s+meses)\b/, frequency: 'QUARTERLY', label: 'Trimestral' },
-    { pattern: /\b(todo\s+ano|anual|anualmente|todos\s+os\s+anos)\b/, frequency: 'YEARLY', label: 'Anual' },
+    { pattern: /\b(todo\s+dia|di[aá]ri[oa]|diariamente|todos\s+os\s+dias)\b/, frequency: 'DAILY', label: 'Diário' },
+    // Days of week = weekly
+    { pattern: /\b(toda\s+segunda(?:[- ]feira)?|todas\s+as\s+segundas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Segunda)' },
+    { pattern: /\b(toda\s+ter[cç]a(?:[- ]feira)?|todas\s+as\s+ter[cç]as(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Terça)' },
+    { pattern: /\b(toda\s+quarta(?:[- ]feira)?|todas\s+as\s+quartas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Quarta)' },
+    { pattern: /\b(toda\s+quinta(?:[- ]feira)?|todas\s+as\s+quintas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Quinta)' },
+    { pattern: /\b(toda\s+sexta(?:[- ]feira)?|todas\s+as\s+sextas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Sexta)' },
+    { pattern: /\b(todo\s+s[aá]bado|todos\s+os\s+s[aá]bados)\b/, frequency: 'WEEKLY', label: 'Semanal (Sábado)' },
+    { pattern: /\b(todo\s+domingo|todos\s+os\s+domingos)\b/, frequency: 'WEEKLY', label: 'Semanal (Domingo)' },
+    { pattern: /\b(toda\s+semana|semanal|semanalmente|por\s+semana)\b/, frequency: 'WEEKLY', label: 'Semanal' },
+    { pattern: /\b(quinzenal|quinzenalmente|a\s+cada\s+15\s+dias|a\s+cada\s+quinze\s+dias)\b/, frequency: 'BIWEEKLY', label: 'Quinzenal' },
+    { pattern: /\b(todo\s+m[eê]s|mensal|mensalmente|todos\s+os\s+meses|por\s+m[eê]s|assinatura|recorrente)\b/, frequency: 'MONTHLY', label: 'Mensal' },
+    { pattern: /\b(trimestral|trimestralmente|a\s+cada\s+3\s+meses|a\s+cada\s+tr[eê]s\s+meses)\b/, frequency: 'QUARTERLY', label: 'Trimestral' },
+    { pattern: /\b(todo\s+ano|anual|anualmente|todos\s+os\s+anos|por\s+ano)\b/, frequency: 'YEARLY', label: 'Anual' },
   ]
 
   for (const { pattern, frequency, label } of recurrencePatterns) {
