@@ -9,15 +9,22 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/shared/empty-state'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { Plus, Target } from 'lucide-react'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Plus, Target, Pencil, Trash2, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [targetAmount, setTargetAmount] = useState('')
+  const [currentAmount, setCurrentAmount] = useState('')
   const [deadline, setDeadline] = useState('')
 
   const fetchGoals = useCallback(async () => {
@@ -38,30 +45,69 @@ export default function GoalsPage() {
     fetchGoals()
   }, [fetchGoals])
 
-  async function handleCreate() {
+  function openCreate() {
+    setEditId(null)
+    setName('')
+    setTargetAmount('')
+    setCurrentAmount('')
+    setDeadline('')
+    setDialogOpen(true)
+  }
+
+  function openEdit(g: any) {
+    setEditId(g.id)
+    setName(g.name)
+    setTargetAmount(String(Number(g.targetAmount)))
+    setCurrentAmount(String(Number(g.currentAmount)))
+    setDeadline(g.deadline ? g.deadline.split('T')[0] : '')
+    setDialogOpen(true)
+  }
+
+  async function handleSave() {
     if (!name || !targetAmount) return
     try {
-      const res = await fetch('/api/goals', {
-        method: 'POST',
+      const url = editId ? `/api/goals/${editId}` : '/api/goals'
+      const method = editId ? 'PUT' : 'POST'
+      const body: any = {
+        name,
+        targetAmount: parseFloat(targetAmount),
+        deadline: deadline || undefined,
+        icon: 'target',
+        color: '#10b981',
+      }
+      if (editId) {
+        body.currentAmount = parseFloat(currentAmount) || 0
+      }
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          targetAmount: parseFloat(targetAmount),
-          deadline: deadline || undefined,
-          icon: 'target',
-          color: '#10b981',
-        }),
+        body: JSON.stringify(body),
       })
       if (res.ok) {
-        toast.success('Meta criada! Agora acompanhe seu progresso por aqui.')
+        toast.success(editId ? 'Meta atualizada!' : 'Meta criada! Agora acompanhe seu progresso por aqui.')
         setDialogOpen(false)
-        setName('')
-        setTargetAmount('')
-        setDeadline('')
         fetchGoals()
+      } else {
+        const err = await res.json()
+        toast.error(err.error || 'Não foi possível salvar a meta.')
       }
     } catch {
-      toast.error('Não foi possível criar a meta. Tente novamente em instantes.')
+      toast.error('Não foi possível salvar a meta. Tente novamente em instantes.')
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      const res = await fetch(`/api/goals/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        toast.success('Meta excluída.')
+        fetchGoals()
+      } else {
+        toast.error('Não foi possível excluir a meta.')
+      }
+    } catch {
+      toast.error('Não foi possível excluir a meta.')
     }
   }
 
@@ -70,28 +116,38 @@ export default function GoalsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Metas</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger render={<Button className="gap-2 gradient-primary shadow-md shadow-primary/25 border-0" />}>
+          <DialogTrigger render={<Button className="gap-2 gradient-primary shadow-md shadow-primary/25 border-0" onClick={openCreate} />}>
               <Plus className="h-4 w-4" />
               Nova Meta
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Nova Meta</DialogTitle>
+              <DialogTitle>{editId ? 'Editar Meta' : 'Nova Meta'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Nome</Label>
                 <Input placeholder="Ex: Viagem para Europa" value={name} onChange={(e) => setName(e.target.value)} className="h-11 rounded-xl" />
               </div>
-              <div className="space-y-2">
-                <Label>Valor alvo (R$)</Label>
-                <Input type="number" step="0.01" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} className="h-11 rounded-xl" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Valor alvo (R$)</Label>
+                  <Input type="number" step="0.01" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} className="h-11 rounded-xl" />
+                </div>
+                {editId && (
+                  <div className="space-y-2">
+                    <Label>Valor atual (R$)</Label>
+                    <Input type="number" step="0.01" value={currentAmount} onChange={(e) => setCurrentAmount(e.target.value)} className="h-11 rounded-xl" />
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Prazo (opcional)</Label>
                 <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="h-11 rounded-xl" />
               </div>
-              <Button className="w-full gradient-primary shadow-md shadow-primary/25 border-0" onClick={handleCreate}>Criar Meta</Button>
+              <Button className="w-full gradient-primary shadow-md shadow-primary/25 border-0" onClick={handleSave}>
+                {editId ? 'Salvar alterações' : 'Criar Meta'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -148,7 +204,7 @@ export default function GoalsPage() {
             icon={<Target className="h-12 w-12" />}
             title="Transforme sonhos em metas com prazo"
             description="Quer viajar, trocar de carro ou criar uma reserva? Defina o valor, o prazo, e acompanhe cada real que te aproxima da conquista."
-            action={<Button onClick={() => setDialogOpen(true)} className="gap-2"><Plus className="h-4 w-4" /> Criar minha primeira meta</Button>}
+            action={<Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Criar minha primeira meta</Button>}
           />
         </div>
       ) : (
@@ -191,6 +247,37 @@ export default function GoalsPage() {
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span style={{ color: goalColor, fontWeight: 600 }}>{percentage}% completo</span>
                     {g.deadline && <span>Prazo: {formatDate(g.deadline)}</span>}
+                  </div>
+                  <div className="flex gap-2 pt-2 border-t border-border/50">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-1.5 text-xs"
+                      onClick={() => openEdit(g)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Editar
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger render={<Button variant="outline" size="sm" className="gap-1.5 text-xs text-destructive hover:text-destructive" />}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Excluir
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir meta &quot;{g.name}&quot;?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. O progresso desta meta será perdido.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(g.id)}>
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>
