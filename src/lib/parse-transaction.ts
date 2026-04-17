@@ -119,7 +119,7 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
 
   // 3. Determine TYPE from anywhere
   const incomeWords = /(recebi|recebemos|ganhei|ganhamos|entrou|me\s+pag\w*|me\s+deu|me\s+enviou|me\s+transferi\w*|pix\s+de|transfer[eê]ncia\s+de)/
-  const expenseWords = /(gastei|gastamos|paguei|pagamos|comprei|compramos|sa[ií]\w*|d[eé]bito)/
+  const expenseWords = /(gastei|gastamos|paguei|pagamos|comprei|compramos|sa[ií]\w*|d[eé]bito|abasteci|abastecemos|almocei|jantei|almocamos|jantamos|tomei|bebi|comi|assinei|renovei|carreguei|recarreguei|depositei)/
 
   let type: 'INCOME' | 'EXPENSE'
   const incomeMatch = normalized.match(incomeWords)
