@@ -135,73 +135,148 @@ function TutorialChat({ botUsername, verificationCode }: { botUsername: string; 
 
 function ConnectedState({ onDisconnect }: { onDisconnect: () => void }) {
   return (
-    <Card>
-      <CardContent className="pt-5 pb-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10">
-              <CheckCircle className="h-6 w-6 text-green-500" />
+    <div className="space-y-6">
+      {/* Status banner */}
+      <Card className="border-green-200 dark:border-green-900/30 bg-green-50/50 dark:bg-green-500/5">
+        <CardContent className="pt-5 pb-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10">
+                <CheckCircle className="h-6 w-6 text-green-500" />
+              </div>
+              <div>
+                <p className="font-semibold">Telegram conectado e ativo!</p>
+                <p className="text-sm text-muted-foreground">
+                  Seu assistente financeiro está funcionando 24 horas por dia.
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold">Telegram conectado</p>
-              <p className="text-sm text-muted-foreground">
-                Você está recebendo alertas de pagamento
-              </p>
-            </div>
+            <Badge className="bg-green-500/10 text-green-600 border-0 text-xs">Ativo</Badge>
           </div>
-          <Badge className="bg-green-500/10 text-green-600 border-0">Ativo</Badge>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* All capabilities */}
+      <div>
+        <h2 className="text-lg font-bold mb-4">O que você pode fazer pelo Telegram</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
             {
+              icon: Send,
+              title: 'Registrar por texto',
+              desc: 'Escreva naturalmente e o Finn entende. Exemplo: "Gastei 50 no mercado".',
+              color: 'text-blue-500',
+              bg: 'bg-blue-50 dark:bg-blue-500/10',
+            },
+            {
               icon: Bell,
-              title: 'Lembretes automáticos',
-              desc: '3 dias antes, 1 dia antes e no dia do vencimento',
+              title: 'Registrar por áudio',
+              desc: 'Grave um áudio descrevendo a transação e a IA transcreve e registra tudo.',
+              color: 'text-purple-500',
+              bg: 'bg-purple-50 dark:bg-purple-500/10',
+            },
+            {
+              icon: CheckCircle,
+              title: 'Ler cupons fiscais',
+              desc: 'Envie uma foto do cupom ou nota fiscal e o Finn extrai os dados automaticamente.',
+              color: 'text-cyan-500',
+              bg: 'bg-cyan-50 dark:bg-cyan-500/10',
+            },
+            {
+              icon: Bell,
+              title: 'Alertas de vencimento',
+              desc: 'Receba lembretes 3 dias antes, 1 dia antes e no dia do vencimento das suas contas.',
+              color: 'text-amber-500',
+              bg: 'bg-amber-50 dark:bg-amber-500/10',
             },
             {
               icon: CheckCircle,
               title: 'Confirmar com um toque',
-              desc: 'Toque em "Paguei" e a transação é registrada',
+              desc: 'Ao receber um alerta, toque em "Paguei" e a transação é registrada e o saldo atualizado.',
+              color: 'text-emerald-500',
+              bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+            },
+            {
+              icon: Bell,
+              title: 'Insights semanais da IA',
+              desc: 'Toda semana você recebe análises inteligentes dos seus gastos com dicas personalizadas.',
+              color: 'text-indigo-500',
+              bg: 'bg-indigo-50 dark:bg-indigo-500/10',
             },
             {
               icon: Shield,
-              title: 'Saldo atualizado',
-              desc: 'O saldo da conta é ajustado automaticamente',
+              title: 'Transações recorrentes',
+              desc: 'Diga "Condomínio 620 todo mês" e o Finn cria a transação e a recorrência automática.',
+              color: 'text-rose-500',
+              bg: 'bg-rose-50 dark:bg-rose-500/10',
+            },
+            {
+              icon: CheckCircle,
+              title: 'Entende datas',
+              desc: '"Ontem gastei 30 na farmácia" — o Finn reconhece a data e registra corretamente.',
+              color: 'text-teal-500',
+              bg: 'bg-teal-50 dark:bg-teal-500/10',
             },
           ].map((item) => (
-            <div key={item.title} className="rounded-xl border border-border/50 p-3">
-              <item.icon className="h-5 w-5 text-primary mb-2" />
-              <p className="text-sm font-medium">{item.title}</p>
-              <p className="text-xs text-muted-foreground">{item.desc}</p>
+            <div key={item.title} className="flex items-start gap-3 rounded-xl border border-border/50 p-4">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.bg} shrink-0`}>
+                <item.icon className={`h-5 w-5 ${item.color}`} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold mb-0.5">{item.title}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+              </div>
             </div>
           ))}
         </div>
+      </div>
 
-        <div className="mt-5 pt-4 border-t">
-          <AlertDialog>
-            <AlertDialogTrigger render={<Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive" />}>
-              <Unplug className="h-4 w-4" />
-              Desconectar Telegram
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Desconectar Telegram?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Você não receberá mais alertas de pagamento. Pode reconectar a qualquer momento.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={onDisconnect}>
-                  Desconectar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Examples */}
+      <Card>
+        <CardContent className="pt-5 pb-5">
+          <h3 className="font-semibold mb-3">Exemplos de mensagens que o bot entende:</h3>
+          <div className="grid sm:grid-cols-2 gap-2">
+            {[
+              'Gastei 50 no mercado',
+              'Recebi 3000 de salário',
+              'Ontem paguei 120 de luz',
+              'Condomínio 800 todo mês',
+              'Assinatura Netflix 44,90',
+              'Paulo me pagou 200 reais',
+            ].map((ex) => (
+              <div key={ex} className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
+                <Send className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <code className="text-xs">{ex}</code>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Disconnect */}
+      <div className="pt-2">
+        <AlertDialog>
+          <AlertDialogTrigger render={<Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive" />}>
+            <Unplug className="h-4 w-4" />
+            Desconectar Telegram
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Desconectar Telegram?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você deixará de receber alertas de pagamento, insights e não poderá registrar transações pelo chat. Pode reconectar a qualquer momento.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={onDisconnect}>
+                Desconectar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
   )
 }
 
@@ -293,7 +368,7 @@ export default function BotPage() {
       <div>
         <h1 className="text-2xl font-bold">Assistente Finn</h1>
         <p className="text-sm text-muted-foreground">
-          Receba lembretes de pagamento e confirme com um toque
+          Seu assistente financeiro no Telegram — registre, acompanhe e nunca perca um vencimento.
         </p>
       </div>
 
