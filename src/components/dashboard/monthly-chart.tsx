@@ -179,7 +179,7 @@ export function MonthlyChart({ data, onMonthClick }: MonthlyChartProps) {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={250}>
-          <AreaChart data={data}>
+          <AreaChart data={data} key={`${showIncome}-${showExpense}`}>
             <defs>
               <linearGradient id="incomeArea" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
@@ -212,8 +212,10 @@ export function MonthlyChart({ data, onMonthClick }: MonthlyChartProps) {
                 strokeWidth={2.5}
                 fill="url(#incomeArea)"
                 activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
+                isAnimationActive={true}
                 animationDuration={800}
                 animationEasing="ease-out"
+                animationBegin={0}
               />
             )}
             {showExpense && (
@@ -225,8 +227,10 @@ export function MonthlyChart({ data, onMonthClick }: MonthlyChartProps) {
                 strokeWidth={2.5}
                 fill="url(#expenseArea)"
                 activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
+                isAnimationActive={true}
                 animationDuration={800}
                 animationEasing="ease-out"
+                animationBegin={0}
               />
             )}
           </AreaChart>
