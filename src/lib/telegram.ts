@@ -144,7 +144,14 @@ export async function downloadFileAsBase64(fileId: string): Promise<{ base64: st
   const buffer = await res.arrayBuffer()
   const base64 = Buffer.from(buffer).toString('base64')
 
-  const contentType = res.headers.get('content-type') || 'image/jpeg'
+  // Detect mime type from URL extension (Telegram headers can be unreliable)
+  let contentType = res.headers.get('content-type') || 'image/jpeg'
+  if (contentType === 'application/octet-stream' || !contentType.startsWith('image/')) {
+    if (url.endsWith('.png')) contentType = 'image/png'
+    else if (url.endsWith('.webp')) contentType = 'image/webp'
+    else if (url.endsWith('.gif')) contentType = 'image/gif'
+    else contentType = 'image/jpeg'
+  }
 
   return { base64, mimeType: contentType }
 }
