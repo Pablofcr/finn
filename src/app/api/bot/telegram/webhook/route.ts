@@ -869,7 +869,9 @@ async function handleConfirmTransaction(
   }
 
   // Use receipt date if available, otherwise today
-  const txDate = parsed.date ? new Date(parsed.date) : new Date()
+  // Normalize date to midnight so same-day transactions sort by createdAt
+  const rawDate = parsed.date ? new Date(parsed.date) : new Date()
+  const txDate = new Date(rawDate.getFullYear(), rawDate.getMonth(), rawDate.getDate())
 
   // Create the transaction
   const transaction = await prisma.transaction.create({
