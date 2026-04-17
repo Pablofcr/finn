@@ -39,12 +39,17 @@ function FeatureValue({ value }: { value: boolean | string }) {
 
 export default function PricingPage() {
   const [plan, setPlan] = useState<string | null>(null)
+  const [selected, setSelected] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/user/plan')
       .then(r => r.json())
-      .then(d => setPlan(d.data?.plan || 'FREE'))
-      .catch(() => setPlan('FREE'))
+      .then(d => {
+        const p = d.data?.plan || 'FREE'
+        setPlan(p)
+        setSelected(p)
+      })
+      .catch(() => { setPlan('FREE'); setSelected('FREE') })
   }, [])
 
   const upgradeMsg = () => toast.info('Pagamento será ativado em breve. Aguarde!')
@@ -58,87 +63,93 @@ export default function PricingPage() {
         </p>
       </div>
 
-      {/* Plan cards — 3 columns */}
+      {/* Plan cards — 3 columns, selectable */}
       <div className="grid md:grid-cols-3 gap-5">
         {/* Free */}
-        <Card className={plan === 'FREE' ? 'ring-2 ring-primary' : ''}>
-          <CardContent className="pt-8 pb-6 flex flex-col h-full">
-            <div className="text-center flex-1">
-              <h2 className="text-lg font-bold mb-3">Free</h2>
-              <div className="mb-1">
-                <span className="text-4xl font-extrabold">R$ 0</span>
-                <span className="text-muted-foreground text-sm">/mês</span>
+        <button type="button" onClick={() => setSelected('FREE')} className="text-left">
+          <Card className={`h-full transition-all duration-200 hover:shadow-lg cursor-pointer ${selected === 'FREE' ? 'ring-2 ring-primary shadow-lg scale-[1.02]' : 'hover:scale-[1.01]'}`}>
+            <CardContent className="pt-8 pb-6 flex flex-col h-full">
+              <div className="text-center flex-1">
+                <h2 className="text-lg font-bold mb-3">Free</h2>
+                <div className="mb-1">
+                  <span className="text-4xl font-extrabold">R$ 0</span>
+                  <span className="text-muted-foreground text-sm">/mês</span>
+                </div>
+                <p className="text-xs text-transparent select-none mb-3" aria-hidden="true">&nbsp;</p>
+                <p className="text-sm text-muted-foreground mb-6">Para começar a organizar</p>
               </div>
-              <p className="text-xs text-transparent select-none mb-3" aria-hidden="true">&nbsp;</p>
-              <p className="text-sm text-muted-foreground mb-6">Para começar a organizar</p>
-            </div>
-            {plan === 'FREE' ? (
-              <Button disabled className="w-full" variant="outline">Plano atual</Button>
-            ) : (
-              <Button variant="outline" className="w-full">Plano Free</Button>
-            )}
-          </CardContent>
-        </Card>
+              {plan === 'FREE' ? (
+                <div className="w-full py-2.5 rounded-xl border text-center text-sm font-semibold text-muted-foreground">Plano atual</div>
+              ) : (
+                <div className="w-full py-2.5 rounded-xl border text-center text-sm font-semibold">Plano Free</div>
+              )}
+            </CardContent>
+          </Card>
+        </button>
 
         {/* Pro */}
-        <Card className={`relative ${plan === 'PRO' || plan === 'MASTER' ? 'ring-2 ring-primary' : 'ring-2 ring-indigo-500 shadow-xl shadow-indigo-500/10'}`}>
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-            <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 px-4 py-1 text-xs font-semibold shadow-lg">
-              Mais popular
-            </Badge>
-          </div>
-          <CardContent className="pt-8 pb-6 flex flex-col h-full">
-            <div className="text-center flex-1">
-              <h2 className="text-lg font-bold flex items-center justify-center gap-1.5 mb-3">
-                <Crown className="h-4 w-4 text-amber-500" />
-                Pro
-              </h2>
-              <div className="mb-1">
-                <span className="text-4xl font-extrabold">R$ 14</span>
-                <span className="text-xl font-bold">,90</span>
-                <span className="text-muted-foreground text-sm">/mês</span>
+        <button type="button" onClick={() => setSelected('PRO')} className="text-left">
+          <Card className={`h-full transition-all duration-200 hover:shadow-lg cursor-pointer ${selected === 'PRO' ? 'ring-2 ring-indigo-500 shadow-xl shadow-indigo-500/10 scale-[1.02]' : 'hover:scale-[1.01]'}`}>
+            <CardContent className="pt-6 pb-6 flex flex-col h-full">
+              <div className="flex justify-center mb-3">
+                <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 px-4 py-1 text-xs font-semibold">
+                  Mais popular
+                </Badge>
               </div>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-3">Menos de R$ 0,50 por dia</p>
-              <p className="text-sm text-muted-foreground mb-6">Assistente financeiro com IA</p>
-            </div>
-            {plan === 'PRO' || plan === 'MASTER' ? (
-              <Button disabled className="w-full gradient-primary border-0">Plano atual</Button>
-            ) : (
-              <Button className="w-full gap-2 gradient-primary shadow-md shadow-primary/25 border-0" onClick={upgradeMsg}>
-                <Zap className="h-4 w-4" />
-                Fazer upgrade
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+              <div className="text-center flex-1">
+                <h2 className="text-lg font-bold flex items-center justify-center gap-1.5 mb-3">
+                  <Crown className="h-4 w-4 text-amber-500" />
+                  Pro
+                </h2>
+                <div className="mb-1">
+                  <span className="text-4xl font-extrabold">R$ 14</span>
+                  <span className="text-xl font-bold">,90</span>
+                  <span className="text-muted-foreground text-sm">/mês</span>
+                </div>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-3">Menos de R$ 0,50 por dia</p>
+                <p className="text-sm text-muted-foreground mb-6">Assistente financeiro com IA</p>
+              </div>
+              {plan === 'PRO' || plan === 'MASTER' ? (
+                <div className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-center text-sm font-semibold">Plano atual</div>
+              ) : (
+                <div className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-center text-sm font-semibold flex items-center justify-center gap-1.5" onClick={upgradeMsg}>
+                  <Zap className="h-4 w-4" />
+                  Fazer upgrade
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </button>
 
         {/* Família */}
-        <Card className="relative">
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-            <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 px-4 py-1 text-xs font-semibold shadow-lg">
-              Melhor custo-benefício
-            </Badge>
-          </div>
-          <CardContent className="pt-8 pb-6 flex flex-col h-full">
-            <div className="text-center flex-1">
-              <h2 className="text-lg font-bold flex items-center justify-center gap-1.5 mb-3">
-                <Users className="h-4 w-4 text-amber-500" />
-                Família
-              </h2>
-              <div className="mb-1">
-                <span className="text-4xl font-extrabold">R$ 34</span>
-                <span className="text-xl font-bold">,90</span>
-                <span className="text-muted-foreground text-sm">/mês</span>
+        <button type="button" onClick={() => setSelected('FAMILIA')} className="text-left">
+          <Card className={`h-full transition-all duration-200 hover:shadow-lg cursor-pointer ${selected === 'FAMILIA' ? 'ring-2 ring-amber-500 shadow-xl shadow-amber-500/10 scale-[1.02]' : 'hover:scale-[1.01]'}`}>
+            <CardContent className="pt-6 pb-6 flex flex-col h-full">
+              <div className="flex justify-center mb-3">
+                <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 px-4 py-1 text-xs font-semibold">
+                  Melhor custo-benefício
+                </Badge>
               </div>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-3">R$ 6,98 por pessoa (até 5)</p>
-              <p className="text-sm text-muted-foreground mb-6">Toda a família no controle</p>
-            </div>
-            <Button className="w-full gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-md shadow-amber-500/25" onClick={upgradeMsg}>
-              <Users className="h-4 w-4" />
-              Escolher Família
-            </Button>
-          </CardContent>
-        </Card>
+              <div className="text-center flex-1">
+                <h2 className="text-lg font-bold flex items-center justify-center gap-1.5 mb-3">
+                  <Users className="h-4 w-4 text-amber-500" />
+                  Família
+                </h2>
+                <div className="mb-1">
+                  <span className="text-4xl font-extrabold">R$ 34</span>
+                  <span className="text-xl font-bold">,90</span>
+                  <span className="text-muted-foreground text-sm">/mês</span>
+                </div>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-3">R$ 6,98 por pessoa (até 5)</p>
+                <p className="text-sm text-muted-foreground mb-6">Toda a família no controle</p>
+              </div>
+              <div className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center text-sm font-semibold flex items-center justify-center gap-1.5" onClick={upgradeMsg}>
+                <Users className="h-4 w-4" />
+                Escolher Família
+              </div>
+            </CardContent>
+          </Card>
+        </button>
       </div>
 
       {/* Feature comparison — 4 columns */}
