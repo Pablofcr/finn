@@ -826,10 +826,11 @@ async function handleReceiptPhoto(
     })
   } catch (err: any) {
     console.error('Error parsing receipt:', err?.message || err)
-    const errorMsg = err?.status === 400
-      ? 'A imagem não pôde ser processada. Tente com uma foto mais nítida e bem iluminada.'
-      : 'Ops, tive um problema ao analisar o cupom. Tente novamente.'
-    await sendMessage({ chatId, text: errorMsg })
+    const detail = err?.message || err?.error?.message || String(err) || 'Erro desconhecido'
+    await sendMessage({
+      chatId,
+      text: `Não foi possível analisar o cupom.\n\n<i>Detalhe: ${detail.substring(0, 200)}</i>`,
+    })
   }
 }
 
