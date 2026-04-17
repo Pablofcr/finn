@@ -21,6 +21,7 @@ interface ParsedTransactionWithDate extends ParsedTransaction {
   recurring?: {
     frequency: RecurrenceFrequency
     label: string
+    dayOfWeek?: number | null // 0=Sunday, 1=Monday, ..., 6=Saturday
   } | null
 }
 
@@ -156,27 +157,27 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
 
   // 4. Detect RECURRENCE from anywhere
   let recurring: ParsedTransactionWithDate['recurring'] = null
-  const recurrencePatterns: { pattern: RegExp; frequency: RecurrenceFrequency; label: string }[] = [
+  const recurrencePatterns: { pattern: RegExp; frequency: RecurrenceFrequency; label: string; dayOfWeek?: number }[] = [
     { pattern: /\b(todo\s+dia|di[aá]ri[oa]|diariamente|todos\s+os\s+dias)\b/, frequency: 'DAILY', label: 'Diário' },
-    // Days of week = weekly
-    { pattern: /\b(toda\s+segunda(?:[- ]feira)?|todas\s+as\s+segundas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Segunda)' },
-    { pattern: /\b(toda\s+ter[cç]a(?:[- ]feira)?|todas\s+as\s+ter[cç]as(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Terça)' },
-    { pattern: /\b(toda\s+quarta(?:[- ]feira)?|todas\s+as\s+quartas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Quarta)' },
-    { pattern: /\b(toda\s+quinta(?:[- ]feira)?|todas\s+as\s+quintas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Quinta)' },
-    { pattern: /\b(toda\s+sexta(?:[- ]feira)?|todas\s+as\s+sextas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Sexta)' },
-    { pattern: /\b(todo\s+s[aá]bado|todos\s+os\s+s[aá]bados)\b/, frequency: 'WEEKLY', label: 'Semanal (Sábado)' },
-    { pattern: /\b(todo\s+domingo|todos\s+os\s+domingos)\b/, frequency: 'WEEKLY', label: 'Semanal (Domingo)' },
+    // Days of week = weekly (dayOfWeek: 0=Sun, 1=Mon, ..., 6=Sat)
+    { pattern: /\b(todo\s+domingo|todos\s+os\s+domingos)\b/, frequency: 'WEEKLY', label: 'Semanal (Domingo)', dayOfWeek: 0 },
+    { pattern: /\b(toda\s+segunda(?:[- ]feira)?|todas\s+as\s+segundas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Segunda)', dayOfWeek: 1 },
+    { pattern: /\b(toda\s+ter[cç]a(?:[- ]feira)?|todas\s+as\s+ter[cç]as(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Terça)', dayOfWeek: 2 },
+    { pattern: /\b(toda\s+quarta(?:[- ]feira)?|todas\s+as\s+quartas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Quarta)', dayOfWeek: 3 },
+    { pattern: /\b(toda\s+quinta(?:[- ]feira)?|todas\s+as\s+quintas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Quinta)', dayOfWeek: 4 },
+    { pattern: /\b(toda\s+sexta(?:[- ]feira)?|todas\s+as\s+sextas(?:[- ]feiras?)?)\b/, frequency: 'WEEKLY', label: 'Semanal (Sexta)', dayOfWeek: 5 },
+    { pattern: /\b(todo\s+s[aá]bado|todos\s+os\s+s[aá]bados)\b/, frequency: 'WEEKLY', label: 'Semanal (Sábado)', dayOfWeek: 6 },
     { pattern: /\b(toda\s+semana|semanal|semanalmente|por\s+semana)\b/, frequency: 'WEEKLY', label: 'Semanal' },
     { pattern: /\b(quinzenal|quinzenalmente|a\s+cada\s+15\s+dias|a\s+cada\s+quinze\s+dias)\b/, frequency: 'BIWEEKLY', label: 'Quinzenal' },
-    { pattern: /\b(todo\s+m[eê]s|mensal|mensalmente|todos\s+os\s+meses|por\s+m[eê]s|assinatura|recorrente)\b/, frequency: 'MONTHLY', label: 'Mensal' },
+    { pattern: /\b(todo\s+m[eê]s|mensal|mensalmente|todos\s+os\s+meses|por\s+m[eê]s|assinatura)\b/, frequency: 'MONTHLY', label: 'Mensal' },
     { pattern: /\b(trimestral|trimestralmente|a\s+cada\s+3\s+meses|a\s+cada\s+tr[eê]s\s+meses)\b/, frequency: 'QUARTERLY', label: 'Trimestral' },
     { pattern: /\b(todo\s+ano|anual|anualmente|todos\s+os\s+anos|por\s+ano)\b/, frequency: 'YEARLY', label: 'Anual' },
   ]
 
-  for (const { pattern, frequency, label } of recurrencePatterns) {
+  for (const { pattern, frequency, label, dayOfWeek } of recurrencePatterns) {
     const match = normalized.match(pattern)
     if (match) {
-      recurring = { frequency, label }
+      recurring = { frequency, label, dayOfWeek: dayOfWeek ?? null }
       normalized = normalized.replace(match[0], ' ').trim()
       break
     }
@@ -185,6 +186,7 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
   // 5. Extract DESCRIPTION from whatever remains
   let description = normalized
     .replace(/\b(reais|real|conto[s]?|r\$)\b/g, '')  // remove currency words
+    .replace(/\b(pagamento|recorrente|recorr[eê]ncia|valor|cadastr\w*|registr\w*|lan[cç]\w*|anot\w*|inclu\w*|adicion\w*|cri\w*|coloc\w*|bot\w*|marc\w*)\b/g, '')  // remove action/noise words
     .replace(/\b(de|do|da|dos|das|no|na|nos|nas|em|pra|para|com|pelo|pela|um|uma|uns|umas|o|a|os|as|e|que)\b/g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim()

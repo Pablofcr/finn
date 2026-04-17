@@ -852,7 +852,7 @@ async function handleConfirmTransaction(
   const parsed = botMsg.parsedData as {
     type: string; amount: number; description: string;
     date?: string | null;
-    recurring?: { frequency: string; label: string } | null;
+    recurring?: { frequency: string; label: string; dayOfWeek?: number | null } | null;
     categoryId?: string | null;
     categoryName?: string | null;
   }
@@ -887,6 +887,22 @@ async function handleConfirmTransaction(
   // If recurring, also create a recurring transaction
   let recurringInfo = ''
   if (parsed.recurring) {
+    // Calculate next due date based on frequency and day of week
+    let nextDueDate = new Date(txDate)
+    if (parsed.recurring.dayOfWeek !== undefined && parsed.recurring.dayOfWeek !== null) {
+      // Find the next occurrence of the specified day of week
+      const targetDay = parsed.recurring.dayOfWeek
+      const today = new Date()
+      const currentDay = today.getDay()
+      let daysUntil = targetDay - currentDay
+      if (daysUntil <= 0) daysUntil += 7 // Next week if today or past
+      nextDueDate = new Date(today)
+      nextDueDate.setDate(today.getDate() + daysUntil)
+    } else {
+      // For non-day-specific recurrence, next due is after the first period
+      nextDueDate = calculateNextDueDate(txDate, parsed.recurring.frequency)
+    }
+
     await prisma.recurringTransaction.create({
       data: {
         userId: connection.userId,
@@ -895,7 +911,7 @@ async function handleConfirmTransaction(
         type: parsed.type as 'INCOME' | 'EXPENSE',
         frequency: parsed.recurring.frequency as any,
         startDate: txDate,
-        nextDueDate: txDate,
+        nextDueDate,
         accountId: defaultAccount.id,
         categoryId: parsed.categoryId ?? undefined,
         autoConfirm: false,
