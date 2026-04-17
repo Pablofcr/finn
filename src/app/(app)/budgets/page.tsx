@@ -138,12 +138,55 @@ export default function BudgetsPage() {
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32" />)}
         </div>
       ) : budgets.length === 0 ? (
-        <EmptyState
-          icon={<PieChart className="h-12 w-12" />}
-          title="Comece a controlar seus gastos"
-          description="Crie seu primeiro orçamento e acompanhe para onde seu dinheiro está indo."
-          action={<Button onClick={() => setDialogOpen(true)}>Novo Orçamento</Button>}
-        />
+        <div className="space-y-6">
+          {/* Explicação didática */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 shrink-0">
+                  <PieChart className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-base mb-2">O que são orçamentos?</h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                    Orçamentos são <strong>limites de gastos</strong> que você define por categoria.
+                    O Finn acompanha quanto você já gastou e avisa quando estiver chegando perto do limite — para que você nunca ultrapasse sem perceber.
+                  </p>
+                  <div className="bg-background/80 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Exemplo prático:</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">🍔 Alimentação</span>
+                        <span className="text-muted-foreground">R$ 420 de R$ 600</span>
+                      </div>
+                      <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full progress-gradient-warning" style={{ width: '70%' }} />
+                      </div>
+                      <p className="text-xs text-amber-600 dark:text-amber-400">⚠️ Você já usou 70% do seu limite — restam R$ 180 para o mês.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">🚗 Transporte</span>
+                        <span className="text-muted-foreground">R$ 150 de R$ 400</span>
+                      </div>
+                      <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full progress-gradient-success" style={{ width: '37%' }} />
+                      </div>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400">✅ Tudo sob controle — você usou apenas 37%.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <EmptyState
+            icon={<PieChart className="h-12 w-12" />}
+            title="Defina seu primeiro limite de gastos"
+            description="Escolha uma categoria (ex: Alimentação), defina um valor máximo por mês e o Finn cuida do resto. Simples assim."
+            action={<Button onClick={() => setDialogOpen(true)} className="gap-2"><Plus className="h-4 w-4" /> Criar meu primeiro orçamento</Button>}
+          />
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {budgets.map((b: any) => {
