@@ -80,13 +80,25 @@ export const defaultCategories: DefaultCategory[] = [
     ],
   },
   {
+    name: 'Vestuário',
+    icon: 'shirt',
+    color: '#d946ef',
+    type: 'EXPENSE',
+    keywords: [
+      'roupa', 'sapato', 'tênis', 'calça', 'camisa', 'camiseta',
+      'vestido', 'blusa', 'saia', 'jaqueta', 'casaco', 'bermuda',
+      'short', 'cueca', 'calcinha', 'meia', 'chinelo', 'sandália',
+      'bota', 'calçado', 'loja de roupa', 'moda', 'costura',
+    ],
+  },
+  {
     name: 'Compras',
     icon: 'shopping-bag',
     color: '#ec4899',
     type: 'EXPENSE',
     keywords: [
-      'roupa', 'sapato', 'tênis', 'bolsa', 'acessório', 'joia',
-      'presente', 'eletrônico', 'celular', 'computador', 'notebook',
+      'bolsa', 'acessório', 'joia', 'presente',
+      'eletrônico', 'celular', 'computador', 'notebook',
       'amazon', 'mercado livre', 'shopee', 'shein', 'magazine luiza',
       'casas bahia', 'americanas',
     ],

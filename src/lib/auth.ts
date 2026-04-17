@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import prisma from '@/lib/prisma'
+import { defaultCategories } from '@/lib/seed/default-categories'
 
 export async function getAuthUser() {
   const supabase = await createClient()
@@ -21,6 +22,19 @@ export async function getAuthUser() {
         avatarUrl: supabaseUser.user_metadata?.avatar_url || null,
       },
     })
+
+    // Seed default categories for new users
+    try {
+      await prisma.category.createMany({
+        data: defaultCategories.map((cat) => ({
+          userId: user!.id,
+          name: cat.name,
+          icon: cat.icon,
+          color: cat.color,
+          type: cat.type,
+        })),
+      })
+    } catch { /* ignore if categories already exist */ }
   }
 
   return user

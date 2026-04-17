@@ -92,7 +92,16 @@ const KEYWORD_MAP: Record<string, { categoryName: string; type: 'EXPENSE' | 'INC
   // Vestuário
   roupa: { categoryName: 'Vestuário', type: 'EXPENSE' },
   sapato: { categoryName: 'Vestuário', type: 'EXPENSE' },
-  shopping: { categoryName: 'Vestuário', type: 'EXPENSE' },
+  tenis: { categoryName: 'Vestuário', type: 'EXPENSE' },
+  calca: { categoryName: 'Vestuário', type: 'EXPENSE' },
+  camisa: { categoryName: 'Vestuário', type: 'EXPENSE' },
+  camiseta: { categoryName: 'Vestuário', type: 'EXPENSE' },
+  vestido: { categoryName: 'Vestuário', type: 'EXPENSE' },
+  blusa: { categoryName: 'Vestuário', type: 'EXPENSE' },
+  jaqueta: { categoryName: 'Vestuário', type: 'EXPENSE' },
+  bermuda: { categoryName: 'Vestuário', type: 'EXPENSE' },
+  chinelo: { categoryName: 'Vestuário', type: 'EXPENSE' },
+  bota: { categoryName: 'Vestuário', type: 'EXPENSE' },
   // Salário (INCOME)
   salario: { categoryName: 'Salário', type: 'INCOME' },
   freelance: { categoryName: 'Salário', type: 'INCOME' },
