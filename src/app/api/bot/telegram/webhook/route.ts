@@ -17,6 +17,18 @@ const KEYWORD_MAP: Record<string, { categoryName: string; type: 'EXPENSE' | 'INC
   restaurante: { categoryName: 'Alimentação', type: 'EXPENSE' },
   lanche: { categoryName: 'Alimentação', type: 'EXPENSE' },
   almoco: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  almoço: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  janta: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  refeicao: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  comida: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  feira: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  acougue: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  bebida: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  bar: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  lanchonete: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  sorveteria: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  peixe: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  carne: { categoryName: 'Alimentação', type: 'EXPENSE' },
   jantar: { categoryName: 'Alimentação', type: 'EXPENSE' },
   cafe: { categoryName: 'Alimentação', type: 'EXPENSE' },
   padaria: { categoryName: 'Alimentação', type: 'EXPENSE' },
@@ -94,8 +106,10 @@ function normalize(text: string): string {
 async function findCategoryForDescription(
   userId: string,
   description: string,
+  originalText?: string,
 ): Promise<{ categoryId: string; categoryName: string } | null> {
-  const normalizedDesc = normalize(description)
+  // Search in both the parsed description AND the original message for better matching
+  const normalizedDesc = normalize(originalText ? `${originalText} ${description}` : description)
 
   try {
     // 1. Try user-defined CategoryKeyword matches first
@@ -303,8 +317,8 @@ async function handleMessage(message: any) {
       ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(parsed.date))
       : 'Hoje'
 
-    // Auto-categorize
-    const category = await findCategoryForDescription(connection.userId, parsed.description)
+    // Auto-categorize (use original text for better keyword matching)
+    const category = await findCategoryForDescription(connection.userId, parsed.description, text)
 
     // Store parsed data temporarily in bot message for confirmation
     const botMsg = await prisma.botMessage.create({
@@ -650,8 +664,8 @@ async function handleVoiceMessage(
       ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(parsed.date))
       : 'Hoje'
 
-    // Auto-categorize
-    const category = await findCategoryForDescription(connection.userId, parsed.description)
+    // Auto-categorize (use original transcription for better keyword matching)
+    const category = await findCategoryForDescription(connection.userId, parsed.description, transcription || undefined)
 
     const botMsg = await prisma.botMessage.create({
       data: {
@@ -777,8 +791,9 @@ async function handleReceiptPhoto(
       ? '\n\n📋 <b>Itens:</b>\n' + parsed.items.map(item => `  • ${item}`).join('\n')
       : ''
 
-    // Auto-categorize
-    const category = await findCategoryForDescription(connection.userId, parsed.description)
+    // Auto-categorize (use description + items for better keyword matching)
+    const itemsText = parsed.items.join(' ')
+    const category = await findCategoryForDescription(connection.userId, parsed.description, itemsText)
 
     // Store parsed data in bot message
     const botMsg = await prisma.botMessage.create({
