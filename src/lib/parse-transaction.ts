@@ -277,7 +277,7 @@ export async function parseReceiptImage(imageBase64: string, mimeType: string): 
   const client = new Anthropic()
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-5-20250929',
+    model: 'claude-sonnet-4-6',
     max_tokens: 400,
     messages: [
       {
