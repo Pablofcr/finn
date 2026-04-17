@@ -118,7 +118,7 @@ export default function BudgetsPage() {
                 <Label>Período</Label>
                 <Select value={period} onValueChange={(v) => v && setPeriod(v)}>
                   <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue />
+                    <SelectValue placeholder="Selecione">{BUDGET_PERIOD_LABELS[period] || period}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(BUDGET_PERIOD_LABELS).map(([key, label]) => (

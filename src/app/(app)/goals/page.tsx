@@ -102,12 +102,55 @@ export default function GoalsPage() {
           {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-40" />)}
         </div>
       ) : goals.length === 0 ? (
-        <EmptyState
-          icon={<Target className="h-12 w-12" />}
-          title="Defina sua primeira meta financeira"
-          description="Planeje seus sonhos e acompanhe cada passo rumo à conquista."
-          action={<Button onClick={() => setDialogOpen(true)}>Nova Meta</Button>}
-        />
+        <div className="space-y-6">
+          {/* Explicação didática */}
+          <Card className="border-emerald-200 dark:border-emerald-900/30 bg-emerald-50/50 dark:bg-emerald-500/5">
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 shrink-0">
+                  <Target className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-base mb-2">O que são metas?</h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                    Metas são <strong>objetivos financeiros</strong> que você quer alcançar.
+                    Defina um nome, um valor e um prazo — o Finn mostra seu progresso e te motiva a chegar lá.
+                  </p>
+                  <div className="bg-background/80 rounded-xl p-4 space-y-4">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Exemplos práticos:</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">✈️ Viagem para o Nordeste</span>
+                        <span className="text-muted-foreground">R$ 3.200 de R$ 5.000</span>
+                      </div>
+                      <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500" style={{ width: '64%' }} />
+                      </div>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400">🎉 64% alcançado! No ritmo atual, você chega lá em 2 meses.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">🛡️ Reserva de emergência</span>
+                        <span className="text-muted-foreground">R$ 4.500 de R$ 15.000</span>
+                      </div>
+                      <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-blue-400 to-indigo-500" style={{ width: '30%' }} />
+                      </div>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">💪 30% alcançado — cada passo conta. Continue firme!</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <EmptyState
+            icon={<Target className="h-12 w-12" />}
+            title="Transforme sonhos em metas com prazo"
+            description="Quer viajar, trocar de carro ou criar uma reserva? Defina o valor, o prazo, e acompanhe cada real que te aproxima da conquista."
+            action={<Button onClick={() => setDialogOpen(true)} className="gap-2"><Plus className="h-4 w-4" /> Criar minha primeira meta</Button>}
+          />
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {goals.map((g: any) => {
