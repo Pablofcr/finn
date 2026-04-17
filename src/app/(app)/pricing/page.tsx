@@ -32,9 +32,9 @@ const FEATURES: { name: string; free: boolean | string; pro: boolean | string; f
 ]
 
 function FeatureValue({ value }: { value: boolean | string }) {
-  if (value === true) return <Check className="h-4 w-4 text-emerald-500" />
-  if (value === false) return <X className="h-4 w-4 text-slate-300 dark:text-slate-600" />
-  return <span className="text-xs font-medium">{value}</span>
+  if (value === true) return <Check className="h-5 w-5 text-emerald-500 mx-auto" />
+  if (value === false) return <X className="h-5 w-5 text-slate-300 dark:text-slate-600 mx-auto" />
+  return <span className="text-sm font-semibold">{value}</span>
 }
 
 export default function PricingPage() {
@@ -154,28 +154,34 @@ export default function PricingPage() {
 
       {/* Feature comparison — 4 columns */}
       <Card>
-        <CardContent className="pt-6 pb-6">
-          <h3 className="font-bold text-center mb-6">Comparativo completo</h3>
+        <CardContent className="pt-8 pb-8">
+          <h3 className="text-xl font-bold text-center mb-8">Comparativo completo</h3>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left pb-3 font-semibold text-muted-foreground">Funcionalidade</th>
-                  <th className="text-center pb-3 font-semibold text-muted-foreground w-24">Free</th>
-                  <th className="text-center pb-3 font-semibold text-muted-foreground w-24">Pro</th>
-                  <th className="text-center pb-3 font-semibold text-muted-foreground w-24">Família</th>
+                <tr className="border-b-2">
+                  <th className="text-left pb-4 text-base font-semibold text-muted-foreground w-[40%]">Funcionalidade</th>
+                  <th className="text-center pb-4 text-base font-semibold text-muted-foreground w-[20%]">Free</th>
+                  <th className="text-center pb-4 text-base font-semibold w-[20%]">
+                    <span className="text-indigo-600 dark:text-indigo-400">Pro</span>
+                  </th>
+                  <th className="text-center pb-4 text-base font-semibold w-[20%]">
+                    <span className="text-amber-600 dark:text-amber-400">Família</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {FEATURES.map((f) => (
-                  <tr key={f.name} className="border-b border-border/50">
-                    <td className="py-3 flex items-center gap-2">
-                      <f.icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                      {f.name}
+                {FEATURES.map((f, i) => (
+                  <tr key={f.name} className={`border-b border-border/50 ${i % 2 === 0 ? 'bg-muted/20' : ''}`}>
+                    <td className="py-4 px-2">
+                      <span className="flex items-center gap-2.5 text-sm font-medium">
+                        <f.icon className="h-5 w-5 text-muted-foreground shrink-0" />
+                        {f.name}
+                      </span>
                     </td>
-                    <td className="py-3 text-center"><FeatureValue value={f.free} /></td>
-                    <td className="py-3 text-center"><FeatureValue value={f.pro} /></td>
-                    <td className="py-3 text-center"><FeatureValue value={f.familia} /></td>
+                    <td className="py-4 text-center"><FeatureValue value={f.free} /></td>
+                    <td className="py-4 text-center bg-indigo-50/30 dark:bg-indigo-500/5"><FeatureValue value={f.pro} /></td>
+                    <td className="py-4 text-center bg-amber-50/30 dark:bg-amber-500/5"><FeatureValue value={f.familia} /></td>
                   </tr>
                 ))}
               </tbody>
