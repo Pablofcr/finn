@@ -126,6 +126,30 @@ async function findCategoryForDescription(
         if (match) {
           return { categoryId: match.id, categoryName: match.name }
         }
+
+        // Category doesn't exist yet — create it automatically
+        const CATEGORY_COLORS: Record<string, string> = {
+          'Alimentação': '#ef4444',
+          'Transporte': '#3b82f6',
+          'Moradia': '#8b5cf6',
+          'Saúde': '#ec4899',
+          'Educação': '#f59e0b',
+          'Lazer': '#06b6d4',
+          'Vestuário': '#d946ef',
+          'Salário': '#22c55e',
+        }
+
+        const newCategory = await prisma.category.create({
+          data: {
+            userId,
+            name: mapping.categoryName,
+            type: mapping.type,
+            color: CATEGORY_COLORS[mapping.categoryName] || '#6366f1',
+            icon: 'tag',
+          },
+        })
+
+        return { categoryId: newCategory.id, categoryName: newCategory.name }
       }
     }
   } catch (err) {
