@@ -84,6 +84,11 @@ const KEYWORD_MAP: Record<string, { categoryName: string; type: 'EXPENSE' | 'INC
   show: { categoryName: 'Lazer', type: 'EXPENSE' },
   viagem: { categoryName: 'Lazer', type: 'EXPENSE' },
   hotel: { categoryName: 'Lazer', type: 'EXPENSE' },
+  // Presentes
+  presente: { categoryName: 'Presentes', type: 'EXPENSE' },
+  pascoa: { categoryName: 'Presentes', type: 'EXPENSE' },
+  natal: { categoryName: 'Presentes', type: 'EXPENSE' },
+  aniversario: { categoryName: 'Presentes', type: 'EXPENSE' },
   // Vestuário
   roupa: { categoryName: 'Vestuário', type: 'EXPENSE' },
   sapato: { categoryName: 'Vestuário', type: 'EXPENSE' },
@@ -162,6 +167,7 @@ async function findCategoryForDescription(
           'Educação': '#f59e0b',
           'Lazer': '#06b6d4',
           'Vestuário': '#d946ef',
+          'Presentes': '#f43f5e',
           'Salário': '#22c55e',
         }
 

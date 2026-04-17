@@ -225,8 +225,11 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
     .replace(/\d+_ord/g, '')  // remove ordinal markers
     .replace(/\b(janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/g, '')  // remove month names
     .replace(/\b(dia|mes|ano)\b/g, '')  // remove date words
-    .replace(/\b(de|do|da|dos|das|no|na|nos|nas|em|pra|para|com|pelo|pela|um|uma|uns|umas|o|a|os|as|e|que)\b/g, ' ')
+    .replace(/\b(de|do|da|dos|das|no|na|nos|nas|em|pra|para|com|pelo|pela|um|uma|uns|umas|os|as|que)\b/g, ' ')
+    .replace(/\s[oe]\s/g, ' ')  // remove standalone "o" and "e" only between spaces (protects names like João)
+    .replace(/[,;:]+/g, ' ')  // remove punctuation
     .replace(/\s{2,}/g, ' ')
+    .replace(/^\s+|\s+$/g, '')  // trim
     .trim()
 
   if (!description) {
