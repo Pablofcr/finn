@@ -94,7 +94,16 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
             </defs>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" vertical={false} />
             <XAxis dataKey="month" className="text-xs" tickLine={false} axisLine={false} />
-            <YAxis className="text-xs" tickLine={false} axisLine={false} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+            <YAxis
+              className="text-xs"
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+              tickFormatter={(v) => {
+                if (v >= 1000) return `R$${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k`
+                return `R$${v}`
+              }}
+            />
             <Tooltip content={<CustomTooltip />} />
             {showIncome && (
               <Area
