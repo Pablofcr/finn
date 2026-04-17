@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  AreaChart, Area, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
@@ -136,9 +136,9 @@ export function MonthlyChart({ data, onMonthClick }: MonthlyChartProps) {
                 formatter={(value: any) => formatCurrency(Number(value))}
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
               />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]} animationDuration={600}>
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} animationDuration={600} animationEasing="ease-out">
                 {barData.map((entry, i) => (
-                  <Bar key={i} dataKey="value" fill={entry.fill} />
+                  <Cell key={i} fill={entry.fill} />
                 ))}
               </Bar>
             </BarChart>
