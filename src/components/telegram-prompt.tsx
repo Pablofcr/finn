@@ -9,7 +9,9 @@ export function TelegramPrompt() {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
-    // Check if user already connected Telegram
+    // Check if dismissed this session
+    if (sessionStorage.getItem('finn-telegram-dismissed')) return
+
     async function checkConnection() {
       try {
         const res = await fetch('/api/bot/telegram/connect')
@@ -24,13 +26,14 @@ export function TelegramPrompt() {
       } catch { /* ignore */ }
     }
 
-    // Small delay to not overlap with tutorial
-    const timer = setTimeout(checkConnection, 2000)
+    // Delay to not overlap with tutorial
+    const timer = setTimeout(checkConnection, 3000)
     return () => clearTimeout(timer)
   }, [])
 
   function handleDismissSession() {
     setShow(false)
+    sessionStorage.setItem('finn-telegram-dismissed', 'true')
   }
 
   if (!show) return null
@@ -77,7 +80,7 @@ export function TelegramPrompt() {
           <Button
             className="w-full gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-md shadow-blue-500/25 hover:shadow-blue-500/40"
             onClick={() => {
-              setShow(false)
+              handleDismissSession()
               window.location.href = '/bot'
             }}
           >
