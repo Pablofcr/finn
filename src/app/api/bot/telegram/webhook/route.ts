@@ -826,10 +826,9 @@ async function handleReceiptPhoto(
     })
   } catch (err: any) {
     console.error('Error parsing receipt:', err?.message || err)
-    const detail = err?.message || err?.error?.message || String(err) || 'Erro desconhecido'
     await sendMessage({
       chatId,
-      text: `Não foi possível analisar o cupom.\n\n<i>Detalhe: ${detail.substring(0, 200)}</i>`,
+      text: '📸 Não foi possível analisar o cupom neste momento. Tente novamente mais tarde ou registre manualmente por texto.',
     })
   }
 }
