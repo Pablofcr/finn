@@ -34,6 +34,7 @@ const KEYWORD_MAP: Record<string, { categoryName: string; type: 'EXPENSE' | 'INC
   padaria: { categoryName: 'Alimentação', type: 'EXPENSE' },
   pizza: { categoryName: 'Alimentação', type: 'EXPENSE' },
   hamburger: { categoryName: 'Alimentação', type: 'EXPENSE' },
+  hamburguer: { categoryName: 'Alimentação', type: 'EXPENSE' },
   delivery: { categoryName: 'Alimentação', type: 'EXPENSE' },
   ifood: { categoryName: 'Alimentação', type: 'EXPENSE' },
   // Transporte
@@ -134,8 +135,14 @@ async function findCategoryForDescription(
       },
     })
 
+    // Helper: match whole word only (prevents "gas" matching "gastei")
+    const matchesWord = (text: string, word: string) => {
+      const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      return new RegExp(`\\b${escaped}\\b`).test(text)
+    }
+
     for (const kw of userKeywords) {
-      if (normalizedDesc.includes(normalize(kw.keyword))) {
+      if (matchesWord(normalizedDesc, normalize(kw.keyword))) {
         return { categoryId: kw.category.id, categoryName: kw.category.name }
       }
     }
@@ -147,7 +154,7 @@ async function findCategoryForDescription(
     })
 
     for (const [keyword, mapping] of Object.entries(KEYWORD_MAP)) {
-      if (normalizedDesc.includes(normalize(keyword))) {
+      if (matchesWord(normalizedDesc, normalize(keyword))) {
         // Try exact name match first
         let match = userCategories.find(
           (c) => normalize(c.name) === normalize(mapping.categoryName) && c.type === mapping.type

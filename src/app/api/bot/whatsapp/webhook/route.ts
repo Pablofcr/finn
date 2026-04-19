@@ -123,6 +123,7 @@ async function findCategoryForDescription(userId: string, description: string, o
     padaria: { categoryName: 'Alimentação', type: 'EXPENSE' },
     pizza: { categoryName: 'Alimentação', type: 'EXPENSE' },
     hamburger: { categoryName: 'Alimentação', type: 'EXPENSE' },
+    hamburguer: { categoryName: 'Alimentação', type: 'EXPENSE' },
     delivery: { categoryName: 'Alimentação', type: 'EXPENSE' },
     ifood: { categoryName: 'Alimentação', type: 'EXPENSE' },
     // Transporte
@@ -205,9 +206,16 @@ async function findCategoryForDescription(userId: string, description: string, o
       select: { id: true, name: true, type: true },
     })
 
+    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+    // Helper: match whole word only (prevents "gas" matching "gastei")
+    const matchesWord = (text: string, word: string) => {
+      const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      return new RegExp(`\\b${escaped}\\b`).test(text)
+    }
+
     for (const [keyword, mapping] of Object.entries(KEYWORD_MAP)) {
-      if (normalizedDesc.includes(keyword)) {
-        const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      if (matchesWord(normalizedDesc, norm(keyword))) {
         let match = userCategories.find(c => norm(c.name) === norm(mapping.categoryName) && c.type === mapping.type)
         if (!match) {
           match = userCategories.find(c => c.type === mapping.type && (norm(c.name).includes(norm(mapping.categoryName)) || norm(mapping.categoryName).includes(norm(c.name))))
