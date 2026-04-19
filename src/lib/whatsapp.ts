@@ -1,6 +1,18 @@
 const WHATSAPP_API = `https://graph.facebook.com/v21.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}`
 const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN
 
+// WhatsApp webhooks from Brazilian mobiles often arrive in legacy 12-digit format
+// (without the leading 9), but the Send API requires the 13-digit format.
+function normalizeRecipient(to: string): string {
+  const digits = to.replace(/\D/g, '')
+  if (digits.length === 12 && digits.startsWith('55')) {
+    const ddd = digits.substring(2, 4)
+    const rest = digits.substring(4)
+    if (/^[6-9]/.test(rest)) return `55${ddd}9${rest}`
+  }
+  return digits
+}
+
 interface SendMessageOptions {
   to: string
   text: string
@@ -33,7 +45,7 @@ async function whatsappFetch(endpoint: string, body: Record<string, unknown>) {
 export async function sendWhatsAppMessage({ to, text }: SendMessageOptions) {
   return whatsappFetch('/messages', {
     messaging_product: 'whatsapp',
-    to,
+    to: normalizeRecipient(to),
     type: 'text',
     text: { body: text },
   })
@@ -42,7 +54,7 @@ export async function sendWhatsAppMessage({ to, text }: SendMessageOptions) {
 export async function sendWhatsAppInteractive({ to, body, buttons }: SendInteractiveOptions) {
   return whatsappFetch('/messages', {
     messaging_product: 'whatsapp',
-    to,
+    to: normalizeRecipient(to),
     type: 'interactive',
     interactive: {
       type: 'button',
