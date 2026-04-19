@@ -29,6 +29,10 @@ export async function POST(request: NextRequest) {
   const changes = entry?.changes?.[0]
   const value = changes?.value
 
+  if (value?.statuses?.[0]) {
+    console.log('WhatsApp status callback:', JSON.stringify(value.statuses[0]))
+  }
+
   if (!value?.messages?.[0]) {
     return Response.json({ ok: true })
   }
