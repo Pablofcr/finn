@@ -13,7 +13,9 @@ interface SendInteractiveOptions {
 }
 
 async function whatsappFetch(endpoint: string, body: Record<string, unknown>) {
-  const res = await fetch(`${WHATSAPP_API}${endpoint}`, {
+  const url = `${WHATSAPP_API}${endpoint}`
+  console.log('WhatsApp API call:', url, 'token exists:', !!WHATSAPP_TOKEN, 'token length:', WHATSAPP_TOKEN?.length)
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
@@ -21,7 +23,11 @@ async function whatsappFetch(endpoint: string, body: Record<string, unknown>) {
     },
     body: JSON.stringify(body),
   })
-  return res.json()
+  const data = await res.json()
+  if (data.error) {
+    console.error('WhatsApp API error:', JSON.stringify(data.error))
+  }
+  return data
 }
 
 export async function sendWhatsAppMessage({ to, text }: SendMessageOptions) {

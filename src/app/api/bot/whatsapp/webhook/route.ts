@@ -57,10 +57,11 @@ export async function POST(request: NextRequest) {
       }
 
       if (!connection) {
-        await sendWhatsAppMessage({
+        const result = await sendWhatsAppMessage({
           to: from,
           text: 'Para começar, conecte sua conta Finn. Acesse o app e vá em *Assistente*.',
         })
+        console.log('WhatsApp send result (no connection):', JSON.stringify(result))
         return Response.json({ ok: true })
       }
 
