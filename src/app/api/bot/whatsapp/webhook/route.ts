@@ -37,6 +37,8 @@ export async function POST(request: NextRequest) {
   const from = message.from // Phone number
   const messageId = message.id
 
+  console.log('WhatsApp webhook from:', from, 'length:', from?.length, 'type:', message.type)
+
   try {
     // Mark as read immediately
     await markAsRead(messageId)
