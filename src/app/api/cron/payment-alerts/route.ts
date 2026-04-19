@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
-import { sendPaymentAlert } from '@/lib/telegram'
+import { sendBotPaymentAlert } from '@/lib/messaging-adapter'
+import type { Platform } from '@/lib/messaging-adapter'
 
 export async function GET(request: NextRequest) {
   // Verify cron secret to prevent unauthorized calls
@@ -28,7 +29,6 @@ export async function GET(request: NextRequest) {
           notificationSetting: true,
           botConnections: {
             where: {
-              platform: 'TELEGRAM',
               isVerified: true,
             },
           },
@@ -54,8 +54,7 @@ export async function GET(request: NextRequest) {
     // Send alert for payments due today, tomorrow, or in 3 days
     if (daysUntilDue === 0 || daysUntilDue === 1 || daysUntilDue === 3) {
       try {
-        await sendPaymentAlert({
-          chatId: connection.platformUserId,
+        await sendBotPaymentAlert(connection.platform as Platform, connection.platformUserId, {
           description: payment.description,
           amount: Number(payment.amount),
           dueDate: payment.nextDueDate.toISOString(),
