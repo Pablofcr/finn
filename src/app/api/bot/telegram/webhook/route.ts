@@ -585,6 +585,17 @@ async function handleCallbackQuery(callbackQuery: any) {
     await answerCallbackQuery(callbackId, '✅ Pagamento registrado!')
 
   } else if (action === 'snooze') {
+    // Suppress alerts until end-of-today UTC. The daily cron runs early
+    // morning (09:00 UTC), so tomorrow's run will pass this filter and
+    // re-send the alert.
+    const endOfToday = new Date()
+    endOfToday.setUTCHours(23, 59, 59, 999)
+
+    await prisma.recurringTransaction.update({
+      where: { id: recurring.id },
+      data: { snoozedUntil: endOfToday },
+    })
+
     await editMessageText({
       chatId,
       messageId,

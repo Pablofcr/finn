@@ -11,10 +11,13 @@ export async function GET(request: NextRequest) {
   }
 
   const now = new Date()
+  console.log('[payment-alerts] Cron started at', now.toISOString())
+
   const threeDaysFromNow = new Date(now)
   threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3)
 
-  // Find all active recurring transactions due in the next 3 days
+  // Find all active recurring transactions due in the next 3 days, excluding
+  // any that the user snoozed until a future moment.
   const upcomingPayments = await prisma.recurringTransaction.findMany({
     where: {
       status: 'ACTIVE',
@@ -22,30 +25,42 @@ export async function GET(request: NextRequest) {
         gte: now,
         lte: threeDaysFromNow,
       },
+      OR: [
+        { snoozedUntil: null },
+        { snoozedUntil: { lte: now } },
+      ],
     },
     include: {
       user: {
         include: {
           notificationSetting: true,
           botConnections: {
-            where: {
-              isVerified: true,
-            },
+            where: { isVerified: true },
           },
         },
       },
     },
   })
 
+  console.log('[payment-alerts] Upcoming payments found:', upcomingPayments.length)
+
   let alertsSent = 0
+  let alertsSkipped = 0
+  const failures: { id: string; reason: string }[] = []
 
   for (const payment of upcomingPayments) {
     const connection = payment.user.botConnections[0]
-    if (!connection) continue
+    if (!connection) {
+      alertsSkipped++
+      continue
+    }
 
     // Check if telegram alerts are enabled
     const alertsEnabled = payment.user.notificationSetting?.telegramAlerts ?? true
-    if (!alertsEnabled) continue
+    if (!alertsEnabled) {
+      alertsSkipped++
+      continue
+    }
 
     const daysUntilDue = Math.ceil(
       (payment.nextDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
@@ -74,15 +89,23 @@ export async function GET(request: NextRequest) {
 
         alertsSent++
       } catch (err) {
-        console.error(`Failed to send alert for recurring ${payment.id}:`, err)
+        const reason = err instanceof Error ? err.message : String(err)
+        console.error(`[payment-alerts] Failed to send alert for recurring ${payment.id}:`, reason)
+        failures.push({ id: payment.id, reason })
       }
+    } else {
+      alertsSkipped++
     }
   }
+
+  console.log('[payment-alerts] Done:', { sent: alertsSent, skipped: alertsSkipped, failed: failures.length })
 
   return Response.json({
     data: {
       checked: upcomingPayments.length,
       alertsSent,
+      alertsSkipped,
+      failures,
       timestamp: now.toISOString(),
     },
   })

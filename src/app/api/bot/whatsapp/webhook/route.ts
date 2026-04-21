@@ -738,6 +738,28 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
   }
 
   if (action === 'snooze') {
-    await sendWhatsAppMessage({ to: from, text: `⏰ *Lembrete adiado*\n\nVou te lembrar novamente amanhã.` })
+    const recurringId = targetId
+    const recurring = await prisma.recurringTransaction.findFirst({
+      where: { id: recurringId, userId: connection.userId },
+    })
+    if (!recurring) {
+      await sendWhatsAppMessage({ to: from, text: '⚠️ Transação não encontrada.' })
+      return
+    }
+
+    // Suppress alerts until end-of-today UTC. The daily cron runs early
+    // morning (09:00 UTC), so tomorrow's run will pass this filter.
+    const endOfToday = new Date()
+    endOfToday.setUTCHours(23, 59, 59, 999)
+
+    await prisma.recurringTransaction.update({
+      where: { id: recurring.id },
+      data: { snoozedUntil: endOfToday },
+    })
+
+    await sendWhatsAppMessage({
+      to: from,
+      text: `⏰ *Lembrete adiado*\n\n*${recurring.description}*\nVou te lembrar novamente amanhã.`,
+    })
   }
 }
