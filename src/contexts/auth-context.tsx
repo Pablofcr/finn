@@ -14,6 +14,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ error: string | null }>
+  resendConfirmation: (email: string) => Promise<{ error: string | null }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -84,8 +85,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null }
   }, [supabase.auth])
 
+  const resendConfirmation = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resend({ type: 'signup', email })
+    if (error) return { error: error.message }
+    return { error: null }
+  }, [supabase.auth])
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signInWithGoogle, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signInWithGoogle, signOut, resetPassword, resendConfirmation }}>
       {children}
     </AuthContext.Provider>
   )

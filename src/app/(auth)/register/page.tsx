@@ -1,15 +1,14 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Check } from 'lucide-react'
 import Link from 'next/link'
 
 export default function RegisterPage() {
-  const { signUp, signInWithGoogle } = useAuth()
+  const { signUp, signInWithGoogle, resendConfirmation } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -17,6 +16,25 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [resendFeedback, setResendFeedback] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const t = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000)
+    return () => clearTimeout(t)
+  }, [resendCooldown])
+
+  async function handleResend() {
+    setResendFeedback(null)
+    const result = await resendConfirmation(email)
+    if (result.error) {
+      setResendFeedback('Não conseguimos reenviar agora. Tente em alguns segundos.')
+    } else {
+      setResendFeedback('E-mail reenviado! Confira sua caixa de entrada e o spam.')
+      setResendCooldown(60)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -44,18 +62,97 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="animate-fade-in text-center py-8">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/20">
-          <Check className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+      <div className="animate-fade-in w-full max-w-md mx-auto">
+        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-lg shadow-indigo-500/5 p-6 sm:p-8">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/30">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-10 w-10 text-white" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <path d="m3 7 9 6 9-6" />
+            </svg>
+          </div>
+
+          <div className="text-center mb-7">
+            <h1 className="text-2xl sm:text-[26px] font-bold text-slate-900 dark:text-white tracking-tight mb-2">
+              Cadastro feito! Falta só ativar.
+            </h1>
+            <p className="text-[15px] leading-relaxed text-slate-500 dark:text-slate-400">
+              Enviamos um link de confirmação para
+              <span className="block mt-1 font-semibold text-slate-700 dark:text-slate-200 break-all">
+                {email}
+              </span>
+            </p>
+          </div>
+
+          <ol className="space-y-3 mb-6">
+            <li className="flex gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-white/[0.02] p-3.5">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-[13px] font-bold text-indigo-600 dark:text-indigo-300">
+                1
+              </span>
+              <p className="text-sm leading-6 text-slate-700 dark:text-slate-300 pt-0.5">
+                Abra seu e-mail no celular ou computador.
+              </p>
+            </li>
+
+            <li className="flex gap-3 rounded-xl border border-amber-300/70 dark:border-amber-400/30 bg-amber-50 dark:bg-amber-500/10 p-3.5 ring-1 ring-amber-200/60 dark:ring-amber-400/10">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400 text-[13px] font-bold text-white shadow-sm">
+                2
+              </span>
+              <div className="pt-0.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-hidden="true">
+                    <path d="M12 9v4" />
+                    <path d="M12 17h.01" />
+                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+                  </svg>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                    Atenção
+                  </span>
+                </div>
+                <p className="text-sm leading-6 text-amber-900 dark:text-amber-100 font-medium">
+                  Confira a pasta de spam ou lixo eletrônico — às vezes ele se esconde por lá. Se encontrar, marque como "não é spam".
+                </p>
+              </div>
+            </li>
+
+            <li className="flex gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-white/[0.02] p-3.5">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-[13px] font-bold text-indigo-600 dark:text-indigo-300">
+                3
+              </span>
+              <p className="text-sm leading-6 text-slate-700 dark:text-slate-300 pt-0.5">
+                Clique em <strong>Ativar minha conta</strong> no e-mail do Finn.
+              </p>
+            </li>
+          </ol>
+
+          <div className="space-y-2.5">
+            <a
+              href={`mailto:${email}`}
+              className="flex items-center justify-center w-full h-12 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold text-[15px] shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all"
+            >
+              Abrir e-mail
+            </a>
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resendCooldown > 0}
+              className="flex items-center justify-center w-full h-12 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 font-semibold text-[15px] hover:bg-slate-50 dark:hover:bg-white/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {resendCooldown > 0 ? `Reenviar em ${resendCooldown}s` : 'Reenviar e-mail'}
+            </button>
+            {resendFeedback && (
+              <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-1">
+                {resendFeedback}
+              </p>
+            )}
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Bem-vindo ao Finn!</h1>
-        <p className="text-slate-500 dark:text-slate-400 mb-8">
-          Enviamos um link de confirmação para <strong>{email}</strong>.<br />
-          Verifique sua caixa de entrada para ativar sua conta.
+
+        <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+          Já confirmou seu e-mail?{' '}
+          <Link href="/login" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
+            Fazer login
+          </Link>
         </p>
-        <Link href="/login">
-          <Button variant="outline" className="rounded-xl">Ir para o login</Button>
-        </Link>
       </div>
     )
   }
