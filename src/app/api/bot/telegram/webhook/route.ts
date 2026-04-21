@@ -351,10 +351,11 @@ async function handleMessage(message: any) {
       orderBy: { createdAt: 'asc' },
     })
     const ctx = detectPaymentContext(text, accounts as any)
-    const paymentMethod = ctx.paymentMethod || 'DEBIT'
-    const resolvedAccount = resolveAccount(ctx.account as any, paymentMethod, accounts as any)
+    const paymentMethod = ctx.paymentMethod // may be null
+    const resolvedAccount = paymentMethod
+      ? resolveAccount(ctx.account as any, paymentMethod, accounts as any)
+      : null
 
-    // Store parsed data temporarily in bot message for confirmation
     const botMsg = await prisma.botMessage.create({
       data: {
         userId: connection.userId,
@@ -369,7 +370,7 @@ async function handleMessage(message: any) {
           recurring: parsed.recurring || null,
           categoryId: category?.categoryId || null,
           categoryName: category?.categoryName || null,
-          paymentMethod,
+          paymentMethod: paymentMethod || null,
           accountId: resolvedAccount?.id || null,
           accountName: resolvedAccount?.name || null,
         },
@@ -377,41 +378,12 @@ async function handleMessage(message: any) {
       },
     })
 
-    const recurringLine = parsed.recurring
-      ? `\n🔄 Recorrente: ${parsed.recurring.label}`
-      : ''
+    if (!paymentMethod) {
+      await askPaymentMethodTelegram(chatId, botMsg.id, parsed, category)
+      return
+    }
 
-    const categoryLine = category
-      ? `\n📂 Categoria: ${category.categoryName}`
-      : ''
-
-    const accountLabel = paymentMethod === 'CREDIT' ? '💳' : '🏦'
-    const accountLine = resolvedAccount ? `\n${accountLabel} ${resolvedAccount.name}` : ''
-    const methodLine = `\n💱 ${PAYMENT_METHOD_LABELS[paymentMethod]}`
-    const creditNote = paymentMethod === 'CREDIT' ? `\n<i>Saldo da conta não muda até você pagar a fatura.</i>` : ''
-
-    await sendMessage({
-      chatId,
-      text:
-        `${typeEmoji} <b>Confirme a transação:</b>\n\n` +
-        `${typeLabel}\n` +
-        `📝 ${parsed.description}\n` +
-        `💰 ${formattedAmount}\n` +
-        `📅 ${dateLabel}` +
-        categoryLine +
-        accountLine +
-        methodLine +
-        creditNote +
-        recurringLine,
-      replyMarkup: {
-        inline_keyboard: [
-          [
-            { text: '✅ Confirmar', callback_data: `confirm_tx:${botMsg.id}` },
-            { text: '❌ Cancelar', callback_data: `cancel_tx:${botMsg.id}` },
-          ],
-        ],
-      },
-    })
+    await sendTransactionPreviewTelegram(chatId, botMsg.id, parsed, category, paymentMethod, resolvedAccount)
   } catch (err) {
     console.error('Error parsing transaction:', err)
     await sendMessage({
@@ -475,7 +447,8 @@ async function handleCallbackQuery(callbackQuery: any) {
   const data = callbackQuery.data || ''
   const callbackId = callbackQuery.id
 
-  const [action, targetId] = data.split(':')
+  const [action, ...rest] = data.split(':')
+  const targetId = rest.length > 1 ? rest[rest.length - 1] : rest[0]
 
   const connection = await prisma.botConnection.findFirst({
     where: { platformUserId: chatId, platform: 'TELEGRAM', isVerified: true },
@@ -483,6 +456,14 @@ async function handleCallbackQuery(callbackQuery: any) {
 
   if (!connection) {
     await answerCallbackQuery(callbackId, 'Conta não conectada.')
+    return
+  }
+
+  // set_method:METHOD:botMsgId — user picked a payment method
+  if (action === 'set_method') {
+    const method = rest[0]
+    const botMsgId = rest[1]
+    await handleSetMethodTelegram(chatId, messageId, callbackId, connection, method, botMsgId)
     return
   }
 
@@ -718,8 +699,10 @@ async function handleVoiceMessage(
       orderBy: { createdAt: 'asc' },
     })
     const ctx = detectPaymentContext(transcription || '', accounts as any)
-    const paymentMethod = ctx.paymentMethod || 'DEBIT'
-    const resolvedAccount = resolveAccount(ctx.account as any, paymentMethod, accounts as any)
+    const paymentMethod = ctx.paymentMethod
+    const resolvedAccount = paymentMethod
+      ? resolveAccount(ctx.account as any, paymentMethod, accounts as any)
+      : null
 
     const botMsg = await prisma.botMessage.create({
       data: {
@@ -736,7 +719,7 @@ async function handleVoiceMessage(
           recurring: parsed.recurring || null,
           categoryId: category?.categoryId || null,
           categoryName: category?.categoryName || null,
-          paymentMethod,
+          paymentMethod: paymentMethod || null,
           accountId: resolvedAccount?.id || null,
           accountName: resolvedAccount?.name || null,
         },
@@ -744,41 +727,12 @@ async function handleVoiceMessage(
       },
     })
 
-    const recurringLine = parsed.recurring
-      ? `\n🔄 Recorrente: ${parsed.recurring.label}`
-      : ''
+    if (!paymentMethod) {
+      await askPaymentMethodTelegram(chatId, botMsg.id, parsed, category)
+      return
+    }
 
-    const categoryLine = category
-      ? `\n📂 Categoria: ${category.categoryName}`
-      : ''
-
-    const accountLabel = paymentMethod === 'CREDIT' ? '💳' : '🏦'
-    const accountLine = resolvedAccount ? `\n${accountLabel} ${resolvedAccount.name}` : ''
-    const methodLine = `\n💱 ${PAYMENT_METHOD_LABELS[paymentMethod]}`
-    const creditNote = paymentMethod === 'CREDIT' ? `\n<i>Saldo da conta não muda até você pagar a fatura.</i>` : ''
-
-    await sendMessage({
-      chatId,
-      text:
-        `${typeEmoji} <b>Confirme a transação:</b>\n\n` +
-        `${typeLabel}\n` +
-        `📝 ${parsed.description}\n` +
-        `💰 ${formattedAmount}\n` +
-        `📅 ${dateLabel}` +
-        categoryLine +
-        accountLine +
-        methodLine +
-        creditNote +
-        recurringLine,
-      replyMarkup: {
-        inline_keyboard: [
-          [
-            { text: '✅ Confirmar', callback_data: `confirm_tx:${botMsg.id}` },
-            { text: '❌ Cancelar', callback_data: `cancel_tx:${botMsg.id}` },
-          ],
-        ],
-      },
-    })
+    await sendTransactionPreviewTelegram(chatId, botMsg.id, parsed, category, paymentMethod, resolvedAccount)
   } catch (err) {
     console.error('Save/confirm error:', err)
     await sendMessage({
@@ -927,6 +881,144 @@ async function handleReceiptPhoto(
       text: '📸 Não foi possível analisar o cupom neste momento. Tente novamente mais tarde ou registre manualmente por texto.',
     })
   }
+}
+
+async function askPaymentMethodTelegram(
+  chatId: string,
+  botMsgId: string,
+  parsed: { amount: number; description: string },
+  category: { categoryName: string } | null,
+) {
+  const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed.amount)
+  const header = `📝 ${parsed.description}${category ? ` · ${category.categoryName}` : ''}\n💰 <b>${formattedAmount}</b>`
+
+  await sendMessage({
+    chatId,
+    text: `${header}\n\n<b>Como você pagou?</b>`,
+    replyMarkup: {
+      inline_keyboard: [
+        [
+          { text: '💸 PIX', callback_data: `set_method:PIX:${botMsgId}` },
+          { text: '🏧 Débito', callback_data: `set_method:DEBIT:${botMsgId}` },
+        ],
+        [
+          { text: '💳 Crédito', callback_data: `set_method:CREDIT:${botMsgId}` },
+          { text: '💵 Dinheiro', callback_data: `set_method:CASH:${botMsgId}` },
+        ],
+        [
+          { text: '📄 Boleto', callback_data: `set_method:BOLETO:${botMsgId}` },
+          { text: '🔁 Transferência', callback_data: `set_method:TRANSFER:${botMsgId}` },
+        ],
+        [
+          { text: '❌ Cancelar', callback_data: `cancel_tx:${botMsgId}` },
+        ],
+      ],
+    },
+  })
+}
+
+async function sendTransactionPreviewTelegram(
+  chatId: string,
+  botMsgId: string,
+  parsed: { type: string; amount: number; description: string; date?: string | null; recurring?: { label: string } | null },
+  category: { categoryName: string } | null,
+  paymentMethod: 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER',
+  resolvedAccount: { name: string } | null,
+) {
+  const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed.amount)
+  const typeLabel = parsed.type === 'INCOME' ? '📥 Receita' : '📤 Despesa'
+  const typeEmoji = parsed.type === 'INCOME' ? '🟢' : '🔴'
+  const dateLabel = parsed.date
+    ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(parsed.date))
+    : 'Hoje'
+  const accountLabel = paymentMethod === 'CREDIT' ? '💳' : '🏦'
+  const accountLine = resolvedAccount ? `\n${accountLabel} ${resolvedAccount.name}` : ''
+  const methodLine = `\n💱 ${PAYMENT_METHOD_LABELS[paymentMethod]}`
+  const creditNote = paymentMethod === 'CREDIT' ? `\n<i>Saldo da conta não muda até você pagar a fatura.</i>` : ''
+  const categoryLine = category ? `\n📂 Categoria: ${category.categoryName}` : ''
+  const recurringLine = parsed.recurring ? `\n🔄 Recorrente: ${parsed.recurring.label}` : ''
+
+  await sendMessage({
+    chatId,
+    text:
+      `${typeEmoji} <b>Confirme a transação:</b>\n\n` +
+      `${typeLabel}\n` +
+      `📝 ${parsed.description}\n` +
+      `💰 ${formattedAmount}\n` +
+      `📅 ${dateLabel}` +
+      categoryLine +
+      accountLine +
+      methodLine +
+      creditNote +
+      recurringLine,
+    replyMarkup: {
+      inline_keyboard: [
+        [
+          { text: '✅ Confirmar', callback_data: `confirm_tx:${botMsgId}` },
+          { text: '❌ Cancelar', callback_data: `cancel_tx:${botMsgId}` },
+        ],
+      ],
+    },
+  })
+}
+
+async function handleSetMethodTelegram(
+  chatId: string,
+  messageId: number,
+  callbackId: string,
+  connection: { userId: string; id: string },
+  method: string,
+  botMsgId: string,
+) {
+  const botMsg = await prisma.botMessage.findFirst({
+    where: { id: botMsgId, userId: connection.userId, status: 'PARSED' },
+  })
+  if (!botMsg || !botMsg.parsedData) {
+    await answerCallbackQuery(callbackId, 'Transação expirada.')
+    return
+  }
+
+  const parsed = botMsg.parsedData as any
+  const pm = method as 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER'
+
+  const accounts = await prisma.account.findMany({
+    where: { userId: connection.userId, isActive: true },
+    orderBy: { createdAt: 'asc' },
+  })
+  const resolvedAccount = resolveAccount(null, pm, accounts as any)
+
+  if (pm === 'CREDIT' && !resolvedAccount) {
+    await answerCallbackQuery(callbackId, 'Cadastre um cartão de crédito no app.')
+    await editMessageText({
+      chatId,
+      messageId,
+      text: '⚠️ Você ainda não cadastrou um cartão de crédito. Adicione um em <b>Contas</b> no app e mande a transação novamente.',
+    })
+    return
+  }
+
+  // Persist the chosen method + account so confirmation uses them
+  await prisma.botMessage.update({
+    where: { id: botMsgId },
+    data: {
+      parsedData: {
+        ...parsed,
+        paymentMethod: pm,
+        accountId: resolvedAccount?.id || null,
+        accountName: resolvedAccount?.name || null,
+      },
+    },
+  })
+
+  await answerCallbackQuery(callbackId, 'Método escolhido')
+  await sendTransactionPreviewTelegram(
+    chatId,
+    botMsgId,
+    { type: parsed.type, amount: parsed.amount, description: parsed.description, date: parsed.date, recurring: parsed.recurring },
+    parsed.categoryName ? { categoryName: parsed.categoryName } : null,
+    pm,
+    resolvedAccount,
+  )
 }
 
 async function handleConfirmTransaction(

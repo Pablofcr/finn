@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
-import { sendWhatsAppMessage, sendWhatsAppInteractive, downloadWhatsAppMedia, markAsRead } from '@/lib/whatsapp'
+import { sendWhatsAppMessage, sendWhatsAppInteractive, sendWhatsAppList, downloadWhatsAppMedia, markAsRead } from '@/lib/whatsapp'
 import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
 import { transcribeAudio } from '@/lib/transcribe-audio'
 import { canUseFeature, getFeatureUsage } from '@/lib/plan-limits'
@@ -88,11 +88,11 @@ export async function POST(request: NextRequest) {
       await handleImageMessage(from, message, connection)
     }
 
-    // Handle button replies
+    // Handle button replies (3-button interactive) and list replies (menu)
     if (message.type === 'interactive' && connection) {
-      const buttonId = message.interactive?.button_reply?.id
-      if (buttonId) {
-        await handleButtonReply(from, buttonId, connection)
+      const replyId = message.interactive?.button_reply?.id || message.interactive?.list_reply?.id
+      if (replyId) {
+        await handleButtonReply(from, replyId, connection)
       }
     }
   } catch (err) {
@@ -292,9 +292,6 @@ async function handleTextMessage(from: string, text: string, connection: { userI
     return
   }
 
-  const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed.amount)
-  const typeLabel = parsed.type === 'INCOME' ? '📥 Receita' : '📤 Despesa'
-  const dateLabel = parsed.date ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(parsed.date)) : 'Hoje'
   const category = await findCategoryForDescription(connection.userId, parsed.description, text)
 
   // Load accounts + detect payment method and account/card from the message
@@ -303,8 +300,10 @@ async function handleTextMessage(from: string, text: string, connection: { userI
     orderBy: { createdAt: 'asc' },
   })
   const ctx = detectPaymentContext(text, accounts as any)
-  const paymentMethod = ctx.paymentMethod || 'DEBIT'
-  const resolvedAccount = resolveAccount(ctx.account as any, paymentMethod, accounts as any)
+  const paymentMethod = ctx.paymentMethod // may be null
+  const resolvedAccount = paymentMethod
+    ? resolveAccount(ctx.account as any, paymentMethod, accounts as any)
+    : null
 
   const botMsg = await prisma.botMessage.create({
     data: {
@@ -318,7 +317,7 @@ async function handleTextMessage(from: string, text: string, connection: { userI
         recurring: parsed.recurring || null,
         categoryId: category?.categoryId || null,
         categoryName: category?.categoryName || null,
-        paymentMethod,
+        paymentMethod: paymentMethod || null,
         accountId: resolvedAccount?.id || null,
         accountName: resolvedAccount?.name || null,
       },
@@ -326,7 +325,54 @@ async function handleTextMessage(from: string, text: string, connection: { userI
     },
   })
 
+  if (!paymentMethod) {
+    await askPaymentMethodWhatsApp(from, botMsg.id, parsed, category)
+    return
+  }
+
+  await sendTransactionPreviewWhatsApp(from, botMsg.id, parsed, category, paymentMethod, resolvedAccount)
+}
+
+// Ask the user how they paid when we couldn't detect it from the message.
+async function askPaymentMethodWhatsApp(
+  to: string,
+  botMsgId: string,
+  parsed: { amount: number; description: string },
+  category: { categoryName: string } | null,
+) {
+  const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed.amount)
+  const header = `📝 ${parsed.description}${category ? ` · ${category.categoryName}` : ''}\n💰 ${formattedAmount}`
+
+  await sendWhatsAppList({
+    to,
+    body: `${header}\n\n*Como você pagou?*`,
+    buttonLabel: 'Escolher',
+    sectionTitle: 'Forma de pagamento',
+    rows: [
+      { id: `set_method:PIX:${botMsgId}`, title: '💸 PIX' },
+      { id: `set_method:DEBIT:${botMsgId}`, title: '🏧 Débito' },
+      { id: `set_method:CREDIT:${botMsgId}`, title: '💳 Crédito' },
+      { id: `set_method:CASH:${botMsgId}`, title: '💵 Dinheiro' },
+      { id: `set_method:BOLETO:${botMsgId}`, title: '📄 Boleto' },
+      { id: `set_method:TRANSFER:${botMsgId}`, title: '🔁 Transferência' },
+      { id: `cancel_tx:${botMsgId}`, title: '❌ Cancelar' },
+    ],
+  })
+}
+
+async function sendTransactionPreviewWhatsApp(
+  to: string,
+  botMsgId: string,
+  parsed: { type: string; amount: number; description: string; date?: string | null; recurring?: { label: string } | null },
+  category: { categoryName: string } | null,
+  paymentMethod: 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER',
+  resolvedAccount: { name: string } | null,
+) {
+  const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed.amount)
+  const typeLabel = parsed.type === 'INCOME' ? '📥 Receita' : '📤 Despesa'
+  const dateLabel = parsed.date ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(parsed.date)) : 'Hoje'
   const accountLabel = paymentMethod === 'CREDIT' ? '💳' : '🏦'
+
   const lines = [
     `${typeLabel}`,
     `📝 ${parsed.description}`,
@@ -340,11 +386,11 @@ async function handleTextMessage(from: string, text: string, connection: { userI
   if (parsed.recurring) lines.push(`🔄 ${parsed.recurring.label}`)
 
   await sendWhatsAppInteractive({
-    to: from,
+    to,
     body: `*Confirme a transação:*\n\n${lines.join('\n')}`,
     buttons: [
-      { id: `confirm_tx:${botMsg.id}`, title: '✅ Confirmar' },
-      { id: `cancel_tx:${botMsg.id}`, title: '❌ Cancelar' },
+      { id: `confirm_tx:${botMsgId}`, title: '✅ Confirmar' },
+      { id: `cancel_tx:${botMsgId}`, title: '❌ Cancelar' },
     ],
   })
 }
@@ -471,8 +517,60 @@ async function handleImageMessage(from: string, message: any, connection: { user
 }
 
 async function handleButtonReply(from: string, buttonId: string, connection: { userId: string; id: string }) {
-  const [action, targetId] = buttonId.split(':')
+  const [action, ...rest] = buttonId.split(':')
 
+  // `set_method:METHOD:botMsgId` — user picked a payment method in the list
+  if (action === 'set_method') {
+    const [method, botMsgId] = rest
+    const botMsg = await prisma.botMessage.findFirst({
+      where: { id: botMsgId, userId: connection.userId, status: 'PARSED' },
+    })
+    if (!botMsg || !botMsg.parsedData) {
+      await sendWhatsAppMessage({ to: from, text: '⚠️ Transação expirada. Mande de novo.' })
+      return
+    }
+
+    const parsed = botMsg.parsedData as any
+    const accounts = await prisma.account.findMany({
+      where: { userId: connection.userId, isActive: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    const pm = method as 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER'
+    const resolvedAccount = resolveAccount(null, pm, accounts as any)
+
+    if (pm === 'CREDIT' && !resolvedAccount) {
+      await sendWhatsAppMessage({
+        to: from,
+        text: '⚠️ Você ainda não cadastrou um cartão de crédito. Adicione um em Contas no app e mande a transação novamente.',
+      })
+      return
+    }
+
+    // Persist the chosen method + account so confirmation uses them
+    await prisma.botMessage.update({
+      where: { id: botMsgId },
+      data: {
+        parsedData: {
+          ...parsed,
+          paymentMethod: pm,
+          accountId: resolvedAccount?.id || null,
+          accountName: resolvedAccount?.name || null,
+        },
+      },
+    })
+
+    await sendTransactionPreviewWhatsApp(
+      from,
+      botMsgId,
+      { type: parsed.type, amount: parsed.amount, description: parsed.description, date: parsed.date, recurring: parsed.recurring },
+      parsed.categoryName ? { categoryName: parsed.categoryName } : null,
+      pm,
+      resolvedAccount,
+    )
+    return
+  }
+
+  const targetId = rest.join(':')
   if (action === 'confirm_tx') {
     const botMsg = await prisma.botMessage.findFirst({ where: { id: targetId, userId: connection.userId, status: 'PARSED' } })
     if (!botMsg || !botMsg.parsedData) {

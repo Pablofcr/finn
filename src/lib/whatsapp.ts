@@ -24,6 +24,14 @@ interface SendInteractiveOptions {
   buttons: { id: string; title: string }[]
 }
 
+interface SendListOptions {
+  to: string
+  body: string
+  buttonLabel: string
+  sectionTitle: string
+  rows: { id: string; title: string; description?: string }[]
+}
+
 async function whatsappFetch(endpoint: string, body: Record<string, unknown>) {
   const url = `${WHATSAPP_API}${endpoint}`
   console.log('WhatsApp API call:', url, 'token exists:', !!WHATSAPP_TOKEN, 'token length:', WHATSAPP_TOKEN?.length)
@@ -101,6 +109,31 @@ export async function sendWhatsAppPaymentAlert({
       { id: `paid:${recurringId}`, title: '✅ Paguei' },
       { id: `snooze:${recurringId}`, title: '⏰ Lembrar amanhã' },
     ],
+  })
+}
+
+export async function sendWhatsAppList({ to, body, buttonLabel, sectionTitle, rows }: SendListOptions) {
+  return whatsappFetch('/messages', {
+    messaging_product: 'whatsapp',
+    to: normalizeRecipient(to),
+    type: 'interactive',
+    interactive: {
+      type: 'list',
+      body: { text: body },
+      action: {
+        button: buttonLabel,
+        sections: [
+          {
+            title: sectionTitle,
+            rows: rows.map(r => ({
+              id: r.id,
+              title: r.title,
+              ...(r.description ? { description: r.description } : {}),
+            })),
+          },
+        ],
+      },
+    },
   })
 }
 
