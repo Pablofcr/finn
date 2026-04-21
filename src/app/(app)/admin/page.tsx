@@ -10,6 +10,7 @@ import { isAdmin } from '@/lib/admin'
 import {
   Users, Crown, TrendingUp, ArrowLeftRight, Wallet,
   DollarSign, UserPlus, MessageCircle, ShieldAlert,
+  Clock, CheckCircle2, XCircle, PlayCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -36,12 +37,28 @@ interface Stats {
   monthlyRevenue: number
 }
 
+interface CronRun {
+  id: string
+  jobName: string
+  startedAt: string
+  finishedAt: string
+  durationMs: number
+  status: string
+  checked: number
+  sent: number
+  skipped: number
+  failed: number
+  errorMsg: string | null
+}
+
 export default function AdminPage() {
   const { user: authUser } = useAuth()
   const [stats, setStats] = useState<Stats | null>(null)
   const [users, setUsers] = useState<UserData[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [cronRuns, setCronRuns] = useState<CronRun[]>([])
+  const [triggeringCron, setTriggeringCron] = useState(false)
 
   const userEmail = authUser?.email
   const authorized = isAdmin(userEmail)
@@ -59,10 +76,42 @@ export default function AdminPage() {
     setLoading(false)
   }, [])
 
+  const fetchCronRuns = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/cron-runs')
+      if (res.ok) {
+        const result = await res.json()
+        setCronRuns(result.data || [])
+      }
+    } catch { /* ignore */ }
+  }, [])
+
   useEffect(() => {
-    if (authorized) fetchData()
-    else setLoading(false)
-  }, [authorized, fetchData])
+    if (authorized) {
+      fetchData()
+      fetchCronRuns()
+    } else {
+      setLoading(false)
+    }
+  }, [authorized, fetchData, fetchCronRuns])
+
+  async function triggerCron() {
+    setTriggeringCron(true)
+    try {
+      const res = await fetch('/api/admin/cron-runs/trigger', { method: 'POST' })
+      if (res.ok) {
+        const result = await res.json()
+        const { alertsSent, alertsSkipped, checked } = result.data
+        toast.success(`Cron executado: ${alertsSent} enviados, ${alertsSkipped} pulados, ${checked} verificados.`)
+        fetchCronRuns()
+      } else {
+        toast.error('Falha ao disparar o cron.')
+      }
+    } catch {
+      toast.error('Falha ao disparar o cron.')
+    }
+    setTriggeringCron(false)
+  }
 
   async function handleChangePlan(userId: string, newPlan: string) {
     setUpdating(userId)
@@ -140,6 +189,75 @@ export default function AdminPage() {
           ))}
         </div>
       )}
+
+      {/* Cron Runs */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Execuções do cron (últimos 50)
+          </CardTitle>
+          <Button
+            size="sm"
+            onClick={triggerCron}
+            disabled={triggeringCron}
+            className="gap-2"
+          >
+            <PlayCircle className="h-4 w-4" />
+            {triggeringCron ? 'Executando...' : 'Disparar agora'}
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          {cronRuns.length === 0 ? (
+            <p className="text-sm text-muted-foreground px-4 py-6 text-center">
+              Nenhuma execução registrada ainda. O cron roda diariamente às 06:00 BRT. Use &quot;Disparar agora&quot; pra testar.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Job</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Quando</th>
+                    <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Status</th>
+                    <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Enviados</th>
+                    <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Pulados</th>
+                    <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Falhas</th>
+                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Duração</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cronRuns.map((run) => (
+                    <tr key={run.id} className="border-b last:border-0 hover:bg-muted/20">
+                      <td className="px-4 py-2.5 font-mono text-xs">{run.jobName}</td>
+                      <td className="px-4 py-2.5 text-xs">
+                        {new Date(run.startedAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        {run.status === 'success' ? (
+                          <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-300 dark:text-emerald-400">
+                            <CheckCircle2 className="h-3 w-3" /> ok
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1 text-rose-600 border-rose-300 dark:text-rose-400">
+                            <XCircle className="h-3 w-3" /> erro
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-center">{run.sent}</td>
+                      <td className="px-4 py-2.5 text-center text-muted-foreground">{run.skipped}</td>
+                      <td className={`px-4 py-2.5 text-center ${run.failed > 0 ? 'text-rose-600 font-semibold' : 'text-muted-foreground'}`}>
+                        {run.failed}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-xs text-muted-foreground">{run.durationMs}ms</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Users Table */}
       <Card>

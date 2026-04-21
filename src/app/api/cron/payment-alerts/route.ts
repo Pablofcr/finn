@@ -10,7 +10,12 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const now = new Date()
+  return runPaymentAlerts()
+}
+
+export async function runPaymentAlerts() {
+  const startedAt = new Date()
+  const now = startedAt
   console.log('[payment-alerts] Cron started at', now.toISOString())
 
   const threeDaysFromNow = new Date(now)
@@ -98,7 +103,30 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const finishedAt = new Date()
   console.log('[payment-alerts] Done:', { sent: alertsSent, skipped: alertsSkipped, failed: failures.length })
+
+  try {
+    await prisma.cronRun.create({
+      data: {
+        jobName: 'payment-alerts',
+        startedAt,
+        finishedAt,
+        durationMs: finishedAt.getTime() - startedAt.getTime(),
+        status: failures.length > 0 ? 'error' : 'success',
+        checked: upcomingPayments.length,
+        sent: alertsSent,
+        skipped: alertsSkipped,
+        failed: failures.length,
+        result: {
+          failures,
+        },
+        errorMsg: failures.length > 0 ? failures.map(f => `${f.id}: ${f.reason}`).join('; ') : null,
+      },
+    })
+  } catch (persistErr) {
+    console.error('[payment-alerts] Failed to persist CronRun:', persistErr)
+  }
 
   return Response.json({
     data: {

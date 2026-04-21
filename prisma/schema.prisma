@@ -347,6 +347,24 @@ model Insight {
   @@index([userId, isRead])
 }
 
+model CronRun {
+  id          String   @id @default(uuid())
+  jobName     String
+  startedAt   DateTime
+  finishedAt  DateTime
+  durationMs  Int
+  status      String   // "success" | "error"
+  checked     Int      @default(0)
+  sent        Int      @default(0)
+  skipped     Int      @default(0)
+  failed      Int      @default(0)
+  result      Json?
+  errorMsg    String?
+  createdAt   DateTime @default(now())
+
+  @@index([jobName, startedAt])
+}
+
 model NotificationSetting {
   id                 String  @id @default(uuid())
   userId             String  @unique
