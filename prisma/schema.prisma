@@ -74,6 +74,15 @@ enum Currency {
   GBP
 }
 
+enum PaymentMethod {
+  PIX
+  DEBIT
+  CREDIT
+  CASH
+  BOLETO
+  TRANSFER
+}
+
 enum UserPlan {
   FREE
   PRO
@@ -114,25 +123,30 @@ model User {
 }
 
 model Account {
-  id          String      @id @default(uuid())
-  userId      String
-  name        String
-  type        AccountType
-  balance     Decimal     @default(0) @db.Decimal(15, 2)
-  color       String      @default("#6366f1")
-  icon        String      @default("wallet")
-  isActive    Boolean     @default(true)
-  creditLimit Decimal?    @db.Decimal(15, 2)
-  closingDay  Int?
-  dueDay      Int?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id              String      @id @default(uuid())
+  userId          String
+  name            String
+  type            AccountType
+  balance         Decimal     @default(0) @db.Decimal(15, 2)
+  color           String      @default("#6366f1")
+  icon            String      @default("wallet")
+  isActive        Boolean     @default(true)
+  isDefault       Boolean     @default(false)
+  creditLimit     Decimal?    @db.Decimal(15, 2)
+  closingDay      Int?
+  dueDay          Int?
+  linkedAccountId String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions          Transaction[]
   recurringTransactions RecurringTransaction[]
+  linkedAccount         Account?               @relation("CreditCardLink", fields: [linkedAccountId], references: [id], onDelete: SetNull)
+  linkedCards           Account[]              @relation("CreditCardLink")
 
   @@index([userId])
+  @@index([userId, isDefault])
 }
 
 model Category {
@@ -179,6 +193,7 @@ model Transaction {
   accountId              String
   categoryId             String?
   toAccountId            String?
+  paymentMethod          PaymentMethod   @default(DEBIT)
   location               String?
   notes                  String?
   tags                   String[]

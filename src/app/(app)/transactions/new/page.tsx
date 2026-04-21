@@ -16,7 +16,7 @@ import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { RECURRENCE_LABELS } from '@/lib/constants'
+import { RECURRENCE_LABELS, PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
 function formatCurrencyInput(cents: number): string {
   const value = (cents / 100).toFixed(2)
@@ -60,6 +60,7 @@ export default function NewTransactionPage() {
       type: 'EXPENSE',
       date: new Date().toISOString().split('T')[0],
       amount: 0,
+      paymentMethod: 'DEBIT',
     },
   })
 
@@ -72,6 +73,7 @@ export default function NewTransactionPage() {
   const type = watch('type')
   const accountId = watch('accountId')
   const categoryId = watch('categoryId')
+  const paymentMethod = watch('paymentMethod')
 
   function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value.replace(/\D/g, '')
@@ -118,10 +120,20 @@ export default function NewTransactionPage() {
       fetch('/api/accounts').then(r => r.json()),
       fetch('/api/categories').then(r => r.json()),
     ]).then(([accRes, catRes]) => {
-      setAccounts(accRes.data || [])
+      const fetchedAccounts = accRes.data || []
+      setAccounts(fetchedAccounts)
       setCategories(catRes.data || [])
+
+      // Pre-select default account if creating new (not editing)
+      if (!editId) {
+        const defaultAccount = fetchedAccounts.find((a: any) => a.isDefault && a.type !== 'CREDIT_CARD')
+          || fetchedAccounts.find((a: any) => a.type !== 'CREDIT_CARD')
+        if (defaultAccount) {
+          setValue('accountId', defaultAccount.id)
+        }
+      }
     })
-  }, [])
+  }, [editId, setValue])
 
   useEffect(() => {
     if (editId) {
@@ -139,6 +151,7 @@ export default function NewTransactionPage() {
               date: new Date(t.date).toISOString().split('T')[0],
               accountId: t.accountId,
               categoryId: t.categoryId || undefined,
+              paymentMethod: t.paymentMethod || 'DEBIT',
               location: t.location || undefined,
               notes: t.notes || undefined,
             })
@@ -294,21 +307,77 @@ export default function NewTransactionPage() {
               {errors.date && <p className="text-xs text-destructive">{errors.date.message}</p>}
             </div>
 
+            {type !== 'TRANSFER' && (
+              <div className="space-y-2">
+                <Label>Forma de pagamento</Label>
+                <Select
+                  onValueChange={(v) => {
+                    if (!v) return
+                    setValue('paymentMethod', v as any, { shouldValidate: true })
+                    // When switching to/from CREDIT, reset the selected account since
+                    // CREDIT requires a credit-card-type account and others don't.
+                    const current = accounts.find(a => a.id === accountId)
+                    if (v === 'CREDIT' && current?.type !== 'CREDIT_CARD') {
+                      const firstCard = accounts.find(a => a.type === 'CREDIT_CARD')
+                      setValue('accountId', firstCard?.id || '', { shouldValidate: true })
+                    } else if (v !== 'CREDIT' && current?.type === 'CREDIT_CARD') {
+                      const defaultAcc = accounts.find(a => a.isDefault && a.type !== 'CREDIT_CARD')
+                        || accounts.find(a => a.type !== 'CREDIT_CARD')
+                      setValue('accountId', defaultAcc?.id || '', { shouldValidate: true })
+                    }
+                  }}
+                  value={paymentMethod}
+                >
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <span className="flex flex-1 text-left truncate">
+                      {PAYMENT_METHOD_LABELS[paymentMethod || 'DEBIT']}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PAYMENT_METHOD_LABELS)
+                      .filter(([key]) => key !== 'TRANSFER')
+                      .map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {paymentMethod === 'CREDIT' && (
+                  <p className="text-xs text-muted-foreground">
+                    Valor vai pra fatura do cartão — saldo da conta bancária só muda quando você pagar.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label>Conta</Label>
+              <Label>{paymentMethod === 'CREDIT' ? 'Cartão' : 'Conta'}</Label>
               <Select onValueChange={(v) => v && setValue('accountId', v, { shouldValidate: true })} value={accountId}>
                 <SelectTrigger className="h-11 rounded-xl">
                   <span className="flex flex-1 text-left truncate">
-                    {selectedAccountName || <span className="text-muted-foreground">Selecione a conta</span>}
+                    {selectedAccountName || <span className="text-muted-foreground">
+                      {paymentMethod === 'CREDIT' ? 'Selecione o cartão' : 'Selecione a conta'}
+                    </span>}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.map((a: any) => (
-                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  {(type === 'TRANSFER'
+                    ? accounts
+                    : paymentMethod === 'CREDIT'
+                      ? accounts.filter((a: any) => a.type === 'CREDIT_CARD')
+                      : accounts.filter((a: any) => a.type !== 'CREDIT_CARD')
+                  ).map((a: any) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}{a.isDefault ? ' ★' : ''}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {errors.accountId && <p className="text-xs text-destructive">{errors.accountId.message}</p>}
+              {paymentMethod === 'CREDIT' && accounts.filter((a: any) => a.type === 'CREDIT_CARD').length === 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Você ainda não cadastrou cartão de crédito. Adicione um em Contas para usar essa opção.
+                </p>
+              )}
             </div>
 
             {type === 'TRANSFER' && (

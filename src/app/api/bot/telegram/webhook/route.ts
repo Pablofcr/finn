@@ -4,6 +4,9 @@ import { sendMessage, answerCallbackQuery, editMessageText, downloadFileAsBase64
 import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
 import { transcribeAudio } from '@/lib/transcribe-audio'
 import { canUseFeature, getFeatureUsage } from '@/lib/plan-limits'
+import { detectPaymentContext, resolveAccount } from '@/lib/detect-payment-context'
+import { applyTransactionBalance } from '@/lib/transaction-balance'
+import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
 export const maxDuration = 60
 
@@ -342,6 +345,15 @@ async function handleMessage(message: any) {
     // Auto-categorize (use original text for better keyword matching)
     const category = await findCategoryForDescription(connection.userId, parsed.description, text)
 
+    // Detect payment method and account/card mentioned in the message
+    const accounts = await prisma.account.findMany({
+      where: { userId: connection.userId, isActive: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    const ctx = detectPaymentContext(text, accounts as any)
+    const paymentMethod = ctx.paymentMethod || 'DEBIT'
+    const resolvedAccount = resolveAccount(ctx.account as any, paymentMethod, accounts as any)
+
     // Store parsed data temporarily in bot message for confirmation
     const botMsg = await prisma.botMessage.create({
       data: {
@@ -357,6 +369,9 @@ async function handleMessage(message: any) {
           recurring: parsed.recurring || null,
           categoryId: category?.categoryId || null,
           categoryName: category?.categoryName || null,
+          paymentMethod,
+          accountId: resolvedAccount?.id || null,
+          accountName: resolvedAccount?.name || null,
         },
         status: 'PARSED',
       },
@@ -370,6 +385,11 @@ async function handleMessage(message: any) {
       ? `\n📂 Categoria: ${category.categoryName}`
       : ''
 
+    const accountLabel = paymentMethod === 'CREDIT' ? '💳' : '🏦'
+    const accountLine = resolvedAccount ? `\n${accountLabel} ${resolvedAccount.name}` : ''
+    const methodLine = `\n💱 ${PAYMENT_METHOD_LABELS[paymentMethod]}`
+    const creditNote = paymentMethod === 'CREDIT' ? `\n<i>Saldo da conta não muda até você pagar a fatura.</i>` : ''
+
     await sendMessage({
       chatId,
       text:
@@ -379,6 +399,9 @@ async function handleMessage(message: any) {
         `💰 ${formattedAmount}\n` +
         `📅 ${dateLabel}` +
         categoryLine +
+        accountLine +
+        methodLine +
+        creditNote +
         recurringLine,
       replyMarkup: {
         inline_keyboard: [
@@ -496,45 +519,45 @@ async function handleCallbackQuery(callbackQuery: any) {
   }
 
   if (action === 'paid') {
-    // accountId is required — if recurring has no account, use user's first account
+    // accountId is required — if recurring has no account, use user's default/first account
     let accountId = recurring.accountId
     if (!accountId) {
-      const defaultAccount = await prisma.account.findFirst({
-        where: { userId: connection.userId },
+      const accounts = await prisma.account.findMany({
+        where: { userId: connection.userId, isActive: true },
         orderBy: { createdAt: 'asc' },
       })
-      if (!defaultAccount) {
+      const resolved = resolveAccount(null, 'DEBIT', accounts as any)
+      if (!resolved) {
         await answerCallbackQuery(callbackId, 'Nenhuma conta encontrada. Crie uma conta no app.')
         return
       }
-      accountId = defaultAccount.id
+      accountId = resolved.id
     }
 
-    // Create the actual transaction
-    const transaction = await prisma.transaction.create({
-      data: {
-        userId: connection.userId,
-        description: recurring.description,
-        amount: recurring.amount,
-        type: recurring.type,
-        date: recurring.nextDueDate,
-        accountId,
-        categoryId: recurring.categoryId ?? undefined,
-        recurringTransactionId: recurring.id,
-      },
-    })
-
-    // Update account balance if date is not in the future
-    if (recurring.nextDueDate <= new Date()) {
-      const balanceChange = recurring.type === 'INCOME'
-        ? Number(recurring.amount)
-        : -Number(recurring.amount)
-
-      await prisma.account.update({
-        where: { id: accountId },
-        data: { balance: { increment: balanceChange } },
+    // Create the actual transaction + apply balance atomically
+    const transaction = await prisma.$transaction(async (db) => {
+      const created = await db.transaction.create({
+        data: {
+          userId: connection.userId,
+          description: recurring.description,
+          amount: recurring.amount,
+          type: recurring.type,
+          date: recurring.nextDueDate,
+          accountId: accountId!,
+          categoryId: recurring.categoryId ?? undefined,
+          recurringTransactionId: recurring.id,
+          paymentMethod: 'DEBIT',
+        },
       })
-    }
+      await applyTransactionBalance(db, {
+        type: recurring.type,
+        amount: Number(recurring.amount),
+        accountId: accountId!,
+        paymentMethod: 'DEBIT',
+        date: recurring.nextDueDate,
+      })
+      return created
+    })
 
     // Advance nextDueDate
     const nextDate = calculateNextDueDate(recurring.nextDueDate, recurring.frequency)
@@ -689,6 +712,15 @@ async function handleVoiceMessage(
     // Auto-categorize (use original transcription for better keyword matching)
     const category = await findCategoryForDescription(connection.userId, parsed.description, transcription || undefined)
 
+    // Detect payment method and account/card from transcription
+    const accounts = await prisma.account.findMany({
+      where: { userId: connection.userId, isActive: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    const ctx = detectPaymentContext(transcription || '', accounts as any)
+    const paymentMethod = ctx.paymentMethod || 'DEBIT'
+    const resolvedAccount = resolveAccount(ctx.account as any, paymentMethod, accounts as any)
+
     const botMsg = await prisma.botMessage.create({
       data: {
         userId: connection.userId,
@@ -704,6 +736,9 @@ async function handleVoiceMessage(
           recurring: parsed.recurring || null,
           categoryId: category?.categoryId || null,
           categoryName: category?.categoryName || null,
+          paymentMethod,
+          accountId: resolvedAccount?.id || null,
+          accountName: resolvedAccount?.name || null,
         },
         status: 'PARSED',
       },
@@ -717,6 +752,11 @@ async function handleVoiceMessage(
       ? `\n📂 Categoria: ${category.categoryName}`
       : ''
 
+    const accountLabel = paymentMethod === 'CREDIT' ? '💳' : '🏦'
+    const accountLine = resolvedAccount ? `\n${accountLabel} ${resolvedAccount.name}` : ''
+    const methodLine = `\n💱 ${PAYMENT_METHOD_LABELS[paymentMethod]}`
+    const creditNote = paymentMethod === 'CREDIT' ? `\n<i>Saldo da conta não muda até você pagar a fatura.</i>` : ''
+
     await sendMessage({
       chatId,
       text:
@@ -726,6 +766,9 @@ async function handleVoiceMessage(
         `💰 ${formattedAmount}\n` +
         `📅 ${dateLabel}` +
         categoryLine +
+        accountLine +
+        methodLine +
+        creditNote +
         recurringLine,
       replyMarkup: {
         inline_keyboard: [
@@ -817,6 +860,15 @@ async function handleReceiptPhoto(
     const itemsText = parsed.items.join(' ')
     const category = await findCategoryForDescription(connection.userId, parsed.description, itemsText)
 
+    // Receipt photos don't tell us the payment method — default to DEBIT and
+    // use the user's default account. User can edit in the web app if needed.
+    const accounts = await prisma.account.findMany({
+      where: { userId: connection.userId, isActive: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    const resolvedAccount = resolveAccount(null, 'DEBIT', accounts as any)
+    const paymentMethod = 'DEBIT' as const
+
     // Store parsed data in bot message
     const botMsg = await prisma.botMessage.create({
       data: {
@@ -833,6 +885,9 @@ async function handleReceiptPhoto(
           items: parsed.items,
           categoryId: category?.categoryId || null,
           categoryName: category?.categoryName || null,
+          paymentMethod,
+          accountId: resolvedAccount?.id || null,
+          accountName: resolvedAccount?.name || null,
         },
         status: 'PARSED',
       },
@@ -841,6 +896,8 @@ async function handleReceiptPhoto(
     const categoryLine = category
       ? `\n📂 Categoria: ${category.categoryName}`
       : ''
+    const accountLine = resolvedAccount ? `\n🏦 ${resolvedAccount.name}` : ''
+    const methodLine = `\n💱 ${PAYMENT_METHOD_LABELS[paymentMethod]}`
 
     await sendMessage({
       chatId,
@@ -850,6 +907,8 @@ async function handleReceiptPhoto(
         `💰 <b>${formattedAmount}</b>\n` +
         `📅 ${formattedDate}` +
         categoryLine +
+        accountLine +
+        methodLine +
         itemsList +
         `\n\nEstá correto?`,
       replyMarkup: {
@@ -892,16 +951,38 @@ async function handleConfirmTransaction(
     recurring?: { frequency: string; label: string; dayOfWeek?: number | null } | null;
     categoryId?: string | null;
     categoryName?: string | null;
+    paymentMethod?: 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER';
+    accountId?: string | null;
+    accountName?: string | null;
   }
 
-  // Get user's default account
-  const defaultAccount = await prisma.account.findFirst({
-    where: { userId: connection.userId },
-    orderBy: { createdAt: 'asc' },
-  })
+  const paymentMethod = parsed.paymentMethod || 'DEBIT'
 
-  if (!defaultAccount) {
-    await answerCallbackQuery(callbackId, 'Crie uma conta no app primeiro.')
+  // Resolve the account (prefer what was detected in parsing, otherwise default/oldest)
+  let accountId: string | null = parsed.accountId || null
+  if (!accountId) {
+    const accounts = await prisma.account.findMany({
+      where: { userId: connection.userId, isActive: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    const resolved = resolveAccount(null, paymentMethod, accounts as any)
+    accountId = resolved?.id || null
+  }
+  if (!accountId) {
+    await answerCallbackQuery(
+      callbackId,
+      paymentMethod === 'CREDIT'
+        ? 'Cadastre um cartão de crédito no app.'
+        : 'Crie uma conta no app primeiro.',
+    )
+    return
+  }
+
+  const selectedAccount = await prisma.account.findFirst({
+    where: { id: accountId, userId: connection.userId },
+  })
+  if (!selectedAccount) {
+    await answerCallbackQuery(callbackId, 'Conta não encontrada.')
     return
   }
 
@@ -910,17 +991,28 @@ async function handleConfirmTransaction(
   const rawDate = parsed.date ? new Date(parsed.date) : new Date()
   const txDate = new Date(rawDate.getFullYear(), rawDate.getMonth(), rawDate.getDate())
 
-  // Create the transaction
-  const transaction = await prisma.transaction.create({
-    data: {
-      userId: connection.userId,
-      description: parsed.description,
+  // Create transaction + apply balance inside a DB transaction
+  const transaction = await prisma.$transaction(async (db) => {
+    const created = await db.transaction.create({
+      data: {
+        userId: connection.userId,
+        description: parsed.description,
+        amount: parsed.amount,
+        type: parsed.type as 'INCOME' | 'EXPENSE',
+        date: txDate,
+        accountId: accountId!,
+        categoryId: parsed.categoryId ?? undefined,
+        paymentMethod,
+      },
+    })
+    await applyTransactionBalance(db, {
+      type: parsed.type as any,
       amount: parsed.amount,
-      type: parsed.type as 'INCOME' | 'EXPENSE',
+      accountId: accountId!,
+      paymentMethod,
       date: txDate,
-      accountId: defaultAccount.id,
-      categoryId: parsed.categoryId ?? undefined,
-    },
+    })
+    return created
   })
 
   // If recurring, also create a recurring transaction
@@ -951,23 +1043,13 @@ async function handleConfirmTransaction(
         frequency: parsed.recurring.frequency as any,
         startDate: txDate,
         nextDueDate,
-        accountId: defaultAccount.id,
+        accountId: accountId!,
         categoryId: parsed.categoryId ?? undefined,
         autoConfirm: false,
       },
     })
     recurringInfo = `\n🔄 Recorrência ${parsed.recurring.label} criada`
   }
-
-  // Update account balance
-  const balanceChange = parsed.type === 'INCOME'
-    ? parsed.amount
-    : -parsed.amount
-
-  await prisma.account.update({
-    where: { id: defaultAccount.id },
-    data: { balance: { increment: balanceChange } },
-  })
 
   // Update bot message status
   await prisma.botMessage.update({
@@ -986,6 +1068,11 @@ async function handleConfirmTransaction(
     ? `\n📂 ${parsed.categoryName}`
     : ''
 
+  const accountEmoji = paymentMethod === 'CREDIT' ? '💳' : '🏦'
+  const balanceNote = paymentMethod === 'CREDIT'
+    ? 'Lançado na fatura do cartão.'
+    : 'Saldo atualizado automaticamente.'
+
   await editMessageText({
     chatId,
     messageId,
@@ -993,10 +1080,11 @@ async function handleConfirmTransaction(
       `<b>✅ Transação registrada!</b>\n\n` +
       `${typeEmoji} ${parsed.description}\n` +
       `💰 ${formattedAmount}\n` +
-      `🏦 ${defaultAccount.name}` +
+      `${accountEmoji} ${selectedAccount.name}\n` +
+      `💱 ${PAYMENT_METHOD_LABELS[paymentMethod]}` +
       categoryInfo +
       recurringInfo +
-      `\n\nSaldo atualizado automaticamente.`,
+      `\n\n${balanceNote}`,
   })
 
   await answerCallbackQuery(callbackId, '✅ Registrado!')

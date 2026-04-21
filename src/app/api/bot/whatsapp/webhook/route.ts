@@ -4,6 +4,9 @@ import { sendWhatsAppMessage, sendWhatsAppInteractive, downloadWhatsAppMedia, ma
 import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
 import { transcribeAudio } from '@/lib/transcribe-audio'
 import { canUseFeature, getFeatureUsage } from '@/lib/plan-limits'
+import { detectPaymentContext, resolveAccount } from '@/lib/detect-payment-context'
+import { applyTransactionBalance } from '@/lib/transaction-balance'
+import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
 export const maxDuration = 60
 
@@ -294,15 +297,36 @@ async function handleTextMessage(from: string, text: string, connection: { userI
   const dateLabel = parsed.date ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(parsed.date)) : 'Hoje'
   const category = await findCategoryForDescription(connection.userId, parsed.description, text)
 
+  // Load accounts + detect payment method and account/card from the message
+  const accounts = await prisma.account.findMany({
+    where: { userId: connection.userId, isActive: true },
+    orderBy: { createdAt: 'asc' },
+  })
+  const ctx = detectPaymentContext(text, accounts as any)
+  const paymentMethod = ctx.paymentMethod || 'DEBIT'
+  const resolvedAccount = resolveAccount(ctx.account as any, paymentMethod, accounts as any)
+
   const botMsg = await prisma.botMessage.create({
     data: {
       userId: connection.userId, connectionId: connection.id, direction: 'INBOUND',
       rawContent: text,
-      parsedData: { type: parsed.type, amount: parsed.amount, description: parsed.description, date: parsed.date || null, recurring: parsed.recurring || null, categoryId: category?.categoryId || null, categoryName: category?.categoryName || null },
+      parsedData: {
+        type: parsed.type,
+        amount: parsed.amount,
+        description: parsed.description,
+        date: parsed.date || null,
+        recurring: parsed.recurring || null,
+        categoryId: category?.categoryId || null,
+        categoryName: category?.categoryName || null,
+        paymentMethod,
+        accountId: resolvedAccount?.id || null,
+        accountName: resolvedAccount?.name || null,
+      },
       status: 'PARSED',
     },
   })
 
+  const accountLabel = paymentMethod === 'CREDIT' ? '💳' : '🏦'
   const lines = [
     `${typeLabel}`,
     `📝 ${parsed.description}`,
@@ -310,6 +334,9 @@ async function handleTextMessage(from: string, text: string, connection: { userI
     `📅 ${dateLabel}`,
   ]
   if (category) lines.push(`📂 ${category.categoryName}`)
+  if (resolvedAccount) lines.push(`${accountLabel} ${resolvedAccount.name}`)
+  lines.push(`💱 ${PAYMENT_METHOD_LABELS[paymentMethod]}`)
+  if (paymentMethod === 'CREDIT') lines.push(`_Saldo da conta não muda até você pagar a fatura._`)
   if (parsed.recurring) lines.push(`🔄 ${parsed.recurring.label}`)
 
   await sendWhatsAppInteractive({
@@ -394,11 +421,24 @@ async function handleImageMessage(from: string, message: any, connection: { user
     const formattedDate = parsed.date ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(parsed.date)) : 'Hoje'
     const category = await findCategoryForDescription(connection.userId, parsed.description, parsed.items.join(' '))
 
+    // Receipt photos don't tell us the payment method — default to DEBIT.
+    const accounts = await prisma.account.findMany({
+      where: { userId: connection.userId, isActive: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    const resolvedAccount = resolveAccount(null, 'DEBIT', accounts as any)
+    const paymentMethod = 'DEBIT' as const
+
     const botMsg = await prisma.botMessage.create({
       data: {
         userId: connection.userId, connectionId: connection.id, direction: 'INBOUND',
         rawContent: `[FOTO] Cupom: ${parsed.description}`, mediaType: mimeType,
-        parsedData: { type: parsed.type, amount: parsed.amount, description: parsed.description, date: parsed.date, items: parsed.items, categoryId: category?.categoryId || null, categoryName: category?.categoryName || null },
+        parsedData: {
+          type: parsed.type, amount: parsed.amount, description: parsed.description,
+          date: parsed.date, items: parsed.items,
+          categoryId: category?.categoryId || null, categoryName: category?.categoryName || null,
+          paymentMethod, accountId: resolvedAccount?.id || null, accountName: resolvedAccount?.name || null,
+        },
         status: 'PARSED',
       },
     })
@@ -409,6 +449,8 @@ async function handleImageMessage(from: string, message: any, connection: { user
       `📅 ${formattedDate}`,
     ]
     if (category) lines.push(`📂 ${category.categoryName}`)
+    if (resolvedAccount) lines.push(`🏦 ${resolvedAccount.name}`)
+    lines.push(`💱 ${PAYMENT_METHOD_LABELS[paymentMethod]}`)
     if (parsed.items.length > 0) {
       lines.push(`\n📋 *Itens:*`)
       parsed.items.slice(0, 5).forEach(item => lines.push(`  • ${item}`))
@@ -439,25 +481,55 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
     }
 
     const parsed = botMsg.parsedData as any
-    const defaultAccount = await prisma.account.findFirst({ where: { userId: connection.userId }, orderBy: { createdAt: 'asc' } })
-    if (!defaultAccount) {
-      await sendWhatsAppMessage({ to: from, text: '⚠️ Crie uma conta no app primeiro.' })
+    const paymentMethod = (parsed.paymentMethod || 'DEBIT') as 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER'
+
+    // Prefer the account resolved when the message was parsed. Fall back to default/oldest.
+    let accountId: string | null = parsed.accountId || null
+    if (!accountId) {
+      const accounts = await prisma.account.findMany({
+        where: { userId: connection.userId, isActive: true },
+        orderBy: { createdAt: 'asc' },
+      })
+      const resolved = resolveAccount(null, paymentMethod, accounts as any)
+      accountId = resolved?.id || null
+    }
+    if (!accountId) {
+      await sendWhatsAppMessage({
+        to: from,
+        text: paymentMethod === 'CREDIT'
+          ? '⚠️ Você ainda não cadastrou um cartão de crédito no app. Adicione um em Contas e tente de novo.'
+          : '⚠️ Crie uma conta no app primeiro.',
+      })
+      return
+    }
+
+    const selectedAccount = await prisma.account.findFirst({ where: { id: accountId, userId: connection.userId } })
+    if (!selectedAccount) {
+      await sendWhatsAppMessage({ to: from, text: '⚠️ Conta não encontrada.' })
       return
     }
 
     const rawDate = parsed.date ? new Date(parsed.date) : new Date()
     const txDate = new Date(rawDate.getFullYear(), rawDate.getMonth(), rawDate.getDate())
 
-    const transaction = await prisma.transaction.create({
-      data: {
-        userId: connection.userId, description: parsed.description, amount: parsed.amount,
-        type: parsed.type, date: txDate, accountId: defaultAccount.id,
-        categoryId: parsed.categoryId ?? undefined,
-      },
+    const transaction = await prisma.$transaction(async (db) => {
+      const created = await db.transaction.create({
+        data: {
+          userId: connection.userId, description: parsed.description, amount: parsed.amount,
+          type: parsed.type, date: txDate, accountId,
+          categoryId: parsed.categoryId ?? undefined,
+          paymentMethod,
+        },
+      })
+      await applyTransactionBalance(db, {
+        type: parsed.type,
+        amount: parsed.amount,
+        accountId,
+        paymentMethod,
+        date: txDate,
+      })
+      return created
     })
-
-    const balanceChange = parsed.type === 'INCOME' ? parsed.amount : -parsed.amount
-    await prisma.account.update({ where: { id: defaultAccount.id }, data: { balance: { increment: balanceChange } } })
     await prisma.botMessage.update({ where: { id: targetId }, data: { status: 'CONFIRMED', transactionId: transaction.id } })
 
     // Handle recurring
@@ -476,7 +548,7 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
         data: {
           userId: connection.userId, description: parsed.description, amount: parsed.amount,
           type: parsed.type, frequency: parsed.recurring.frequency, startDate: txDate,
-          nextDueDate, accountId: defaultAccount.id, categoryId: parsed.categoryId ?? undefined,
+          nextDueDate, accountId, categoryId: parsed.categoryId ?? undefined,
           autoConfirm: false,
         },
       })
@@ -484,12 +556,16 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
 
     const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed.amount)
     const typeEmoji = parsed.type === 'INCOME' ? '📥' : '📤'
+    const accountEmoji = paymentMethod === 'CREDIT' ? '💳' : '🏦'
     const categoryLine = parsed.categoryName ? `\n📂 ${parsed.categoryName}` : ''
     const recurringLine = parsed.recurring ? `\n🔄 Recorrência ${parsed.recurring.label} criada` : ''
+    const balanceNote = paymentMethod === 'CREDIT'
+      ? 'Lançado na fatura do cartão.'
+      : 'Saldo atualizado automaticamente.'
 
     await sendWhatsAppMessage({
       to: from,
-      text: `✅ *Transação registrada!*\n\n${typeEmoji} ${parsed.description}\n💰 ${formattedAmount}\n🏦 ${defaultAccount.name}${categoryLine}${recurringLine}\n\nSaldo atualizado automaticamente.`,
+      text: `✅ *Transação registrada!*\n\n${typeEmoji} ${parsed.description}\n💰 ${formattedAmount}\n${accountEmoji} ${selectedAccount.name}\n💱 ${PAYMENT_METHOD_LABELS[paymentMethod]}${categoryLine}${recurringLine}\n\n${balanceNote}`,
     })
   }
 
@@ -512,23 +588,32 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
 
     let accountId = recurring.accountId
     if (!accountId) {
-      const acc = await prisma.account.findFirst({ where: { userId: connection.userId }, orderBy: { createdAt: 'asc' } })
-      if (!acc) return
-      accountId = acc.id
+      const accounts = await prisma.account.findMany({
+        where: { userId: connection.userId, isActive: true },
+        orderBy: { createdAt: 'asc' },
+      })
+      const resolved = resolveAccount(null, 'DEBIT', accounts as any)
+      if (!resolved) return
+      accountId = resolved.id
     }
 
-    await prisma.transaction.create({
-      data: {
-        userId: connection.userId, description: recurring.description, amount: recurring.amount,
-        type: recurring.type, date: recurring.nextDueDate, accountId,
-        categoryId: recurring.categoryId ?? undefined, recurringTransactionId: recurring.id,
-      },
+    await prisma.$transaction(async (db) => {
+      await db.transaction.create({
+        data: {
+          userId: connection.userId, description: recurring.description, amount: recurring.amount,
+          type: recurring.type, date: recurring.nextDueDate, accountId: accountId!,
+          categoryId: recurring.categoryId ?? undefined, recurringTransactionId: recurring.id,
+          paymentMethod: 'DEBIT',
+        },
+      })
+      await applyTransactionBalance(db, {
+        type: recurring.type,
+        amount: Number(recurring.amount),
+        accountId: accountId!,
+        paymentMethod: 'DEBIT',
+        date: recurring.nextDueDate,
+      })
     })
-
-    if (recurring.nextDueDate <= new Date()) {
-      const change = recurring.type === 'INCOME' ? Number(recurring.amount) : -Number(recurring.amount)
-      await prisma.account.update({ where: { id: accountId }, data: { balance: { increment: change } } })
-    }
 
     // Advance next due date
     const next = new Date(recurring.nextDueDate)

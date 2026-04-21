@@ -44,9 +44,17 @@ export async function PUT(
     return Response.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
 
-  const account = await prisma.account.update({
-    where: { id },
-    data: parsed.data,
+  const account = await prisma.$transaction(async (tx) => {
+    if (parsed.data.isDefault) {
+      await tx.account.updateMany({
+        where: { userId: user.id, isDefault: true, id: { not: id } },
+        data: { isDefault: false },
+      })
+    }
+    return tx.account.update({
+      where: { id },
+      data: parsed.data,
+    })
   })
 
   return Response.json({ data: account })

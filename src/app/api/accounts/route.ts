@@ -31,11 +31,23 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
 
-  const account = await prisma.account.create({
-    data: {
-      userId: user.id,
-      ...parsed.data,
-    },
+  const existingCount = await prisma.account.count({ where: { userId: user.id } })
+  const shouldBeDefault = parsed.data.isDefault ?? existingCount === 0
+
+  const account = await prisma.$transaction(async (tx) => {
+    if (shouldBeDefault) {
+      await tx.account.updateMany({
+        where: { userId: user.id, isDefault: true },
+        data: { isDefault: false },
+      })
+    }
+    return tx.account.create({
+      data: {
+        userId: user.id,
+        ...parsed.data,
+        isDefault: shouldBeDefault,
+      },
+    })
   })
 
   return Response.json({ data: account }, { status: 201 })

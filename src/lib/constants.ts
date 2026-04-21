@@ -25,6 +25,15 @@ export const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   TRANSFER: 'Transferência',
 }
 
+export const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  PIX: 'PIX',
+  DEBIT: 'Débito',
+  CREDIT: 'Crédito',
+  CASH: 'Dinheiro',
+  BOLETO: 'Boleto',
+  TRANSFER: 'Transferência',
+}
+
 export const BUDGET_PERIOD_LABELS: Record<string, string> = {
   WEEKLY: 'Semanal',
   MONTHLY: 'Mensal',

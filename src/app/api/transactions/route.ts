@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import { transactionSchema } from '@/lib/validations/transaction'
 import { checkTransactionLimit } from '@/lib/plan-limits'
+import { applyTransactionBalance } from '@/lib/transaction-balance'
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUser()
@@ -69,7 +70,19 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
 
-  const { installments, ...data } = parsed.data
+  const { installments, ...rest } = parsed.data
+  const data = { ...rest, paymentMethod: rest.paymentMethod ?? 'DEBIT' as const }
+
+  // If payment method is CREDIT, the selected account must be a CREDIT_CARD.
+  if (data.paymentMethod === 'CREDIT') {
+    const account = await prisma.account.findFirst({
+      where: { id: data.accountId, userId: user.id },
+      select: { type: true },
+    })
+    if (!account || account.type !== 'CREDIT_CARD') {
+      return Response.json({ error: 'Forma de pagamento "Crédito" exige um cartão de crédito.' }, { status: 400 })
+    }
+  }
 
   if (installments && installments > 1) {
     const groupId = crypto.randomUUID()
@@ -81,31 +94,38 @@ export async function POST(request: NextRequest) {
       const installmentDate = new Date(baseDate)
       installmentDate.setMonth(installmentDate.getMonth() + i)
 
-      const tx = await prisma.transaction.create({
-        data: {
-          userId: user.id,
-          type: data.type,
-          amount: installmentAmount,
-          description: `${data.description} (${i + 1}/${installments})`,
-          date: installmentDate,
-          accountId: data.accountId,
-          categoryId: data.categoryId || null,
-          location: data.location || null,
-          notes: data.notes || null,
-          tags: data.tags || [],
-          installment: {
-            create: {
-              installmentNumber: i + 1,
-              totalInstallments: installments,
-              groupId,
+      const tx = await prisma.$transaction(async (db) => {
+        const created = await db.transaction.create({
+          data: {
+            userId: user.id,
+            type: data.type,
+            amount: installmentAmount,
+            description: `${data.description} (${i + 1}/${installments})`,
+            date: installmentDate,
+            accountId: data.accountId,
+            categoryId: data.categoryId || null,
+            paymentMethod: data.paymentMethod,
+            location: data.location || null,
+            notes: data.notes || null,
+            tags: data.tags || [],
+            installment: {
+              create: {
+                installmentNumber: i + 1,
+                totalInstallments: installments,
+                groupId,
+              },
             },
           },
-        },
-        include: {
-          category: true,
-          account: true,
-          installment: true,
-        },
+          include: { category: true, account: true, installment: true },
+        })
+        await applyTransactionBalance(db, {
+          type: data.type,
+          amount: installmentAmount,
+          accountId: data.accountId,
+          paymentMethod: data.paymentMethod,
+          date: installmentDate,
+        })
+        return created
       })
       transactions.push(tx)
     }
@@ -113,54 +133,34 @@ export async function POST(request: NextRequest) {
     return Response.json({ data: transactions }, { status: 201 })
   }
 
-  const transaction = await prisma.transaction.create({
-    data: {
-      userId: user.id,
+  const transaction = await prisma.$transaction(async (db) => {
+    const created = await db.transaction.create({
+      data: {
+        userId: user.id,
+        type: data.type,
+        amount: data.amount,
+        description: data.description,
+        date: new Date(data.date),
+        accountId: data.accountId,
+        categoryId: data.categoryId || null,
+        toAccountId: data.toAccountId || null,
+        paymentMethod: data.paymentMethod,
+        location: data.location || null,
+        notes: data.notes || null,
+        tags: data.tags || [],
+      },
+      include: { category: true, account: true },
+    })
+    await applyTransactionBalance(db, {
       type: data.type,
       amount: data.amount,
-      description: data.description,
-      date: new Date(data.date),
       accountId: data.accountId,
-      categoryId: data.categoryId || null,
-      toAccountId: data.toAccountId || null,
-      location: data.location || null,
-      notes: data.notes || null,
-      tags: data.tags || [],
-    },
-    include: {
-      category: true,
-      account: true,
-    },
+      toAccountId: data.toAccountId,
+      paymentMethod: data.paymentMethod,
+      date: new Date(data.date),
+    })
+    return created
   })
-
-  // Update account balance only for present/past transactions
-  const transactionDate = new Date(data.date)
-  const today = new Date()
-  today.setHours(23, 59, 59, 999)
-  const isFuture = transactionDate > today
-
-  if (!isFuture) {
-    if (data.type === 'EXPENSE') {
-      await prisma.account.update({
-        where: { id: data.accountId },
-        data: { balance: { decrement: data.amount } },
-      })
-    } else if (data.type === 'INCOME') {
-      await prisma.account.update({
-        where: { id: data.accountId },
-        data: { balance: { increment: data.amount } },
-      })
-    } else if (data.type === 'TRANSFER' && data.toAccountId) {
-      await prisma.account.update({
-        where: { id: data.accountId },
-        data: { balance: { decrement: data.amount } },
-      })
-      await prisma.account.update({
-        where: { id: data.toAccountId },
-        data: { balance: { increment: data.amount } },
-      })
-    }
-  }
 
   return Response.json({ data: transaction }, { status: 201 })
 }

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import { transactionSchema } from '@/lib/validations/transaction'
+import { applyTransactionBalance, revertTransactionBalance } from '@/lib/transaction-balance'
 
 export async function GET(
   request: NextRequest,
@@ -49,49 +50,55 @@ export async function PUT(
     return Response.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
 
-  const { installments: _installments, ...data } = parsed.data
+  const { installments: _installments, ...rest } = parsed.data
+  const data = { ...rest, paymentMethod: rest.paymentMethod ?? 'DEBIT' as const }
 
-  // Revert old balance change
-  if (existing.type === 'EXPENSE') {
-    await prisma.account.update({
-      where: { id: existing.accountId },
-      data: { balance: { increment: Number(existing.amount) } },
+  if (data.paymentMethod === 'CREDIT') {
+    const account = await prisma.account.findFirst({
+      where: { id: data.accountId, userId: user.id },
+      select: { type: true },
     })
-  } else if (existing.type === 'INCOME') {
-    await prisma.account.update({
-      where: { id: existing.accountId },
-      data: { balance: { decrement: Number(existing.amount) } },
-    })
+    if (!account || account.type !== 'CREDIT_CARD') {
+      return Response.json({ error: 'Forma de pagamento "Crédito" exige um cartão de crédito.' }, { status: 400 })
+    }
   }
 
-  const transaction = await prisma.transaction.update({
-    where: { id },
-    data: {
+  const transaction = await prisma.$transaction(async (db) => {
+    await revertTransactionBalance(db, {
+      type: existing.type,
+      amount: Number(existing.amount),
+      accountId: existing.accountId,
+      toAccountId: existing.toAccountId,
+      paymentMethod: existing.paymentMethod,
+      date: existing.date,
+    })
+    const updated = await db.transaction.update({
+      where: { id },
+      data: {
+        type: data.type,
+        amount: data.amount,
+        description: data.description,
+        date: new Date(data.date),
+        accountId: data.accountId,
+        categoryId: data.categoryId || null,
+        toAccountId: data.toAccountId || null,
+        paymentMethod: data.paymentMethod,
+        location: data.location || null,
+        notes: data.notes || null,
+        tags: data.tags || [],
+      },
+      include: { category: true, account: true },
+    })
+    await applyTransactionBalance(db, {
       type: data.type,
       amount: data.amount,
-      description: data.description,
-      date: new Date(data.date),
       accountId: data.accountId,
-      categoryId: data.categoryId || null,
-      location: data.location || null,
-      notes: data.notes || null,
-      tags: data.tags || [],
-    },
-    include: { category: true, account: true },
+      toAccountId: data.toAccountId,
+      paymentMethod: data.paymentMethod,
+      date: new Date(data.date),
+    })
+    return updated
   })
-
-  // Apply new balance change
-  if (data.type === 'EXPENSE') {
-    await prisma.account.update({
-      where: { id: data.accountId },
-      data: { balance: { decrement: data.amount } },
-    })
-  } else if (data.type === 'INCOME') {
-    await prisma.account.update({
-      where: { id: data.accountId },
-      data: { balance: { increment: data.amount } },
-    })
-  }
 
   return Response.json({ data: transaction })
 }
@@ -112,20 +119,17 @@ export async function DELETE(
     return Response.json({ error: 'Transação não encontrada' }, { status: 404 })
   }
 
-  // Revert balance
-  if (existing.type === 'EXPENSE') {
-    await prisma.account.update({
-      where: { id: existing.accountId },
-      data: { balance: { increment: Number(existing.amount) } },
+  await prisma.$transaction(async (db) => {
+    await revertTransactionBalance(db, {
+      type: existing.type,
+      amount: Number(existing.amount),
+      accountId: existing.accountId,
+      toAccountId: existing.toAccountId,
+      paymentMethod: existing.paymentMethod,
+      date: existing.date,
     })
-  } else if (existing.type === 'INCOME') {
-    await prisma.account.update({
-      where: { id: existing.accountId },
-      data: { balance: { decrement: Number(existing.amount) } },
-    })
-  }
-
-  await prisma.transaction.delete({ where: { id } })
+    await db.transaction.delete({ where: { id } })
+  })
 
   return Response.json({ message: 'Transação excluída' })
 }

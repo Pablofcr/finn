@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/shared/empty-state'
 import { formatCurrency } from '@/lib/utils'
 import { ACCOUNT_TYPE_LABELS, COLORS } from '@/lib/constants'
-import { Plus, Wallet, Trash2, Pencil } from 'lucide-react'
+import { Plus, Wallet, Trash2, Pencil, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -65,17 +65,48 @@ export default function AccountsPage() {
       balance: Number(account.balance),
       color: account.color,
       icon: account.icon,
+      isDefault: !!account.isDefault,
       creditLimit: account.creditLimit ? Number(account.creditLimit) : undefined,
       closingDay: account.closingDay || undefined,
       dueDay: account.dueDay || undefined,
+      linkedAccountId: account.linkedAccountId || null,
     })
     setDialogOpen(true)
   }
 
   function openNew() {
     setEditingId(null)
-    reset({ color: '#6366f1', icon: 'wallet', balance: 0 })
+    reset({ color: '#6366f1', icon: 'wallet', balance: 0, isDefault: false })
     setDialogOpen(true)
+  }
+
+  async function setAsDefault(id: string) {
+    try {
+      const account = accounts.find(a => a.id === id)
+      if (!account) return
+      const res = await fetch(`/api/accounts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: account.name,
+          type: account.type,
+          balance: Number(account.balance),
+          color: account.color,
+          icon: account.icon,
+          isDefault: true,
+          creditLimit: account.creditLimit ? Number(account.creditLimit) : undefined,
+          closingDay: account.closingDay || undefined,
+          dueDay: account.dueDay || undefined,
+          linkedAccountId: account.linkedAccountId || null,
+        }),
+      })
+      if (res.ok) {
+        toast.success(`${account.name} agora é sua conta principal.`)
+        fetchAccounts()
+      }
+    } catch {
+      toast.error('Não foi possível definir a conta principal.')
+    }
   }
 
   async function onSubmit(data: AccountInput) {
@@ -172,8 +203,41 @@ export default function AccountsPage() {
                       <Input type="number" min="1" max="31" className="h-11 rounded-xl" {...register('dueDay', { valueAsNumber: true })} />
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <Label>Conta vinculada (onde a fatura é debitada)</Label>
+                    <Select
+                      onValueChange={(v) => setValue('linkedAccountId', v === '__none__' ? null : v)}
+                      value={watch('linkedAccountId') || '__none__'}
+                    >
+                      <SelectTrigger className="h-11 rounded-xl">
+                        <SelectValue placeholder="Escolha a conta bancária" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Nenhuma (definir depois)</SelectItem>
+                        {accounts
+                          .filter(a => a.type !== 'CREDIT_CARD' && a.id !== editingId)
+                          .map(a => (
+                            <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Quando você pagar a fatura, o valor sai dessa conta.
+                    </p>
+                  </div>
                 </>
               )}
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3">
+                <input
+                  id="isDefault"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-border"
+                  {...register('isDefault')}
+                />
+                <label htmlFor="isDefault" className="text-sm font-medium cursor-pointer select-none">
+                  Definir como conta principal
+                </label>
+              </div>
               <div className="space-y-2">
                 <Label>Cor</Label>
                 <div className="flex flex-wrap gap-2">
@@ -224,13 +288,30 @@ export default function AccountsPage() {
                     <Wallet className="h-5 w-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">{account.name}</CardTitle>
+                    <CardTitle className="text-base flex items-center gap-1.5">
+                      {account.name}
+                      {account.isDefault && (
+                        <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" aria-label="Conta principal" />
+                      )}
+                    </CardTitle>
                     <p className="text-xs text-muted-foreground">
                       {ACCOUNT_TYPE_LABELS[account.type]}
+                      {account.isDefault && ' · Principal'}
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-1">
+                  {!account.isDefault && account.type !== 'CREDIT_CARD' && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setAsDefault(account.id)}
+                      title="Definir como principal"
+                    >
+                      <Star className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(account)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
