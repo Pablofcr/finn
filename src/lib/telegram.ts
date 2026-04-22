@@ -39,12 +39,14 @@ export async function sendPaymentAlert({
   amount,
   dueDate,
   recurringId,
+  variant = 'normal',
 }: {
   chatId: string | number
   description: string
   amount: number
   dueDate: string
   recurringId: string
+  variant?: 'normal' | 'urgent'
 }) {
   const formattedAmount = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -53,12 +55,16 @@ export async function sendPaymentAlert({
 
   const formattedDate = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(dueDate))
 
-  const text =
-    `<b>🔔 Lembrete de pagamento</b>\n\n` +
-    `<b>${description}</b>\n` +
-    `💰 Valor: <b>${formattedAmount}</b>\n` +
-    `📅 Vencimento: <b>${formattedDate}</b>\n\n` +
-    `Já pagou? Toque no botão abaixo!`
+  const text = variant === 'urgent'
+    ? `<b>⏰ Pagamento ainda não confirmado</b>\n\n` +
+      `<b>${description}</b>\n` +
+      `💰 ${formattedAmount} · vence <b>hoje (${formattedDate})</b>\n\n` +
+      `Se já pagou, toque em "Paguei" pra fechar.`
+    : `<b>🔔 Lembrete de pagamento</b>\n\n` +
+      `<b>${description}</b>\n` +
+      `💰 Valor: <b>${formattedAmount}</b>\n` +
+      `📅 Vencimento: <b>${formattedDate}</b>\n\n` +
+      `Já pagou? Toque no botão abaixo!`
 
   return sendMessage({
     chatId,

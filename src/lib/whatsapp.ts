@@ -83,12 +83,14 @@ export async function sendWhatsAppPaymentAlert({
   amount,
   dueDate,
   recurringId,
+  variant = 'normal',
 }: {
   to: string
   description: string
   amount: number
   dueDate: string
   recurringId: string
+  variant?: 'normal' | 'urgent'
 }) {
   const formattedAmount = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -97,14 +99,20 @@ export async function sendWhatsAppPaymentAlert({
 
   const formattedDate = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(dueDate))
 
-  return sendWhatsAppInteractive({
-    to,
-    body:
-      `🔔 *Lembrete de pagamento*\n\n` +
+  const body = variant === 'urgent'
+    ? `⏰ *Pagamento ainda não confirmado*\n\n` +
+      `*${description}*\n` +
+      `💰 ${formattedAmount} · vence *hoje (${formattedDate})*\n\n` +
+      `Se já pagou, toque em "Paguei" pra fechar.`
+    : `🔔 *Lembrete de pagamento*\n\n` +
       `*${description}*\n` +
       `💰 Valor: *${formattedAmount}*\n` +
       `📅 Vencimento: *${formattedDate}*\n\n` +
-      `Já pagou? Toque no botão abaixo!`,
+      `Já pagou? Toque no botão abaixo!`
+
+  return sendWhatsAppInteractive({
+    to,
+    body,
     buttons: [
       { id: `paid:${recurringId}`, title: '✅ Paguei' },
       { id: `snooze:${recurringId}`, title: '⏰ Lembrar amanhã' },

@@ -366,18 +366,19 @@ model CronRun {
 }
 
 model NotificationSetting {
-  id                 String  @id @default(uuid())
-  userId             String  @unique
-  emailNotifications Boolean @default(true)
-  pushNotifications  Boolean @default(true)
-  budgetAlerts       Boolean @default(true)
-  goalAlerts         Boolean @default(true)
-  weeklyReport       Boolean @default(true)
-  monthlyReport      Boolean @default(true)
-  botConfirmations   Boolean @default(true)
-  autoInsights       Boolean @default(true)
-  telegramInsights   Boolean @default(true)
-  telegramAlerts     Boolean @default(true)
+  id                     String  @id @default(uuid())
+  userId                 String  @unique
+  emailNotifications     Boolean @default(true)
+  pushNotifications      Boolean @default(true)
+  budgetAlerts           Boolean @default(true)
+  goalAlerts             Boolean @default(true)
+  weeklyReport           Boolean @default(true)
+  monthlyReport          Boolean @default(true)
+  botConfirmations       Boolean @default(true)
+  autoInsights           Boolean @default(true)
+  telegramInsights       Boolean @default(true)
+  telegramAlerts         Boolean @default(true)
+  eveningPaymentReminder Boolean @default(true)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

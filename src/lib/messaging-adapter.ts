@@ -20,7 +20,7 @@ export async function sendBotMessage(platform: Platform, chatId: string, text: s
 export async function sendBotPaymentAlert(
   platform: Platform,
   chatId: string,
-  opts: { description: string; amount: number; dueDate: string; recurringId: string }
+  opts: { description: string; amount: number; dueDate: string; recurringId: string; variant?: 'normal' | 'urgent' }
 ) {
   if (platform === 'WHATSAPP') {
     return sendWhatsAppPaymentAlert({ to: chatId, ...opts })

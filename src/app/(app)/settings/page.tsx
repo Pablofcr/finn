@@ -48,6 +48,7 @@ interface NotificationSettings {
   autoInsights: boolean
   telegramInsights: boolean
   telegramAlerts: boolean
+  eveningPaymentReminder: boolean
 }
 
 export default function SettingsPage() {
@@ -75,6 +76,7 @@ export default function SettingsPage() {
     autoInsights: true,
     telegramInsights: true,
     telegramAlerts: true,
+    eveningPaymentReminder: true,
   })
 
   const fetchData = useCallback(async () => {
@@ -106,6 +108,7 @@ export default function SettingsPage() {
           autoInsights: notifRes.data.autoInsights ?? true,
           telegramInsights: notifRes.data.telegramInsights ?? true,
           telegramAlerts: notifRes.data.telegramAlerts ?? true,
+          eveningPaymentReminder: notifRes.data.eveningPaymentReminder ?? true,
         })
       }
     } catch {
@@ -289,6 +292,7 @@ export default function SettingsPage() {
             { key: 'autoInsights' as const, label: 'Insights automáticos', desc: 'Gerar análises financeiras semanalmente com IA' },
             { key: 'telegramInsights' as const, label: 'Insights pelo Telegram', desc: 'Receber insights importantes no Telegram' },
             { key: 'telegramAlerts' as const, label: 'Alertas pelo Telegram', desc: 'Receber lembretes de vencimento no Telegram' },
+            { key: 'eveningPaymentReminder' as const, label: 'Lembrete de fim de dia', desc: 'Reenvio às 18h no vencimento se ainda não foi marcado como pago' },
           ].map((item) => (
             <div key={item.key} className="flex items-center justify-between py-1">
               <div>
