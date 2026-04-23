@@ -14,7 +14,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/shared/empty-state'
 import { formatCurrency } from '@/lib/utils'
 import { ACCOUNT_TYPE_LABELS, COLORS } from '@/lib/constants'
-import { Plus, Wallet, Trash2, Pencil, Star } from 'lucide-react'
+import { Plus, Wallet, Trash2, Pencil, Star, FileText } from 'lucide-react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -24,6 +25,7 @@ import {
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState<any[]>([])
+  const [openInvoices, setOpenInvoices] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -42,10 +44,25 @@ export default function AccountsPage() {
   const fetchAccounts = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/accounts')
-      if (res.ok) {
-        const result = await res.json()
+      const [accRes, invRes] = await Promise.all([
+        fetch('/api/accounts'),
+        fetch('/api/invoices?status=OPEN'),
+      ])
+      if (accRes.ok) {
+        const result = await accRes.json()
         setAccounts(result.data || [])
+      }
+      if (invRes.ok) {
+        const invData = await invRes.json()
+        const map: Record<string, any> = {}
+        for (const inv of invData.data || []) {
+          // Keep the nearest-due open invoice per card
+          const existing = map[inv.cardId]
+          if (!existing || new Date(inv.dueDate) < new Date(existing.dueDate)) {
+            map[inv.cardId] = inv
+          }
+        }
+        setOpenInvoices(map)
       }
     } catch {
       toast.error('Não conseguimos carregar suas contas. Tente novamente em instantes.')
@@ -342,6 +359,22 @@ export default function AccountsPage() {
                   <p className="text-xs text-muted-foreground mt-1">
                     Limite: {formatCurrency(Number(account.creditLimit))}
                   </p>
+                )}
+                {account.type === 'CREDIT_CARD' && openInvoices[account.id] && (
+                  <Link
+                    href={`/invoices/${openInvoices[account.id].id}`}
+                    className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-muted/40 hover:bg-muted/70 transition-colors px-3 py-2 text-xs"
+                  >
+                    <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">
+                        Fatura atual: {formatCurrency(Number(openInvoices[account.id].total))}
+                      </p>
+                      <p className="text-muted-foreground">
+                        Vence {new Date(openInvoices[account.id].dueDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                      </p>
+                    </div>
+                  </Link>
                 )}
               </CardContent>
             </Card>

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
-import { sendBotPaymentAlert } from '@/lib/messaging-adapter'
+import { sendBotPaymentAlert, sendBotMessage } from '@/lib/messaging-adapter'
 import type { Platform } from '@/lib/messaging-adapter'
 
 export async function GET(request: NextRequest) {
@@ -141,9 +141,97 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
     }
   }
 
-  const finishedAt = new Date()
-  console.log(`[payment-alerts:${period}] Done:`, { sent: alertsSent, skipped: alertsSkipped, failed: failures.length })
+  // ─── Invoice alerts ──────────────────────────────────────────────────
+  // Same cadence as payment-alerts: morning fires on days 0, 1 and 3 before
+  // due date; evening only on day 0. Only unpaid invoices are considered.
+  const invoiceEnd = period === 'evening'
+    ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+    : threeDaysFromNow
 
+  const unpaidInvoices = await prisma.invoice.findMany({
+    where: {
+      status: { in: ['OPEN', 'CLOSED', 'OVERDUE'] },
+      dueDate: { gte: now, lte: invoiceEnd },
+      total: { gt: 0 },
+    },
+    include: {
+      card: { select: { name: true } },
+      user: {
+        include: {
+          notificationSetting: true,
+          botConnections: { where: { isVerified: true } },
+        },
+      },
+    },
+  })
+  console.log(`[payment-alerts:${period}] Unpaid invoices in window:`, unpaidInvoices.length)
+
+  let invoiceSent = 0
+  let invoiceSkipped = 0
+  const invoiceFailures: { id: string; reason: string }[] = []
+
+  for (const invoice of unpaidInvoices) {
+    const connection = invoice.user.botConnections[0]
+    if (!connection) { invoiceSkipped++; continue }
+
+    const alertsEnabled = invoice.user.notificationSetting?.telegramAlerts ?? true
+    if (!alertsEnabled) { invoiceSkipped++; continue }
+
+    if (period === 'evening') {
+      const eveningEnabled = invoice.user.notificationSetting?.eveningPaymentReminder ?? true
+      if (!eveningEnabled) { invoiceSkipped++; continue }
+    }
+
+    const daysUntil = Math.ceil((invoice.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    const shouldAlert = period === 'evening'
+      ? daysUntil === 0
+      : daysUntil === 0 || daysUntil === 1 || daysUntil === 3
+    if (!shouldAlert) { invoiceSkipped++; continue }
+
+    const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(invoice.total))
+    const formattedDate = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(invoice.dueDate)
+    const heading = period === 'evening'
+      ? `⏰ <b>Fatura ainda não paga</b>`
+      : `💳 <b>Fatura ${invoice.card.name}</b>`
+    const urgency = daysUntil === 0 ? 'vence hoje' : daysUntil === 1 ? 'vence amanhã' : `vence em ${daysUntil} dias (${formattedDate})`
+
+    const text =
+      `${heading}\n\n` +
+      `<b>${invoice.card.name}</b>\n` +
+      `💰 ${formattedAmount}\n` +
+      `📅 ${urgency}\n\n` +
+      `Pague agora em https://finn-steel.vercel.app/invoices/${invoice.id}`
+
+    try {
+      await sendBotMessage(connection.platform as Platform, connection.platformUserId, text)
+      await prisma.botMessage.create({
+        data: {
+          userId: invoice.userId,
+          connectionId: connection.id,
+          direction: 'OUTBOUND',
+          rawContent: `Lembrete fatura: ${invoice.card.name} - ${formattedAmount}`,
+          status: 'CONFIRMED',
+        },
+      })
+      invoiceSent++
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err)
+      console.error(`[payment-alerts:${period}] Failed invoice alert ${invoice.id}:`, reason)
+      invoiceFailures.push({ id: invoice.id, reason })
+    }
+  }
+
+  const finishedAt = new Date()
+  console.log(`[payment-alerts:${period}] Done:`, {
+    sent: alertsSent,
+    skipped: alertsSkipped,
+    failed: failures.length,
+    invoiceSent,
+    invoiceSkipped,
+    invoiceFailed: invoiceFailures.length,
+  })
+
+  const totalFailures = [...failures, ...invoiceFailures]
   try {
     await prisma.cronRun.create({
       data: {
@@ -151,13 +239,13 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
         startedAt,
         finishedAt,
         durationMs: finishedAt.getTime() - startedAt.getTime(),
-        status: failures.length > 0 ? 'error' : 'success',
-        checked: upcomingPayments.length,
-        sent: alertsSent,
-        skipped: alertsSkipped,
-        failed: failures.length,
-        result: { failures },
-        errorMsg: failures.length > 0 ? failures.map(f => `${f.id}: ${f.reason}`).join('; ') : null,
+        status: totalFailures.length > 0 ? 'error' : 'success',
+        checked: upcomingPayments.length + unpaidInvoices.length,
+        sent: alertsSent + invoiceSent,
+        skipped: alertsSkipped + invoiceSkipped,
+        failed: totalFailures.length,
+        result: { failures: totalFailures, payments: { sent: alertsSent }, invoices: { sent: invoiceSent } },
+        errorMsg: totalFailures.length > 0 ? totalFailures.map(f => `${f.id}: ${f.reason}`).join('; ') : null,
       },
     })
   } catch (persistErr) {
@@ -167,10 +255,8 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
   return Response.json({
     data: {
       period,
-      checked: upcomingPayments.length,
-      alertsSent,
-      alertsSkipped,
-      failures,
+      payments: { checked: upcomingPayments.length, sent: alertsSent, skipped: alertsSkipped, failures },
+      invoices: { checked: unpaidInvoices.length, sent: invoiceSent, skipped: invoiceSkipped, failures: invoiceFailures },
       timestamp: now.toISOString(),
     },
   })

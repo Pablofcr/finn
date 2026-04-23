@@ -4,8 +4,9 @@ import { sendWhatsAppMessage, sendWhatsAppInteractive, sendWhatsAppList, downloa
 import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
 import { transcribeAudio } from '@/lib/transcribe-audio'
 import { canUseFeature, getFeatureUsage } from '@/lib/plan-limits'
-import { detectPaymentContext, resolveAccount } from '@/lib/detect-payment-context'
+import { detectPaymentContext, resolveAccount, detectInstallments } from '@/lib/detect-payment-context'
 import { applyTransactionBalance } from '@/lib/transaction-balance'
+import { getOrCreateInvoiceFor, adjustInvoiceTotal } from '@/lib/invoice'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
 export const maxDuration = 60
@@ -301,6 +302,7 @@ async function handleTextMessage(from: string, text: string, connection: { userI
   })
   const ctx = detectPaymentContext(text, accounts as any)
   const paymentMethod = ctx.paymentMethod // may be null
+  const installments = detectInstallments(text)
   const resolvedAccount = paymentMethod
     ? resolveAccount(ctx.account as any, paymentMethod, accounts as any)
     : null
@@ -320,28 +322,33 @@ async function handleTextMessage(from: string, text: string, connection: { userI
         paymentMethod: paymentMethod || null,
         accountId: resolvedAccount?.id || null,
         accountName: resolvedAccount?.name || null,
+        installments: installments || null,
       },
       status: 'PARSED',
     },
   })
 
   if (!paymentMethod) {
-    await askPaymentMethodWhatsApp(from, botMsg.id, parsed, category)
+    await askPaymentMethodWhatsApp(from, botMsg.id, { ...parsed, installments }, category)
     return
   }
 
-  await sendTransactionPreviewWhatsApp(from, botMsg.id, parsed, category, paymentMethod, resolvedAccount)
+  await sendTransactionPreviewWhatsApp(from, botMsg.id, { ...parsed, installments }, category, paymentMethod, resolvedAccount)
 }
 
 // Ask the user how they paid when we couldn't detect it from the message.
 async function askPaymentMethodWhatsApp(
   to: string,
   botMsgId: string,
-  parsed: { amount: number; description: string },
+  parsed: { amount: number; description: string; installments?: number | null },
   category: { categoryName: string } | null,
 ) {
-  const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed.amount)
-  const header = `📝 ${parsed.description}${category ? ` · ${category.categoryName}` : ''}\n💰 ${formattedAmount}`
+  const formatMoney = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
+  const formattedAmount = formatMoney(parsed.amount)
+  const installmentsLine = parsed.installments && parsed.installments > 1
+    ? `\n🔢 ${parsed.installments}x de ${formatMoney(parsed.amount / parsed.installments)}`
+    : ''
+  const header = `📝 ${parsed.description}${category ? ` · ${category.categoryName}` : ''}\n💰 ${formattedAmount}${installmentsLine}`
 
   await sendWhatsAppList({
     to,
@@ -363,12 +370,13 @@ async function askPaymentMethodWhatsApp(
 async function sendTransactionPreviewWhatsApp(
   to: string,
   botMsgId: string,
-  parsed: { type: string; amount: number; description: string; date?: string | null; recurring?: { label: string } | null },
+  parsed: { type: string; amount: number; description: string; date?: string | null; recurring?: { label: string } | null; installments?: number | null },
   category: { categoryName: string } | null,
   paymentMethod: 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER',
   resolvedAccount: { name: string } | null,
 ) {
-  const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed.amount)
+  const formatMoney = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
+  const formattedAmount = formatMoney(parsed.amount)
   const typeLabel = parsed.type === 'INCOME' ? '📥 Receita' : '📤 Despesa'
   const dateLabel = parsed.date ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(parsed.date)) : 'Hoje'
   const accountLabel = paymentMethod === 'CREDIT' ? '💳' : '🏦'
@@ -382,6 +390,9 @@ async function sendTransactionPreviewWhatsApp(
   if (category) lines.push(`📂 ${category.categoryName}`)
   if (resolvedAccount) lines.push(`${accountLabel} ${resolvedAccount.name}`)
   lines.push(`💱 ${PAYMENT_METHOD_LABELS[paymentMethod]}`)
+  if (paymentMethod === 'CREDIT' && parsed.installments && parsed.installments > 1) {
+    lines.push(`🔢 ${parsed.installments}x de ${formatMoney(parsed.amount / parsed.installments)}`)
+  }
   if (paymentMethod === 'CREDIT') lines.push(`_Saldo da conta não muda até você pagar a fatura._`)
   if (parsed.recurring) lines.push(`🔄 ${parsed.recurring.label}`)
 
@@ -562,7 +573,7 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
     await sendTransactionPreviewWhatsApp(
       from,
       botMsgId,
-      { type: parsed.type, amount: parsed.amount, description: parsed.description, date: parsed.date, recurring: parsed.recurring },
+      { type: parsed.type, amount: parsed.amount, description: parsed.description, date: parsed.date, recurring: parsed.recurring, installments: parsed.installments },
       parsed.categoryName ? { categoryName: parsed.categoryName } : null,
       pm,
       resolvedAccount,
@@ -580,6 +591,7 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
 
     const parsed = botMsg.parsedData as any
     const paymentMethod = (parsed.paymentMethod || 'DEBIT') as 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER'
+    const installments = paymentMethod === 'CREDIT' && parsed.installments && parsed.installments > 1 ? parsed.installments : 1
 
     // Prefer the account resolved when the message was parsed. Fall back to default/oldest.
     let accountId: string | null = parsed.accountId || null
@@ -610,23 +622,49 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
     const rawDate = parsed.date ? new Date(parsed.date) : new Date()
     const txDate = new Date(rawDate.getFullYear(), rawDate.getMonth(), rawDate.getDate())
 
+    const cardForInvoice = paymentMethod === 'CREDIT' && selectedAccount.closingDay && selectedAccount.dueDay
+      ? { id: selectedAccount.id, userId: connection.userId, closingDay: selectedAccount.closingDay, dueDay: selectedAccount.dueDay }
+      : null
+
+    const installmentAmount = parsed.amount / installments
+    const groupId = installments > 1 ? crypto.randomUUID() : null
+
     const transaction = await prisma.$transaction(async (db) => {
-      const created = await db.transaction.create({
-        data: {
-          userId: connection.userId, description: parsed.description, amount: parsed.amount,
-          type: parsed.type, date: txDate, accountId,
-          categoryId: parsed.categoryId ?? undefined,
+      let firstCreated: any = null
+      for (let i = 0; i < installments; i++) {
+        const parcelDate = new Date(txDate)
+        parcelDate.setMonth(parcelDate.getMonth() + i)
+        const invoice = cardForInvoice ? await getOrCreateInvoiceFor(db, cardForInvoice, parcelDate) : null
+        const created = await db.transaction.create({
+          data: {
+            userId: connection.userId,
+            description: installments > 1 ? `${parsed.description} (${i + 1}/${installments})` : parsed.description,
+            amount: installmentAmount,
+            type: parsed.type,
+            date: parcelDate,
+            accountId,
+            categoryId: parsed.categoryId ?? undefined,
+            paymentMethod,
+            invoiceId: invoice?.id ?? null,
+            ...(groupId ? {
+              installment: { create: { installmentNumber: i + 1, totalInstallments: installments, groupId } },
+            } : {}),
+          },
+        })
+        await applyTransactionBalance(db, {
+          type: parsed.type,
+          amount: installmentAmount,
+          accountId,
           paymentMethod,
-        },
-      })
-      await applyTransactionBalance(db, {
-        type: parsed.type,
-        amount: parsed.amount,
-        accountId,
-        paymentMethod,
-        date: txDate,
-      })
-      return created
+          date: parcelDate,
+        })
+        if (invoice) {
+          const delta = parsed.type === 'EXPENSE' ? installmentAmount : -installmentAmount
+          await adjustInvoiceTotal(db, invoice.id, delta)
+        }
+        if (i === 0) firstCreated = created
+      }
+      return firstCreated
     })
     await prisma.botMessage.update({ where: { id: targetId }, data: { status: 'CONFIRMED', transactionId: transaction.id } })
 

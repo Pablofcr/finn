@@ -4,8 +4,9 @@ import { sendMessage, answerCallbackQuery, editMessageText, downloadFileAsBase64
 import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
 import { transcribeAudio } from '@/lib/transcribe-audio'
 import { canUseFeature, getFeatureUsage } from '@/lib/plan-limits'
-import { detectPaymentContext, resolveAccount } from '@/lib/detect-payment-context'
+import { detectPaymentContext, resolveAccount, detectInstallments } from '@/lib/detect-payment-context'
 import { applyTransactionBalance } from '@/lib/transaction-balance'
+import { getOrCreateInvoiceFor, adjustInvoiceTotal } from '@/lib/invoice'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
 export const maxDuration = 60
@@ -352,6 +353,7 @@ async function handleMessage(message: any) {
     })
     const ctx = detectPaymentContext(text, accounts as any)
     const paymentMethod = ctx.paymentMethod // may be null
+    const installments = detectInstallments(text)
     const resolvedAccount = paymentMethod
       ? resolveAccount(ctx.account as any, paymentMethod, accounts as any)
       : null
@@ -373,17 +375,18 @@ async function handleMessage(message: any) {
           paymentMethod: paymentMethod || null,
           accountId: resolvedAccount?.id || null,
           accountName: resolvedAccount?.name || null,
+          installments: installments || null,
         },
         status: 'PARSED',
       },
     })
 
     if (!paymentMethod) {
-      await askPaymentMethodTelegram(chatId, botMsg.id, parsed, category)
+      await askPaymentMethodTelegram(chatId, botMsg.id, { ...parsed, installments }, category)
       return
     }
 
-    await sendTransactionPreviewTelegram(chatId, botMsg.id, parsed, category, paymentMethod, resolvedAccount)
+    await sendTransactionPreviewTelegram(chatId, botMsg.id, { ...parsed, installments }, category, paymentMethod, resolvedAccount)
   } catch (err) {
     console.error('Error parsing transaction:', err)
     await sendMessage({
@@ -897,11 +900,14 @@ async function handleReceiptPhoto(
 async function askPaymentMethodTelegram(
   chatId: string,
   botMsgId: string,
-  parsed: { amount: number; description: string },
+  parsed: { amount: number; description: string; installments?: number | null },
   category: { categoryName: string } | null,
 ) {
   const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed.amount)
-  const header = `📝 ${parsed.description}${category ? ` · ${category.categoryName}` : ''}\n💰 <b>${formattedAmount}</b>`
+  const installmentsLine = parsed.installments && parsed.installments > 1
+    ? `\n🔢 ${parsed.installments}x de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed.amount / parsed.installments)}`
+    : ''
+  const header = `📝 ${parsed.description}${category ? ` · ${category.categoryName}` : ''}\n💰 <b>${formattedAmount}</b>${installmentsLine}`
 
   await sendMessage({
     chatId,
@@ -931,12 +937,13 @@ async function askPaymentMethodTelegram(
 async function sendTransactionPreviewTelegram(
   chatId: string,
   botMsgId: string,
-  parsed: { type: string; amount: number; description: string; date?: string | null; recurring?: { label: string } | null },
+  parsed: { type: string; amount: number; description: string; date?: string | null; recurring?: { label: string } | null; installments?: number | null },
   category: { categoryName: string } | null,
   paymentMethod: 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER',
   resolvedAccount: { name: string } | null,
 ) {
-  const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed.amount)
+  const formatMoney = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
+  const formattedAmount = formatMoney(parsed.amount)
   const typeLabel = parsed.type === 'INCOME' ? '📥 Receita' : '📤 Despesa'
   const typeEmoji = parsed.type === 'INCOME' ? '🟢' : '🔴'
   const dateLabel = parsed.date
@@ -948,6 +955,9 @@ async function sendTransactionPreviewTelegram(
   const creditNote = paymentMethod === 'CREDIT' ? `\n<i>Saldo da conta não muda até você pagar a fatura.</i>` : ''
   const categoryLine = category ? `\n📂 Categoria: ${category.categoryName}` : ''
   const recurringLine = parsed.recurring ? `\n🔄 Recorrente: ${parsed.recurring.label}` : ''
+  const installmentsLine = paymentMethod === 'CREDIT' && parsed.installments && parsed.installments > 1
+    ? `\n🔢 ${parsed.installments}x de ${formatMoney(parsed.amount / parsed.installments)}`
+    : ''
 
   await sendMessage({
     chatId,
@@ -1025,7 +1035,7 @@ async function handleSetMethodTelegram(
   await sendTransactionPreviewTelegram(
     chatId,
     botMsgId,
-    { type: parsed.type, amount: parsed.amount, description: parsed.description, date: parsed.date, recurring: parsed.recurring },
+    { type: parsed.type, amount: parsed.amount, description: parsed.description, date: parsed.date, recurring: parsed.recurring, installments: parsed.installments },
     parsed.categoryName ? { categoryName: parsed.categoryName } : null,
     pm,
     resolvedAccount,
@@ -1057,9 +1067,11 @@ async function handleConfirmTransaction(
     paymentMethod?: 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER';
     accountId?: string | null;
     accountName?: string | null;
+    installments?: number | null;
   }
 
   const paymentMethod = parsed.paymentMethod || 'DEBIT'
+  const installments = paymentMethod === 'CREDIT' && parsed.installments && parsed.installments > 1 ? parsed.installments : 1
 
   // Resolve the account (prefer what was detected in parsing, otherwise default/oldest)
   let accountId: string | null = parsed.accountId || null
@@ -1094,28 +1106,53 @@ async function handleConfirmTransaction(
   const rawDate = parsed.date ? new Date(parsed.date) : new Date()
   const txDate = new Date(rawDate.getFullYear(), rawDate.getMonth(), rawDate.getDate())
 
-  // Create transaction + apply balance inside a DB transaction
+  const cardForInvoice = paymentMethod === 'CREDIT' && selectedAccount.closingDay && selectedAccount.dueDay
+    ? { id: selectedAccount.id, userId: connection.userId, closingDay: selectedAccount.closingDay, dueDay: selectedAccount.dueDay }
+    : null
+
+  // When paying in installments on credit, each parcel goes into the invoice
+  // for the month where that parcel actually charges.
+  const installmentAmount = parsed.amount / installments
+  const groupId = installments > 1 ? crypto.randomUUID() : null
+
   const transaction = await prisma.$transaction(async (db) => {
-    const created = await db.transaction.create({
-      data: {
-        userId: connection.userId,
-        description: parsed.description,
-        amount: parsed.amount,
-        type: parsed.type as 'INCOME' | 'EXPENSE',
-        date: txDate,
+    let firstCreated: any = null
+    for (let i = 0; i < installments; i++) {
+      const parcelDate = new Date(txDate)
+      parcelDate.setMonth(parcelDate.getMonth() + i)
+      const invoice = cardForInvoice ? await getOrCreateInvoiceFor(db, cardForInvoice, parcelDate) : null
+      const created = await db.transaction.create({
+        data: {
+          userId: connection.userId,
+          description: installments > 1 ? `${parsed.description} (${i + 1}/${installments})` : parsed.description,
+          amount: installmentAmount,
+          type: parsed.type as 'INCOME' | 'EXPENSE',
+          date: parcelDate,
+          accountId: accountId!,
+          categoryId: parsed.categoryId ?? undefined,
+          paymentMethod,
+          invoiceId: invoice?.id ?? null,
+          ...(groupId ? {
+            installment: {
+              create: { installmentNumber: i + 1, totalInstallments: installments, groupId },
+            },
+          } : {}),
+        },
+      })
+      await applyTransactionBalance(db, {
+        type: parsed.type as any,
+        amount: installmentAmount,
         accountId: accountId!,
-        categoryId: parsed.categoryId ?? undefined,
         paymentMethod,
-      },
-    })
-    await applyTransactionBalance(db, {
-      type: parsed.type as any,
-      amount: parsed.amount,
-      accountId: accountId!,
-      paymentMethod,
-      date: txDate,
-    })
-    return created
+        date: parcelDate,
+      })
+      if (invoice) {
+        const delta = parsed.type === 'EXPENSE' ? installmentAmount : -installmentAmount
+        await adjustInvoiceTotal(db, invoice.id, delta)
+      }
+      if (i === 0) firstCreated = created
+    }
+    return firstCreated
   })
 
   // If recurring, also create a recurring transaction

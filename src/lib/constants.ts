@@ -64,6 +64,7 @@ export const NAV_SECTIONS = [
       { href: '/dashboard', label: 'Início', icon: 'layout-dashboard' },
       { href: '/transactions', label: 'Transações', icon: 'arrow-left-right' },
       { href: '/accounts', label: 'Contas', icon: 'wallet' },
+      { href: '/invoices', label: 'Faturas', icon: 'credit-card' },
       { href: '/categories', label: 'Categorias', icon: 'tags' },
     ],
   },

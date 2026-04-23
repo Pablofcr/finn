@@ -83,6 +83,13 @@ enum PaymentMethod {
   TRANSFER
 }
 
+enum InvoiceStatus {
+  OPEN
+  CLOSED
+  PAID
+  OVERDUE
+}
+
 enum UserPlan {
   FREE
   PRO
@@ -117,6 +124,7 @@ model User {
   insights              Insight[]
   recurringTransactions RecurringTransaction[]
   notificationSetting   NotificationSetting?
+  invoices              Invoice[]
 
   @@index([supabaseId])
   @@index([email])
@@ -144,9 +152,34 @@ model Account {
   recurringTransactions RecurringTransaction[]
   linkedAccount         Account?               @relation("CreditCardLink", fields: [linkedAccountId], references: [id], onDelete: SetNull)
   linkedCards           Account[]              @relation("CreditCardLink")
+  invoices              Invoice[]              @relation("CardInvoices")
 
   @@index([userId])
   @@index([userId, isDefault])
+}
+
+model Invoice {
+  id                String        @id @default(uuid())
+  userId            String
+  cardId            String
+  periodStart       DateTime
+  periodEnd         DateTime
+  dueDate           DateTime
+  total             Decimal       @default(0) @db.Decimal(15, 2)
+  status            InvoiceStatus @default(OPEN)
+  paidAt            DateTime?
+  paidTransactionId String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card         Account       @relation("CardInvoices", fields: [cardId], references: [id], onDelete: Cascade)
+  transactions Transaction[] @relation("InvoiceTransactions")
+
+  @@unique([cardId, periodEnd])
+  @@index([userId])
+  @@index([cardId, status])
+  @@index([status, dueDate])
 }
 
 model Category {
@@ -194,6 +227,7 @@ model Transaction {
   categoryId             String?
   toAccountId            String?
   paymentMethod          PaymentMethod   @default(DEBIT)
+  invoiceId              String?
   location               String?
   notes                  String?
   tags                   String[]
@@ -206,6 +240,7 @@ model Transaction {
   account              Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
   category             Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   recurringTransaction RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
+  invoice              Invoice?              @relation("InvoiceTransactions", fields: [invoiceId], references: [id], onDelete: SetNull)
   installment          Installment?
   botMessage           BotMessage?
 
@@ -214,6 +249,7 @@ model Transaction {
   @@index([accountId])
   @@index([categoryId])
   @@index([recurringTransactionId])
+  @@index([invoiceId])
 }
 
 model Installment {

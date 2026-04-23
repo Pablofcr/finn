@@ -62,6 +62,28 @@ export function detectPaymentContext(text: string, accounts: AccountLite[]) {
 }
 
 /**
+ * Detects an installment count in free-form text. Matches patterns like:
+ *   "em 12x", "12 x", "12 vezes", "parcelado em 10x"
+ * Returns an integer between 2 and 48 when found, otherwise null.
+ */
+export function detectInstallments(text: string): number | null {
+  const norm = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  const patterns = [
+    /\b(\d{1,2})\s*x\b/,
+    /\b(\d{1,2})\s*vezes\b/,
+    /parcelad[ao]s?\s+em\s+(\d{1,2})/,
+  ]
+  for (const re of patterns) {
+    const match = norm.match(re)
+    if (match) {
+      const n = parseInt(match[1], 10)
+      if (n >= 2 && n <= 48) return n
+    }
+  }
+  return null
+}
+
+/**
  * Resolve the final account to use for a transaction, given the user-specified
  * account (from text), the intended payment method, and the user's accounts.
  *

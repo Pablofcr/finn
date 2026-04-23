@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/auth'
 import { transactionSchema } from '@/lib/validations/transaction'
 import { checkTransactionLimit } from '@/lib/plan-limits'
 import { applyTransactionBalance } from '@/lib/transaction-balance'
+import { getOrCreateInvoiceFor, adjustInvoiceTotal } from '@/lib/invoice'
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUser()
@@ -73,15 +74,21 @@ export async function POST(request: NextRequest) {
   const { installments, ...rest } = parsed.data
   const data = { ...rest, paymentMethod: rest.paymentMethod ?? 'DEBIT' as const }
 
-  // If payment method is CREDIT, the selected account must be a CREDIT_CARD.
+  // If payment method is CREDIT, the selected account must be a CREDIT_CARD
+  // and must have closingDay/dueDay configured for invoice generation.
+  let creditCard: { id: string; userId: string; closingDay: number | null; dueDay: number | null } | null = null
   if (data.paymentMethod === 'CREDIT') {
     const account = await prisma.account.findFirst({
       where: { id: data.accountId, userId: user.id },
-      select: { type: true },
+      select: { id: true, userId: true, type: true, closingDay: true, dueDay: true },
     })
     if (!account || account.type !== 'CREDIT_CARD') {
       return Response.json({ error: 'Forma de pagamento "Crédito" exige um cartão de crédito.' }, { status: 400 })
     }
+    if (!account.closingDay || !account.dueDay) {
+      return Response.json({ error: 'Configure o dia de fechamento e vencimento do cartão em Contas antes de registrar compras no crédito.' }, { status: 400 })
+    }
+    creditCard = account
   }
 
   if (installments && installments > 1) {
@@ -95,6 +102,7 @@ export async function POST(request: NextRequest) {
       installmentDate.setMonth(installmentDate.getMonth() + i)
 
       const tx = await prisma.$transaction(async (db) => {
+        const invoice = creditCard ? await getOrCreateInvoiceFor(db, creditCard, installmentDate) : null
         const created = await db.transaction.create({
           data: {
             userId: user.id,
@@ -105,6 +113,7 @@ export async function POST(request: NextRequest) {
             accountId: data.accountId,
             categoryId: data.categoryId || null,
             paymentMethod: data.paymentMethod,
+            invoiceId: invoice?.id ?? null,
             location: data.location || null,
             notes: data.notes || null,
             tags: data.tags || [],
@@ -125,6 +134,10 @@ export async function POST(request: NextRequest) {
           paymentMethod: data.paymentMethod,
           date: installmentDate,
         })
+        if (invoice) {
+          const delta = data.type === 'EXPENSE' ? installmentAmount : -installmentAmount
+          await adjustInvoiceTotal(db, invoice.id, delta)
+        }
         return created
       })
       transactions.push(tx)
@@ -133,18 +146,21 @@ export async function POST(request: NextRequest) {
     return Response.json({ data: transactions }, { status: 201 })
   }
 
+  const txDate = new Date(data.date)
   const transaction = await prisma.$transaction(async (db) => {
+    const invoice = creditCard ? await getOrCreateInvoiceFor(db, creditCard, txDate) : null
     const created = await db.transaction.create({
       data: {
         userId: user.id,
         type: data.type,
         amount: data.amount,
         description: data.description,
-        date: new Date(data.date),
+        date: txDate,
         accountId: data.accountId,
         categoryId: data.categoryId || null,
         toAccountId: data.toAccountId || null,
         paymentMethod: data.paymentMethod,
+        invoiceId: invoice?.id ?? null,
         location: data.location || null,
         notes: data.notes || null,
         tags: data.tags || [],
@@ -157,8 +173,12 @@ export async function POST(request: NextRequest) {
       accountId: data.accountId,
       toAccountId: data.toAccountId,
       paymentMethod: data.paymentMethod,
-      date: new Date(data.date),
+      date: txDate,
     })
+    if (invoice) {
+      const delta = data.type === 'EXPENSE' ? data.amount : -data.amount
+      await adjustInvoiceTotal(db, invoice.id, delta)
+    }
     return created
   })
 
