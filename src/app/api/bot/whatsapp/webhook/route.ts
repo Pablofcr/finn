@@ -629,13 +629,15 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
     const installmentAmount = parsed.amount / installments
     const groupId = installments > 1 ? crypto.randomUUID() : null
 
-    const transaction = await prisma.$transaction(async (db) => {
-      let firstCreated: any = null
-      for (let i = 0; i < installments; i++) {
-        const parcelDate = new Date(txDate)
-        parcelDate.setMonth(parcelDate.getMonth() + i)
+    // Each parcel is its own short transaction so 10–48 installments don't
+    // exceed Prisma's default 5s window.
+    let firstCreated: any = null
+    for (let i = 0; i < installments; i++) {
+      const parcelDate = new Date(txDate)
+      parcelDate.setMonth(parcelDate.getMonth() + i)
+      const created = await prisma.$transaction(async (db) => {
         const invoice = cardForInvoice ? await getOrCreateInvoiceFor(db, cardForInvoice, parcelDate) : null
-        const created = await db.transaction.create({
+        const createdRow = await db.transaction.create({
           data: {
             userId: connection.userId,
             description: installments > 1 ? `${parsed.description} (${i + 1}/${installments})` : parsed.description,
@@ -662,10 +664,11 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
           const delta = parsed.type === 'EXPENSE' ? installmentAmount : -installmentAmount
           await adjustInvoiceTotal(db, invoice.id, delta)
         }
-        if (i === 0) firstCreated = created
-      }
-      return firstCreated
-    })
+        return createdRow
+      })
+      if (i === 0) firstCreated = created
+    }
+    const transaction = firstCreated
     await prisma.botMessage.update({ where: { id: targetId }, data: { status: 'CONFIRMED', transactionId: transaction.id } })
 
     // Handle recurring

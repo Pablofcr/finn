@@ -472,7 +472,13 @@ async function handleCallbackQuery(callbackQuery: any) {
 
   // Handle transaction confirmation from text message
   if (action === 'confirm_tx') {
-    await handleConfirmTransaction(chatId, messageId, callbackId, connection, targetId)
+    try {
+      await handleConfirmTransaction(chatId, messageId, callbackId, connection, targetId)
+    } catch (err) {
+      console.error('confirm_tx failed:', err)
+      // Always close the Telegram loading spinner even when the handler throws
+      try { await answerCallbackQuery(callbackId, 'Erro ao confirmar. Tente de novo.') } catch { /* noop */ }
+    }
     return
   }
 
@@ -1117,13 +1123,17 @@ async function handleConfirmTransaction(
   const installmentAmount = parsed.amount / installments
   const groupId = installments > 1 ? crypto.randomUUID() : null
 
-  const transaction = await prisma.$transaction(async (db) => {
-    let firstCreated: any = null
-    for (let i = 0; i < installments; i++) {
-      const parcelDate = new Date(txDate)
-      parcelDate.setMonth(parcelDate.getMonth() + i)
+  // Creating 10–48 installments plus their invoices inside a single
+  // transaction would easily exceed Prisma's default 5s window. Each parcel
+  // is its own short transaction — if one fails mid-way the ones already
+  // committed stay (user can retry the remaining).
+  let firstCreated: any = null
+  for (let i = 0; i < installments; i++) {
+    const parcelDate = new Date(txDate)
+    parcelDate.setMonth(parcelDate.getMonth() + i)
+    const created = await prisma.$transaction(async (db) => {
       const invoice = cardForInvoice ? await getOrCreateInvoiceFor(db, cardForInvoice, parcelDate) : null
-      const created = await db.transaction.create({
+      const createdRow = await db.transaction.create({
         data: {
           userId: connection.userId,
           description: installments > 1 ? `${parsed.description} (${i + 1}/${installments})` : parsed.description,
@@ -1152,10 +1162,11 @@ async function handleConfirmTransaction(
         const delta = parsed.type === 'EXPENSE' ? installmentAmount : -installmentAmount
         await adjustInvoiceTotal(db, invoice.id, delta)
       }
-      if (i === 0) firstCreated = created
-    }
-    return firstCreated
-  })
+      return createdRow
+    })
+    if (i === 0) firstCreated = created
+  }
+  const transaction = firstCreated
 
   // If recurring, also create a recurring transaction
   let recurringInfo = ''
