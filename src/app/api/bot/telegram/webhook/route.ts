@@ -714,6 +714,7 @@ async function handleVoiceMessage(
     })
     const ctx = detectPaymentContext(transcription || '', accounts as any)
     const paymentMethod = ctx.paymentMethod
+    const installments = detectInstallments(transcription || '')
     const resolvedAccount = paymentMethod
       ? resolveAccount(ctx.account as any, paymentMethod, accounts as any)
       : null
@@ -736,17 +737,18 @@ async function handleVoiceMessage(
           paymentMethod: paymentMethod || null,
           accountId: resolvedAccount?.id || null,
           accountName: resolvedAccount?.name || null,
+          installments: installments || null,
         },
         status: 'PARSED',
       },
     })
 
     if (!paymentMethod) {
-      await askPaymentMethodTelegram(chatId, botMsg.id, parsed, category)
+      await askPaymentMethodTelegram(chatId, botMsg.id, { ...parsed, installments }, category)
       return
     }
 
-    await sendTransactionPreviewTelegram(chatId, botMsg.id, parsed, category, paymentMethod, resolvedAccount)
+    await sendTransactionPreviewTelegram(chatId, botMsg.id, { ...parsed, installments }, category, paymentMethod, resolvedAccount)
   } catch (err) {
     console.error('Save/confirm error:', err)
     await sendMessage({
