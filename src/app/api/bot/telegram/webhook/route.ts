@@ -386,6 +386,11 @@ async function handleMessage(message: any) {
       return
     }
 
+    if (paymentMethod === 'CREDIT' && !installments) {
+      await askInstallmentsTelegram(chatId, botMsg.id, parsed, category)
+      return
+    }
+
     await sendTransactionPreviewTelegram(chatId, botMsg.id, { ...parsed, installments }, category, paymentMethod, resolvedAccount)
   } catch (err) {
     console.error('Error parsing transaction:', err)
@@ -467,6 +472,14 @@ async function handleCallbackQuery(callbackQuery: any) {
     const method = rest[0]
     const botMsgId = rest[1]
     await handleSetMethodTelegram(chatId, messageId, callbackId, connection, method, botMsgId)
+    return
+  }
+
+  // set_installments:N:botMsgId — user picked the installment count
+  if (action === 'set_installments') {
+    const count = parseInt(rest[0], 10)
+    const botMsgId = rest[1]
+    await handleSetInstallmentsTelegram(chatId, callbackId, connection, count, botMsgId)
     return
   }
 
@@ -754,6 +767,11 @@ async function handleVoiceMessage(
       return
     }
 
+    if (paymentMethod === 'CREDIT' && !installments) {
+      await askInstallmentsTelegram(chatId, botMsg.id, parsed, category)
+      return
+    }
+
     await sendTransactionPreviewTelegram(chatId, botMsg.id, { ...parsed, installments }, category, paymentMethod, resolvedAccount)
   } catch (err) {
     console.error('Save/confirm error:', err)
@@ -905,6 +923,40 @@ async function handleReceiptPhoto(
   }
 }
 
+async function askInstallmentsTelegram(
+  chatId: string,
+  botMsgId: string,
+  parsed: { amount: number; description: string },
+  category: { categoryName: string } | null,
+) {
+  const formatMoney = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
+  const header = `💳 ${parsed.description}${category ? ` · ${category.categoryName}` : ''}\n💰 <b>${formatMoney(parsed.amount)}</b>`
+
+  await sendMessage({
+    chatId,
+    text: `${header}\n\n<b>Em quantas parcelas?</b>`,
+    replyMarkup: {
+      inline_keyboard: [
+        [
+          { text: 'À vista', callback_data: `set_installments:1:${botMsgId}` },
+          { text: '2x', callback_data: `set_installments:2:${botMsgId}` },
+          { text: '3x', callback_data: `set_installments:3:${botMsgId}` },
+        ],
+        [
+          { text: '4x', callback_data: `set_installments:4:${botMsgId}` },
+          { text: '6x', callback_data: `set_installments:6:${botMsgId}` },
+          { text: '10x', callback_data: `set_installments:10:${botMsgId}` },
+        ],
+        [
+          { text: '12x', callback_data: `set_installments:12:${botMsgId}` },
+          { text: '24x', callback_data: `set_installments:24:${botMsgId}` },
+          { text: '❌ Cancelar', callback_data: `cancel_tx:${botMsgId}` },
+        ],
+      ],
+    },
+  })
+}
+
 async function askPaymentMethodTelegram(
   chatId: string,
   botMsgId: string,
@@ -1040,6 +1092,18 @@ async function handleSetMethodTelegram(
   })
 
   await answerCallbackQuery(callbackId, 'Método escolhido')
+
+  // Credit purchase without a detected installment count → ask now.
+  if (pm === 'CREDIT' && !parsed.installments) {
+    await askInstallmentsTelegram(
+      chatId,
+      botMsgId,
+      { amount: parsed.amount, description: parsed.description },
+      parsed.categoryName ? { categoryName: parsed.categoryName } : null,
+    )
+    return
+  }
+
   await sendTransactionPreviewTelegram(
     chatId,
     botMsgId,
@@ -1047,6 +1111,48 @@ async function handleSetMethodTelegram(
     parsed.categoryName ? { categoryName: parsed.categoryName } : null,
     pm,
     resolvedAccount,
+  )
+}
+
+async function handleSetInstallmentsTelegram(
+  chatId: string,
+  callbackId: string,
+  connection: { userId: string; id: string },
+  count: number,
+  botMsgId: string,
+) {
+  const botMsg = await prisma.botMessage.findFirst({
+    where: { id: botMsgId, userId: connection.userId, status: 'PARSED' },
+  })
+  if (!botMsg || !botMsg.parsedData) {
+    await answerCallbackQuery(callbackId, 'Transação expirada.')
+    return
+  }
+
+  const parsed = botMsg.parsedData as any
+  // count === 1 means "à vista" → no installment record needed
+  const installments = count > 1 ? count : null
+
+  await prisma.botMessage.update({
+    where: { id: botMsgId },
+    data: { parsedData: { ...parsed, installments } },
+  })
+
+  await answerCallbackQuery(callbackId, installments ? `${installments}x` : 'À vista')
+  await sendTransactionPreviewTelegram(
+    chatId,
+    botMsgId,
+    {
+      type: parsed.type,
+      amount: parsed.amount,
+      description: parsed.description,
+      date: parsed.date,
+      recurring: parsed.recurring,
+      installments,
+    },
+    parsed.categoryName ? { categoryName: parsed.categoryName } : null,
+    parsed.paymentMethod || 'CREDIT',
+    parsed.accountName ? { name: parsed.accountName } : null,
   )
 }
 

@@ -333,10 +333,43 @@ async function handleTextMessage(from: string, text: string, connection: { userI
     return
   }
 
+  if (paymentMethod === 'CREDIT' && !installments) {
+    await askInstallmentsWhatsApp(from, botMsg.id, parsed, category)
+    return
+  }
+
   await sendTransactionPreviewWhatsApp(from, botMsg.id, { ...parsed, installments }, category, paymentMethod, resolvedAccount)
 }
 
 // Ask the user how they paid when we couldn't detect it from the message.
+async function askInstallmentsWhatsApp(
+  to: string,
+  botMsgId: string,
+  parsed: { amount: number; description: string },
+  category: { categoryName: string } | null,
+) {
+  const formatMoney = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
+  const header = `💳 ${parsed.description}${category ? ` · ${category.categoryName}` : ''}\n💰 ${formatMoney(parsed.amount)}`
+
+  await sendWhatsAppList({
+    to,
+    body: `${header}\n\n*Em quantas parcelas?*`,
+    buttonLabel: 'Escolher parcelas',
+    sectionTitle: 'Parcelamento',
+    rows: [
+      { id: `set_installments:1:${botMsgId}`, title: 'À vista' },
+      { id: `set_installments:2:${botMsgId}`, title: '2x' },
+      { id: `set_installments:3:${botMsgId}`, title: '3x' },
+      { id: `set_installments:4:${botMsgId}`, title: '4x' },
+      { id: `set_installments:6:${botMsgId}`, title: '6x' },
+      { id: `set_installments:10:${botMsgId}`, title: '10x' },
+      { id: `set_installments:12:${botMsgId}`, title: '12x' },
+      { id: `set_installments:24:${botMsgId}`, title: '24x' },
+      { id: `cancel_tx:${botMsgId}`, title: '❌ Cancelar' },
+    ],
+  })
+}
+
 async function askPaymentMethodWhatsApp(
   to: string,
   botMsgId: string,
@@ -530,6 +563,43 @@ async function handleImageMessage(from: string, message: any, connection: { user
 async function handleButtonReply(from: string, buttonId: string, connection: { userId: string; id: string }) {
   const [action, ...rest] = buttonId.split(':')
 
+  // `set_installments:N:botMsgId` — user picked the installment count
+  if (action === 'set_installments') {
+    const [countStr, botMsgId] = rest
+    const count = parseInt(countStr, 10)
+    const botMsg = await prisma.botMessage.findFirst({
+      where: { id: botMsgId, userId: connection.userId, status: 'PARSED' },
+    })
+    if (!botMsg || !botMsg.parsedData) {
+      await sendWhatsAppMessage({ to: from, text: '⚠️ Transação expirada. Mande de novo.' })
+      return
+    }
+    const parsed = botMsg.parsedData as any
+    const installments = count > 1 ? count : null
+
+    await prisma.botMessage.update({
+      where: { id: botMsgId },
+      data: { parsedData: { ...parsed, installments } },
+    })
+
+    await sendTransactionPreviewWhatsApp(
+      from,
+      botMsgId,
+      {
+        type: parsed.type,
+        amount: parsed.amount,
+        description: parsed.description,
+        date: parsed.date,
+        recurring: parsed.recurring,
+        installments,
+      },
+      parsed.categoryName ? { categoryName: parsed.categoryName } : null,
+      parsed.paymentMethod || 'CREDIT',
+      parsed.accountName ? { name: parsed.accountName } : null,
+    )
+    return
+  }
+
   // `set_method:METHOD:botMsgId` — user picked a payment method in the list
   if (action === 'set_method') {
     const [method, botMsgId] = rest
@@ -569,6 +639,16 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
         },
       },
     })
+
+    if (pm === 'CREDIT' && !parsed.installments) {
+      await askInstallmentsWhatsApp(
+        from,
+        botMsgId,
+        { amount: parsed.amount, description: parsed.description },
+        parsed.categoryName ? { categoryName: parsed.categoryName } : null,
+      )
+      return
+    }
 
     await sendTransactionPreviewWhatsApp(
       from,
