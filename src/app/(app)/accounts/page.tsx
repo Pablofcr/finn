@@ -177,21 +177,20 @@ export default function AccountsPage() {
               <Plus className="h-4 w-4" />
               Nova Conta
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Editar Conta' : 'Nova Conta'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label>Nome</Label>
-                <Input placeholder="Ex: Nubank" className="h-11 rounded-xl" {...register('name')} />
-                {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label>Tipo</Label>
+                <Label>Tipo de conta</Label>
                 <Select onValueChange={(v) => v && setValue('type', v as any)} value={watch('type')}>
                   <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue placeholder="Selecione o tipo" />
+                    <span className="flex flex-1 text-left truncate">
+                      {watch('type')
+                        ? ACCOUNT_TYPE_LABELS[watch('type') as string]
+                        : <span className="text-muted-foreground">Selecione o tipo</span>}
+                    </span>
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(ACCOUNT_TYPE_LABELS).map(([key, label]) => (
@@ -201,33 +200,51 @@ export default function AccountsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Saldo inicial (R$)</Label>
-                <Input type="number" step="0.01" className="h-11 rounded-xl" {...register('balance', { valueAsNumber: true })} />
+                <Label>Nome</Label>
+                <Input
+                  placeholder={accountType === 'CREDIT_CARD' ? 'Ex: Nubank Ultravioleta' : 'Ex: Nubank'}
+                  className="h-11 rounded-xl"
+                  {...register('name')}
+                />
+                {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
               </div>
+              {accountType !== 'CREDIT_CARD' && (
+                <div className="space-y-2">
+                  <Label>Saldo atual (R$)</Label>
+                  <Input type="number" step="0.01" className="h-11 rounded-xl" {...register('balance', { valueAsNumber: true })} />
+                </div>
+              )}
               {accountType === 'CREDIT_CARD' && (
                 <>
                   <div className="space-y-2">
-                    <Label>Limite (R$)</Label>
-                    <Input type="number" step="0.01" className="h-11 rounded-xl" {...register('creditLimit', { valueAsNumber: true })} />
+                    <Label>Limite do cartão (R$)</Label>
+                    <Input type="number" step="0.01" placeholder="Ex: 5000" className="h-11 rounded-xl" {...register('creditLimit', { valueAsNumber: true })} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label>Dia de fechamento</Label>
-                      <Input type="number" min="1" max="31" className="h-11 rounded-xl" {...register('closingDay', { valueAsNumber: true })} />
+                      <Input type="number" min="1" max="31" placeholder="Ex: 10" className="h-11 rounded-xl" {...register('closingDay', { valueAsNumber: true })} />
                     </div>
                     <div className="space-y-2">
                       <Label>Dia de vencimento</Label>
-                      <Input type="number" min="1" max="31" className="h-11 rounded-xl" {...register('dueDay', { valueAsNumber: true })} />
+                      <Input type="number" min="1" max="31" placeholder="Ex: 20" className="h-11 rounded-xl" {...register('dueDay', { valueAsNumber: true })} />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Conta vinculada (onde a fatura é debitada)</Label>
+                    <Label>Conta onde a fatura é paga</Label>
                     <Select
                       onValueChange={(v) => setValue('linkedAccountId', v === '__none__' ? null : v)}
                       value={watch('linkedAccountId') || '__none__'}
                     >
                       <SelectTrigger className="h-11 rounded-xl">
-                        <SelectValue placeholder="Escolha a conta bancária" />
+                        <span className="flex flex-1 text-left truncate">
+                          {(() => {
+                            const linkedId = watch('linkedAccountId')
+                            if (!linkedId) return 'Nenhuma (definir depois)'
+                            const match = accounts.find(a => a.id === linkedId)
+                            return match?.name || 'Nenhuma (definir depois)'
+                          })()}
+                        </span>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none__">Nenhuma (definir depois)</SelectItem>
