@@ -61,22 +61,44 @@ export function detectPaymentContext(text: string, accounts: AccountLite[]) {
   return { paymentMethod, account: matchedAccount }
 }
 
+const WRITTEN_TO_N: Record<string, number> = {
+  dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9,
+  dez: 10, onze: 11, doze: 12, treze: 13, quatorze: 14, catorze: 14, quinze: 15,
+  dezesseis: 16, dezessete: 17, dezoito: 18, dezenove: 19, vinte: 20, trinta: 30,
+  quarenta: 40, cinquenta: 50,
+}
+
+const WRITTEN_UNION = Object.keys(WRITTEN_TO_N).join('|')
+
 /**
  * Detects an installment count in free-form text. Matches patterns like:
- *   "em 12x", "12 x", "12 vezes", "parcelado em 10x"
+ *   "em 12x", "12 x", "12 vezes", "parcelado em 10x",
+ *   "em dez vezes", "parcelado em doze vezes", "dez x"
  * Returns an integer between 2 and 48 when found, otherwise null.
  */
 export function detectInstallments(text: string): number | null {
   const norm = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  const patterns = [
+  const digitPatterns = [
     /\b(\d{1,2})\s*x\b/,
     /\b(\d{1,2})\s*vezes\b/,
     /parcelad[ao]s?\s+em\s+(\d{1,2})/,
   ]
-  for (const re of patterns) {
-    const match = norm.match(re)
-    if (match) {
-      const n = parseInt(match[1], 10)
+  for (const re of digitPatterns) {
+    const m = norm.match(re)
+    if (m) {
+      const n = parseInt(m[1], 10)
+      if (n >= 2 && n <= 48) return n
+    }
+  }
+  const writtenPatterns = [
+    new RegExp(`\\b(${WRITTEN_UNION})\\s*vezes\\b`),
+    new RegExp(`parcelad[ao]s?\\s+em\\s+(${WRITTEN_UNION})`),
+    new RegExp(`\\bem\\s+(${WRITTEN_UNION})\\s*vezes?\\b`),
+  ]
+  for (const re of writtenPatterns) {
+    const m = norm.match(re)
+    if (m) {
+      const n = WRITTEN_TO_N[m[1]]
       if (n >= 2 && n <= 48) return n
     }
   }

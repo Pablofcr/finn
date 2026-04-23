@@ -117,36 +117,71 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
   // Remove ordinal markers to avoid confusing "1º" with amount
   normalized = normalized.replace(/(\d)[°ºª]/g, '$1_ord').trim()
 
+  // Remove installment patterns early so "em dez vezes" doesn't capture "dez" as the amount.
+  // (Actual installment count is detected separately by lib/detect-payment-context.)
+  const installmentCleanup = [
+    /\b(?:parcelad[ao]s?\s+em\s+)?\d{1,2}\s*x\b/g,
+    /\b(?:parcelad[ao]s?\s+)?em\s+\d{1,2}\s*vezes?\b/g,
+    /\b\d{1,2}\s*vezes?\b/g,
+    /\bparcelad[ao]s?\s+em\s+(?:um|dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|(?:qu)?atorze|quinze|dezess?[ei]s|dezess?ete|dezoito|dezenove|vinte|trinta|quarenta|cinq[uü]enta)(?:\s+vezes?)?\b/g,
+    /\bem\s+(?:dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|(?:qu)?atorze|quinze|dezess?[ei]s|dezess?ete|dezoito|dezenove|vinte|trinta|quarenta|cinq[uü]enta)\s+vezes?\b/g,
+  ]
+  for (const pat of installmentCleanup) {
+    normalized = normalized.replace(pat, ' ')
+  }
+  normalized = normalized.replace(/\s{2,}/g, ' ').trim()
+
   // 2. Extract AMOUNT from anywhere (try explicit R$ first, then others)
   let amount: number | null = null
+
+  const writtenNumberUnion = `(?:um|uma|dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|(?:qu)?atorze|quinze|dezess?[ei]s|dezess?ete|dezoito|dezenove|vinte|trinta|quarenta|cinq[uü]enta|sessenta|setenta|oitenta|noventa|cem|cento|duzentos?|duzentas?|trezentos?|trezentas?|quatrocentos?|quatrocentas?|quinhentos?|quinhentas?|seiscentos?|seiscentas?|setecentos?|setecentas?|oitocentos?|oitocentas?|novecentos?|novecentas?|mil)`
 
   // Priority 1: "R$ 95,85" or "valor de R$ 95,85" (explicit currency marker)
   const explicitMatch = normalized.match(/(?:valor\s+(?:de\s+)?)?r\$\s*(\d[\d.,]*\d|\d+)/)
   // Priority 2: "95,85 reais" or "95 reais"
   const reaisMatch = !explicitMatch ? normalized.match(/(\d[\d.,]*\d|\d+)\s*(?:reais|real)/) : null
-  // Priority 3: any number (but not ordinals marked with _ord)
-  const anyNumMatch = !explicitMatch && !reaisMatch ? normalized.match(/(?<!\d_ord\s*)(\d[\d.,]*\d|\d+)(?!_ord)/) : null
+  // Priority 3: written numbers ending in "reais" — e.g. "dois mil reais", "quinhentos reais"
+  const reaisWrittenMatch = !explicitMatch && !reaisMatch
+    ? normalized.match(new RegExp(`((?:${writtenNumberUnion}[\\s,]*(?:e\\s+)?)+)\\s+(?:reais|real|conto[s]?)`))
+    : null
+  // Priority 4: "valor de dois mil" (no reais) — written after "valor de"
+  const valorWrittenMatch = !explicitMatch && !reaisMatch && !reaisWrittenMatch
+    ? normalized.match(new RegExp(`valor\\s+(?:de\\s+)?((?:${writtenNumberUnion}[\\s,]*(?:e\\s+)?)+)`))
+    : null
+  // Priority 5: any digit (but not ordinals marked with _ord)
+  const anyNumMatch = !explicitMatch && !reaisMatch && !reaisWrittenMatch && !valorWrittenMatch
+    ? normalized.match(/(?<!\d_ord\s*)(\d[\d.,]*\d|\d+)(?!_ord)/)
+    : null
 
-  const numMatch = explicitMatch || reaisMatch || anyNumMatch
-  if (numMatch) {
-    const amountStr = numMatch[1].replace(/\./g, '').replace(',', '.')
+  const digitMatch = explicitMatch || reaisMatch || anyNumMatch
+  if (digitMatch) {
+    const amountStr = digitMatch[1].replace(/\./g, '').replace(',', '.')
     amount = parseFloat(amountStr)
     if (amount > 0) {
-      normalized = normalized.replace(numMatch[0], ' ').trim()
+      normalized = normalized.replace(digitMatch[0], ' ').trim()
     } else {
       amount = null
     }
   }
 
-  // Try written numbers: "cem reais", "duzentos", "mil e quinhentos"
+  if (!amount && (reaisWrittenMatch || valorWrittenMatch)) {
+    const m = reaisWrittenMatch || valorWrittenMatch!
+    amount = parseWrittenNumber(m[1])
+    if (amount) {
+      normalized = normalized.replace(m[0], ' ').trim()
+    }
+  }
+
+  // Last resort: any written number sequence (handles bare "cinquenta")
   if (!amount) {
-    const writtenMatch = normalized.match(
-      /(?:r?\$?\s*)?((?:(?:um|uma|dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|(?:qu)?atorze|quinze|dezess?[ei]s|dezess?ete|dezoito|dezenove|vinte|trinta|quarenta|cinq[uü]enta|sessenta|setenta|oitenta|noventa|cem|cento|duzentos?|duzentas?|trezentos?|trezentas?|quatrocentos?|quatrocentas?|quinhentos?|quinhentas?|seiscentos?|seiscentas?|setecentos?|setecentas?|oitocentos?|oitocentas?|novecentos?|novecentas?|mil)[\s,]*(?:e\s+)?)+)\s*(?:reais|real|conto[s]?)?/
-    )
-    if (writtenMatch) {
-      amount = parseWrittenNumber(writtenMatch[1])
-      if (amount) {
-        normalized = normalized.replace(writtenMatch[0], ' ').trim()
+    const anyWritten = normalized.match(new RegExp(`(?:r?\\$?\\s*)?((?:${writtenNumberUnion}[\\s,]*(?:e\\s+)?)+)\\s*(?:reais|real|conto[s]?)?`))
+    if (anyWritten) {
+      const candidate = parseWrittenNumber(anyWritten[1])
+      // Reject trivial matches like just "um" (likely an article, not an amount)
+      const singleWordLowValue = anyWritten[1].trim().split(/\s+/).length === 1 && candidate !== null && candidate < 5
+      if (candidate && !singleWordLowValue) {
+        amount = candidate
+        normalized = normalized.replace(anyWritten[0], ' ').trim()
       }
     }
   }
@@ -221,10 +256,12 @@ function regexParseTransaction(text: string): ParsedTransactionWithDate | null {
   // 5. Extract DESCRIPTION from whatever remains
   let description = normalized
     .replace(/\b(reais|real|conto[s]?|r\$)\b/g, '')  // remove currency words
-    .replace(/\b(pagamento|recorrente|recorr[eê]ncia|valor|cadastr\w*|registr\w*|lan[cç]\w*|anot\w*|inclu\w*|adicion\w*|cri\w*|coloc\w*|bot\w*|marc\w*)\b/g, '')  // remove action/noise words
+    .replace(/\b(pagamento|recorrente|recorr[eê]ncia|valor|cadastr\w*|registr\w*|lan[cç]\w*|anot\w*|inclu\w*|adicion\w*|cri\w*|coloc\w*|bot\w*|marc\w*|parcelad\w*|vezes?|vez)\b/g, '')  // remove action/noise words
     .replace(/\d+_ord/g, '')  // remove ordinal markers
     .replace(/\b(janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/g, '')  // remove month names
     .replace(/\b(dia|mes|ano)\b/g, '')  // remove date words
+    // remove any leftover written-number words (e.g. parts of "dois mil" not captured as the amount)
+    .replace(/\b(dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|(?:qu)?atorze|quinze|dezess?[ei]s|dezess?ete|dezoito|dezenove|vinte|trinta|quarenta|cinq[uü]enta|sessenta|setenta|oitenta|noventa|cem|cento|duzentos?|duzentas?|trezentos?|trezentas?|quatrocentos?|quatrocentas?|quinhentos?|quinhentas?|seiscentos?|seiscentas?|setecentos?|setecentas?|oitocentos?|oitocentas?|novecentos?|novecentas?|mil)\b/g, ' ')
     .replace(/\b(de|do|da|dos|das|no|na|nos|nas|em|pra|para|com|pelo|pela|um|uma|uns|umas|os|as|que)\b/g, ' ')
     .replace(/\s[oe]\s/g, ' ')  // remove standalone "o" and "e" only between spaces (protects names like João)
     .replace(/[,;:]+/g, ' ')  // remove punctuation
