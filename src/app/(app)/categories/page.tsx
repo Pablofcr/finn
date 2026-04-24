@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/shared/empty-state'
 import { COLORS } from '@/lib/constants'
 import { Plus, Tags, Trash2, Pencil } from 'lucide-react'
+import { getCategoryIcon } from '@/lib/category-icon'
 import { toast } from 'sonner'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -341,21 +342,24 @@ function CategoryGroup({
       ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400 bg-red-50 dark:bg-red-950/30'
       : 'border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
 
+  const ParentIcon = getCategoryIcon(category.icon)
+  const parentColor = category.color || '#64748b'
+
   return (
-    <div className="space-y-2">
-      {/* Parent card */}
-      <Card className="group relative hover:shadow-md transition-all">
+    <div className="space-y-3">
+      {/* Parent card — solid-color icon block, subtle hover lift */}
+      <Card className="group relative transition-all duration-200 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/40 hover:-translate-y-0.5 ring-1 ring-inset ring-black/0 hover:ring-black/5 dark:hover:ring-white/5">
         <CardContent className="pt-4 pb-4 px-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0 flex-1">
               <div
-                className="h-11 w-11 rounded-xl flex items-center justify-center text-white text-base font-bold shadow-sm shrink-0"
-                style={{ backgroundColor: category.color || '#64748b' }}
+                className="h-11 w-11 rounded-2xl flex items-center justify-center shadow-sm shrink-0 ring-1 ring-inset ring-black/5"
+                style={{ backgroundColor: parentColor }}
               >
-                {category.name.charAt(0).toUpperCase()}
+                <ParentIcon className="h-5 w-5 text-white" strokeWidth={1.75} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-base truncate">{category.name}</p>
+                <p className="text-[15px] font-semibold tracking-tight truncate">{category.name}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${typeBadge}`}>
                     {typeLabel}
@@ -406,56 +410,63 @@ function CategoryGroup({
         </CardContent>
       </Card>
 
-      {/* Subcategories grid — indented under parent */}
+      {/* Subcategories — hairline rail, tinted icon tiles (icon-on-color) */}
       {hasChildren && (
-        <div className="ml-6 pl-4 border-l-2 border-dashed border-border/50 grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-          {subs.map((sub) => (
-            <Card key={sub.id} className="group relative hover:shadow-sm transition-all bg-muted/30">
-              <CardContent className="pt-3 pb-3 px-3">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div
-                    className="h-8 w-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-sm"
-                    style={{ backgroundColor: sub.color || category.color || '#64748b' }}
-                  >
-                    {sub.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                      onClick={() => onEdit(sub)}
+        <div className="ml-5 pl-5 border-l border-border/60 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+          {subs.map((sub) => {
+            const SubIcon = getCategoryIcon(sub.icon)
+            const subColor = sub.color || category.color || '#64748b'
+            return (
+              <Card
+                key={sub.id}
+                className="group relative bg-card border-border/40 transition-all duration-200 hover:border-border hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/40 hover:-translate-y-0.5"
+              >
+                <CardContent className="pt-3 pb-3 px-3">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div
+                      className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-inset ring-black/5 dark:ring-white/10"
+                      style={{ backgroundColor: `${subColor}1a` /* ~10% alpha */ }}
                     >
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" />}>
-                        <Trash2 className="h-3 w-3" />
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir &ldquo;{sub.name}&rdquo;?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Suas transações anteriores serão mantidas, mas ficarão sem categoria.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onDelete(sub.id)}>Excluir</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                      <SubIcon className="h-4 w-4" style={{ color: subColor }} strokeWidth={1.75} />
+                    </div>
+                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                        onClick={() => onEdit(sub)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" />}>
+                          <Trash2 className="h-3 w-3" />
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir &ldquo;{sub.name}&rdquo;?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Suas transações anteriores serão mantidas, mas ficarão sem categoria.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => onDelete(sub.id)}>Excluir</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
-                </div>
-                <p className="font-medium text-sm truncate">{sub.name}</p>
-                {sub._count.transactions > 0 && (
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {sub._count.transactions} {sub._count.transactions === 1 ? 'transação' : 'transações'}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  <p className="font-medium text-sm tracking-tight truncate">{sub.name}</p>
+                  {sub._count.transactions > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {sub._count.transactions} {sub._count.transactions === 1 ? 'transação' : 'transações'}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>
