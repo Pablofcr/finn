@@ -113,8 +113,12 @@ export default function CategoriesPage() {
     }
   }
 
-  const expenseCategories = categories.filter((c) => c.type === 'EXPENSE')
-  const incomeCategories = categories.filter((c) => c.type === 'INCOME')
+  // Show only top-level categories at the root grid; children render nested below each parent.
+  const topLevel = categories.filter((c) => !c.parentId)
+  const expenseTop = topLevel.filter((c) => c.type === 'EXPENSE')
+  const incomeTop = topLevel.filter((c) => c.type === 'INCOME')
+  const expenseCount = categories.filter((c) => c.type === 'EXPENSE').length
+  const incomeCount = categories.filter((c) => c.type === 'INCOME').length
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -123,7 +127,7 @@ export default function CategoriesPage() {
           <h1 className="text-2xl font-bold">Categorias</h1>
           {categories.length > 0 && (
             <p className="text-sm text-muted-foreground mt-1">
-              {expenseCategories.length} {expenseCategories.length === 1 ? 'categoria de despesa' : 'categorias de despesa'} · {incomeCategories.length} {incomeCategories.length === 1 ? 'categoria de receita' : 'categorias de receita'}
+              {expenseCount} {expenseCount === 1 ? 'categoria de despesa' : 'categorias de despesa'} · {incomeCount} {incomeCount === 1 ? 'categoria de receita' : 'categorias de receita'}
             </p>
           )}
         </div>
@@ -254,136 +258,204 @@ export default function CategoriesPage() {
       ) : (
         <div className="space-y-8">
           {/* Despesas */}
-          {expenseCategories.length > 0 && (
-            <div className="space-y-3">
+          {expenseTop.length > 0 && (
+            <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-red-500" />
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Despesas ({expenseCategories.length})
+                  Despesas ({expenseCount})
                 </h2>
               </div>
-              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-                {expenseCategories.map((c) => (
-                  <Card key={c.id} className="group relative hover:shadow-md transition-all duration-200 hover:border-foreground/10">
-                    <CardContent className="pt-4 pb-4 px-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div
-                          className="h-10 w-10 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-sm"
-                          style={{ backgroundColor: c.color || '#64748b' }}
-                        >
-                          {c.name?.charAt(0)?.toUpperCase()}
-                        </div>
-                        {!c.isSystem && (
-                          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                              onClick={() => openEditDialog(c)}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" />}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir &ldquo;{c.name}&rdquo;?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita. Suas transações anteriores serão mantidas, mas ficarão sem categoria.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(c.id)}>Excluir</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        )}
-                      </div>
-                      <p className="font-semibold text-sm truncate">{c.name}</p>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-red-200 text-red-600 dark:border-red-800 dark:text-red-400 bg-red-50 dark:bg-red-950/30">
-                          Despesa
-                        </Badge>
-                        {c.isSystem && (
-                          <span className="text-[10px] text-muted-foreground">(sistema)</span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+              <div className="space-y-5">
+                {expenseTop.map((cat) => (
+                  <CategoryGroup
+                    key={cat.id}
+                    category={cat}
+                    onEdit={openEditDialog}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </div>
             </div>
           )}
 
           {/* Receitas */}
-          {incomeCategories.length > 0 && (
-            <div className="space-y-3">
+          {incomeTop.length > 0 && (
+            <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-emerald-500" />
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Receitas ({incomeCategories.length})
+                  Receitas ({incomeCount})
                 </h2>
               </div>
-              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-                {incomeCategories.map((c) => (
-                  <Card key={c.id} className="group relative hover:shadow-md transition-all duration-200 hover:border-foreground/10">
-                    <CardContent className="pt-4 pb-4 px-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div
-                          className="h-10 w-10 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-sm"
-                          style={{ backgroundColor: c.color || '#64748b' }}
-                        >
-                          {c.name?.charAt(0)?.toUpperCase()}
-                        </div>
-                        {!c.isSystem && (
-                          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                              onClick={() => openEditDialog(c)}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" />}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir &ldquo;{c.name}&rdquo;?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita. Suas transações anteriores serão mantidas, mas ficarão sem categoria.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(c.id)}>Excluir</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        )}
-                      </div>
-                      <p className="font-semibold text-sm truncate">{c.name}</p>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30">
-                          Receita
-                        </Badge>
-                        {c.isSystem && (
-                          <span className="text-[10px] text-muted-foreground">(sistema)</span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+              <div className="space-y-5">
+                {incomeTop.map((cat) => (
+                  <CategoryGroup
+                    key={cat.id}
+                    category={cat}
+                    onEdit={openEditDialog}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </div>
             </div>
           )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+type CategoryWithChildren = {
+  id: string
+  name: string
+  type: 'EXPENSE' | 'INCOME'
+  color: string | null
+  icon: string | null
+  parentId: string | null
+  _count: { transactions: number }
+  subcategories?: Array<{
+    id: string
+    name: string
+    type: 'EXPENSE' | 'INCOME'
+    color: string | null
+    icon: string | null
+    _count: { transactions: number }
+  }>
+}
+
+function CategoryGroup({
+  category,
+  onEdit,
+  onDelete,
+}: {
+  category: CategoryWithChildren
+  onEdit: (c: unknown) => void
+  onDelete: (id: string) => void
+}) {
+  const subs = category.subcategories ?? []
+  const hasChildren = subs.length > 0
+  const typeLabel = category.type === 'EXPENSE' ? 'Despesa' : 'Receita'
+  const typeBadge =
+    category.type === 'EXPENSE'
+      ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400 bg-red-50 dark:bg-red-950/30'
+      : 'border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
+
+  return (
+    <div className="space-y-2">
+      {/* Parent card */}
+      <Card className="group relative hover:shadow-md transition-all">
+        <CardContent className="pt-4 pb-4 px-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div
+                className="h-11 w-11 rounded-xl flex items-center justify-center text-white text-base font-bold shadow-sm shrink-0"
+                style={{ backgroundColor: category.color || '#64748b' }}
+              >
+                {category.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-base truncate">{category.name}</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${typeBadge}`}>
+                    {typeLabel}
+                  </Badge>
+                  {hasChildren && (
+                    <span className="text-[11px] text-muted-foreground">
+                      · {subs.length} {subs.length === 1 ? 'subcategoria' : 'subcategorias'}
+                    </span>
+                  )}
+                  {!hasChildren && category._count.transactions > 0 && (
+                    <span className="text-[11px] text-muted-foreground">
+                      · {category._count.transactions} {category._count.transactions === 1 ? 'transação' : 'transações'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={() => onEdit(category)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" />}>
+                  <Trash2 className="h-4 w-4" />
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir &ldquo;{category.name}&rdquo;?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {hasChildren
+                        ? `Esta categoria tem ${subs.length} subcategorias. Excluir a pai também apaga as filhas.`
+                        : 'Suas transações anteriores serão mantidas, mas ficarão sem categoria.'}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDelete(category.id)}>Excluir</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Subcategories grid — indented under parent */}
+      {hasChildren && (
+        <div className="ml-6 pl-4 border-l-2 border-dashed border-border/50 grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+          {subs.map((sub) => (
+            <Card key={sub.id} className="group relative hover:shadow-sm transition-all bg-muted/30">
+              <CardContent className="pt-3 pb-3 px-3">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div
+                    className="h-8 w-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                    style={{ backgroundColor: sub.color || category.color || '#64748b' }}
+                  >
+                    {sub.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      onClick={() => onEdit(sub)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" />}>
+                        <Trash2 className="h-3 w-3" />
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir &ldquo;{sub.name}&rdquo;?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Suas transações anteriores serão mantidas, mas ficarão sem categoria.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onDelete(sub.id)}>Excluir</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+                <p className="font-medium text-sm truncate">{sub.name}</p>
+                {sub._count.transactions > 0 && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {sub._count.transactions} {sub._count.transactions === 1 ? 'transação' : 'transações'}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>
