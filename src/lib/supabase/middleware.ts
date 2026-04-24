@@ -40,6 +40,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/api/cron') &&
     request.nextUrl.pathname !== '/' &&
     request.nextUrl.pathname !== '/privacy' &&
+    request.nextUrl.pathname !== '/terms' &&
     request.nextUrl.pathname !== '/security'
   ) {
     const url = request.nextUrl.clone()
