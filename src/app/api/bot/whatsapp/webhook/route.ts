@@ -140,7 +140,7 @@ async function handleVerification(from: string, code: string) {
 
 async function handleTextMessage(from: string, text: string, connection: { userId: string; id: string }) {
   // Try conversational agent first (for QUERY-type intents)
-  const agentReply = await maybeRunAgent(connection.userId, text)
+  const agentReply = await maybeRunAgent(connection.userId, text, connection.id)
   if (agentReply) {
     await sendWhatsAppMessage({ to: from, text: agentReply })
     return

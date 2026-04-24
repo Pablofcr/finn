@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { AGENT_TOOLS, executeTool } from './tools'
+import type { HistoryMessage } from './history'
 
 const AGENT_SYSTEM = `Você é o **Finn**, um assistente financeiro pessoal brasileiro. O usuário conversa contigo pelo WhatsApp ou Telegram.
 
@@ -21,7 +22,7 @@ Principais hierarquias:
 - *Moradia* → Aluguel/Condomínio, Energia, Água, Internet/TV
 - *Saúde* → Farmácia, Consulta/Exame, Plano de Saúde
 
-Se o usuário falar coloquialmente ("mercado", "ifood", "gasolina", "luz"), traduza mentalmente pra subcategoria certa quando passar `category_name` pra tool. Ex: "quanto gastei com ifood?" → `category_name="Delivery"`.
+Se o usuário falar coloquialmente ("mercado", "ifood", "gasolina", "luz"), traduza mentalmente pra subcategoria certa quando passar o parâmetro category_name pra tool. Ex: "quanto gastei com ifood?" → category_name = "Delivery".
 
 # Como executar ações (marcar recorrências como pagas)
 Quando o usuário disser que pagou uma conta recorrente ("o condomínio foi pago", "paguei o aluguel", "os dois condomínios foram pagos"):
@@ -142,19 +143,28 @@ const MAX_ITERATIONS = 8
 
 /**
  * Roda o agente conversacional. Pergunta do usuário → tool calls → resposta formatada.
+ * Pass `history` with recent user/assistant turns so the agent can handle
+ * follow-up replies like "sim" or "mostra mais" in context.
  */
 export async function runQueryAgent(
   userId: string,
-  userMessage: string
+  userMessage: string,
+  history: HistoryMessage[] = []
 ): Promise<AgentResult> {
   const client = getClient()
 
   const timeContext = buildTimeContext()
-  const firstUserContent = `${timeContext}\n\n${userMessage.trim()}`
+  const currentTurn = `${timeContext}\n\n${userMessage.trim()}`
 
-  const messages: Anthropic.MessageParam[] = [
-    { role: 'user', content: firstUserContent },
-  ]
+  const messages: Anthropic.MessageParam[] = []
+  for (const h of history) {
+    messages.push({ role: h.role, content: h.content })
+  }
+  // Ensure conversation starts with a user turn (Anthropic requires that)
+  if (messages.length === 0 || messages[0].role !== 'user') {
+    messages.unshift({ role: 'user', content: '(start of conversation)' })
+  }
+  messages.push({ role: 'user', content: currentTurn })
 
   let toolCallsCount = 0
   let iterations = 0

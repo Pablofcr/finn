@@ -118,7 +118,7 @@ async function handleMessage(message: any) {
   }
 
   // Try conversational agent first (for QUERY-type intents)
-  const agentReply = await maybeRunAgent(connection.userId, text)
+  const agentReply = await maybeRunAgent(connection.userId, text, connection.id)
   if (agentReply) {
     await sendMessage({ chatId, text: agentReply })
     return
@@ -500,7 +500,7 @@ async function handleVoiceMessage(
   })
 
   // Try conversational agent first (for QUERY-type intents)
-  const agentReply = await maybeRunAgent(connection.userId, transcription)
+  const agentReply = await maybeRunAgent(connection.userId, transcription, connection.id)
   if (agentReply) {
     await sendMessage({ chatId, text: agentReply })
     return
