@@ -1,12 +1,10 @@
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import { generateVerificationCode } from '@/lib/whatsapp'
-import { isAdmin } from '@/lib/admin'
 
 export async function GET() {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
-  if (!isAdmin(user.email)) return Response.json({ error: 'Acesso negado' }, { status: 403 })
 
   const connection = await prisma.botConnection.findFirst({
     where: { userId: user.id, platform: 'WHATSAPP' },
@@ -29,7 +27,6 @@ export async function GET() {
 export async function POST() {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
-  if (!isAdmin(user.email)) return Response.json({ error: 'Acesso negado' }, { status: 403 })
 
   const existing = await prisma.botConnection.findFirst({
     where: { userId: user.id, platform: 'WHATSAPP' },
@@ -68,7 +65,6 @@ export async function POST() {
 export async function DELETE() {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
-  if (!isAdmin(user.email)) return Response.json({ error: 'Acesso negado' }, { status: 403 })
 
   await prisma.botConnection.deleteMany({
     where: { userId: user.id, platform: 'WHATSAPP' },

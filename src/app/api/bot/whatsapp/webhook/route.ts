@@ -8,6 +8,7 @@ import { detectPaymentContext, resolveAccount, detectInstallments } from '@/lib/
 import { applyTransactionBalance } from '@/lib/transaction-balance'
 import { getOrCreateInvoiceFor, adjustInvoiceTotal } from '@/lib/invoice'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
+import { maybeRunAgent } from '@/lib/agent'
 
 export const maxDuration = 60
 
@@ -283,6 +284,13 @@ async function handleVerification(from: string, code: string) {
 }
 
 async function handleTextMessage(from: string, text: string, connection: { userId: string; id: string }) {
+  // Try conversational agent first (for QUERY-type intents)
+  const agentReply = await maybeRunAgent(connection.userId, text)
+  if (agentReply) {
+    await sendWhatsAppMessage({ to: from, text: agentReply })
+    return
+  }
+
   const parsed = await parseTransactionMessage(text)
 
   if (!parsed) {

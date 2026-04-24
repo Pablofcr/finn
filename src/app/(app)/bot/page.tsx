@@ -16,8 +16,6 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { useAuth } from '@/contexts/auth-context'
-import { isAdmin } from '@/lib/admin'
 
 interface ConnectionStatus {
   connected: boolean
@@ -397,7 +395,7 @@ function WhatsAppTutorialChat({
   )
 }
 
-function AdminWhatsAppTool() {
+function WhatsAppConnectTool() {
   const [status, setStatus] = useState<ConnectionStatus | null>(null)
   const [whatsappNumber, setWhatsappNumber] = useState('')
   const [connecting, setConnecting] = useState(false)
@@ -464,13 +462,14 @@ function AdminWhatsAppTool() {
   }
 
   return (
-    <div className="mt-10 pt-6 border-t border-dashed">
+    <div className="mt-10 pt-6 border-t">
       <div className="flex items-center gap-2 mb-3">
-        <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Admin · Teste WhatsApp
-        </p>
+        <MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+        <p className="text-sm font-semibold">Conectar também pelo WhatsApp</p>
       </div>
+      <p className="text-xs text-muted-foreground mb-4">
+        Quer usar o Finn direto no WhatsApp? Você pode conectar os dois — tudo fica sincronizado.
+      </p>
 
       {status?.connected ? (
         <Card className="border-green-200 dark:border-green-900/30 bg-green-50/50 dark:bg-green-500/5">
@@ -510,8 +509,6 @@ function AdminWhatsAppTool() {
 }
 
 export default function BotPage() {
-  const { user } = useAuth()
-  const userIsAdmin = isAdmin(user?.email)
   const [status, setStatus] = useState<ConnectionStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState(false)
@@ -652,7 +649,7 @@ export default function BotPage() {
         </Card>
       )}
 
-      {userIsAdmin && <AdminWhatsAppTool />}
+      <WhatsAppConnectTool />
     </div>
   )
 }

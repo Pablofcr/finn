@@ -1,0 +1,106 @@
+import Anthropic from '@anthropic-ai/sdk'
+
+export type Intent = 'REGISTER' | 'QUERY' | 'CONFIRMATION' | 'OTHER'
+
+export type Classification = {
+  intent: Intent
+  confidence: number // 0-1
+}
+
+const CLASSIFIER_SYSTEM = `Você é um classificador de intenção para um assistente financeiro brasileiro.
+
+Classifique a mensagem do usuário em UMA das intenções:
+
+REGISTER — usuário quer registrar uma transação financeira nova (gasto, receita, pagamento, compra, recebimento).
+  Exemplos: "gastei 50 no mercado", "recebi 2000 de salário", "paguei 120 de luz", "comprei um celular de 5 mil reais parcelado em 10 vezes", "pix de 200 pro joão", "abasteci 150", "500 no restaurante"
+
+QUERY — usuário faz uma pergunta sobre as finanças dele (pede informação, resumo, análise).
+  Exemplos: "quanto gastei este mês?", "quais contas tenho pra pagar?", "meu saldo", "quais foram meus maiores gastos?", "como tá meu orçamento de lazer?", "resumo do mês", "quanto recebi de salário este ano?", "compara março com abril"
+
+CONFIRMATION — usuário está confirmando ou negando algo que o bot perguntou/sugeriu.
+  Exemplos: "sim", "confirma", "não", "nope", "ok", "certo", "isso mesmo", "tá errado"
+
+OTHER — saudação, agradecimento, pergunta fora do escopo financeiro, comando não relacionado.
+  Exemplos: "oi", "bom dia", "obrigado", "quem é você?", "como você funciona?"
+
+Responda APENAS com JSON válido, sem markdown, sem explicação:
+{"intent": "REGISTER|QUERY|CONFIRMATION|OTHER", "confidence": 0.0-1.0}
+
+Regra importante: se mencionou quantia (R$, reais, mil, valor numérico) com verbo de transação (gastei, paguei, recebi, comprei, etc), é REGISTER, não QUERY.`
+
+let _client: Anthropic | null = null
+function getClient(): Anthropic {
+  if (!_client) _client = new Anthropic()
+  return _client
+}
+
+/**
+ * Classifica a intenção da mensagem do usuário.
+ * Em caso de erro ou baixa confiança, retorna REGISTER como fallback seguro.
+ */
+export async function classifyIntent(message: string): Promise<Classification> {
+  const text = message.trim()
+  if (!text) return { intent: 'OTHER', confidence: 1 }
+
+  // Cheap local shortcut for obvious confirmation words — saves an API call
+  const lowerShort = text.toLowerCase()
+  if (
+    /^(sim|s|não|nao|n|ok|okay|certo|confirma|confirmado|cancela|cancelar)$/.test(lowerShort)
+  ) {
+    return { intent: 'CONFIRMATION', confidence: 0.99 }
+  }
+
+  try {
+    const response = await getClient().messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 100,
+      system: [
+        {
+          type: 'text',
+          text: CLASSIFIER_SYSTEM,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
+      messages: [{ role: 'user', content: text }],
+    })
+
+    const block = response.content.find((b) => b.type === 'text')
+    if (!block || block.type !== 'text') return fallback()
+
+    const parsed = parseJson(block.text)
+    if (!parsed) return fallback()
+
+    const intent = normalizeIntent(parsed.intent)
+    const confidence = typeof parsed.confidence === 'number' ? parsed.confidence : 0.5
+
+    if (!intent) return fallback()
+    return { intent, confidence: Math.min(1, Math.max(0, confidence)) }
+  } catch {
+    return fallback()
+  }
+}
+
+function parseJson(text: string): { intent?: unknown; confidence?: unknown } | null {
+  // Extract JSON object even if wrapped in markdown or prose
+  const match = text.match(/\{[\s\S]*?\}/)
+  if (!match) return null
+  try {
+    return JSON.parse(match[0])
+  } catch {
+    return null
+  }
+}
+
+function normalizeIntent(v: unknown): Intent | null {
+  if (typeof v !== 'string') return null
+  const upper = v.toUpperCase().trim()
+  if (upper === 'REGISTER' || upper === 'QUERY' || upper === 'CONFIRMATION' || upper === 'OTHER') {
+    return upper
+  }
+  return null
+}
+
+function fallback(): Classification {
+  // Default to REGISTER preserves existing bot behavior (parser handles it)
+  return { intent: 'REGISTER', confidence: 0 }
+}

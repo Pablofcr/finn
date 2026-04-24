@@ -8,6 +8,7 @@ import { detectPaymentContext, resolveAccount, detectInstallments } from '@/lib/
 import { applyTransactionBalance } from '@/lib/transaction-balance'
 import { getOrCreateInvoiceFor, adjustInvoiceTotal } from '@/lib/invoice'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
+import { maybeRunAgent } from '@/lib/agent'
 
 export const maxDuration = 60
 
@@ -312,6 +313,13 @@ async function handleMessage(message: any) {
         '✅ <b>Confirmar pagamentos</b> com um toque\n\n' +
         'É só mandar uma mensagem, áudio ou foto!',
     })
+    return
+  }
+
+  // Try conversational agent first (for QUERY-type intents)
+  const agentReply = await maybeRunAgent(connection.userId, text)
+  if (agentReply) {
+    await sendMessage({ chatId, text: agentReply })
     return
   }
 
@@ -689,6 +697,13 @@ async function handleVoiceMessage(
     chatId,
     text: `🎙️ Entendi: <i>"${transcription}"</i>`,
   })
+
+  // Try conversational agent first (for QUERY-type intents)
+  const agentReply = await maybeRunAgent(connection.userId, transcription)
+  if (agentReply) {
+    await sendMessage({ chatId, text: agentReply })
+    return
+  }
 
   // Step 2: Parse as transaction
   let parsed: { type: 'INCOME' | 'EXPENSE'; amount: number; description: string; date?: string | null; recurring?: { frequency: string; label: string } | null } | null = null
