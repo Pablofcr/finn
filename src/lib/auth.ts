@@ -23,17 +23,31 @@ export async function getAuthUser() {
       },
     })
 
-    // Seed default categories for new users
+    // Seed default categories (parents) for new users, then subcategories
     try {
-      await prisma.category.createMany({
-        data: defaultCategories.map((cat) => ({
-          userId: user!.id,
-          name: cat.name,
-          icon: cat.icon,
-          color: cat.color,
-          type: cat.type,
-        })),
-      })
+      for (const cat of defaultCategories) {
+        const parent = await prisma.category.create({
+          data: {
+            userId: user!.id,
+            name: cat.name,
+            icon: cat.icon,
+            color: cat.color,
+            type: cat.type,
+          },
+        })
+        if (cat.subcategories && cat.subcategories.length > 0) {
+          await prisma.category.createMany({
+            data: cat.subcategories.map((sub) => ({
+              userId: user!.id,
+              name: sub.name,
+              icon: sub.icon,
+              color: cat.color, // inherit parent color by default
+              type: cat.type,
+              parentId: parent.id,
+            })),
+          })
+        }
+      }
     } catch { /* ignore if categories already exist */ }
   }
 

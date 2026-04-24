@@ -14,12 +14,12 @@ export const defaultCategories: DefaultCategory[] = [
     icon: 'utensils',
     color: '#f97316',
     type: 'EXPENSE',
-    keywords: [
-      'restaurante', 'lanchonete', 'padaria', 'supermercado', 'mercado',
-      'ifood', 'rappi', 'uber eats', 'almoço', 'jantar', 'café',
-      'sorvete', 'pizza', 'hamburguer', 'sushi', 'açaí', 'feira',
-      'hortifruti', 'delivery', 'marmita', 'salgado', 'doce',
-      'san paolo', 'mcdonalds', 'burger king', 'subway', 'starbucks',
+    keywords: ['comida', 'refeição', 'marmita'],
+    subcategories: [
+      { name: 'Mercado', icon: 'shopping-cart', keywords: ['mercado', 'supermercado', 'hortifruti', 'feira', 'açougue', 'carne', 'peixe'] },
+      { name: 'Restaurante', icon: 'utensils-crossed', keywords: ['restaurante', 'almoço', 'jantar', 'pizza', 'hamburguer', 'sushi', 'mcdonalds', 'burger king', 'subway'] },
+      { name: 'Delivery', icon: 'bike', keywords: ['ifood', 'rappi', 'uber eats', 'delivery'] },
+      { name: 'Lanche', icon: 'coffee', keywords: ['padaria', 'café', 'lanchonete', 'lanche', 'starbucks', 'sorvete', 'açaí'] },
     ],
   },
   {
@@ -27,11 +27,11 @@ export const defaultCategories: DefaultCategory[] = [
     icon: 'car',
     color: '#3b82f6',
     type: 'EXPENSE',
-    keywords: [
-      'uber', '99', 'taxi', 'gasolina', 'combustível', 'estacionamento',
-      'pedágio', 'ônibus', 'metrô', 'passagem', 'avião', 'aéreo',
-      'manutenção carro', 'oficina', 'pneu', 'óleo', 'lavagem',
-      'ipva', 'licenciamento', 'multa', 'seguro auto',
+    keywords: ['estacionamento', 'pedágio', 'manutenção carro', 'oficina', 'pneu', 'óleo', 'lavagem', 'ipva', 'licenciamento', 'multa', 'seguro auto'],
+    subcategories: [
+      { name: 'Combustível', icon: 'fuel', keywords: ['gasolina', 'combustível', 'posto', 'abasteci', 'etanol', 'diesel'] },
+      { name: 'App/Táxi', icon: 'car-taxi-front', keywords: ['uber', '99', 'taxi', 'indriver'] },
+      { name: 'Transporte Público', icon: 'bus', keywords: ['ônibus', 'metrô', 'passagem', 'bilhete'] },
     ],
   },
   {
@@ -39,10 +39,12 @@ export const defaultCategories: DefaultCategory[] = [
     icon: 'home',
     color: '#8b5cf6',
     type: 'EXPENSE',
-    keywords: [
-      'aluguel', 'condomínio', 'iptu', 'luz', 'energia', 'água',
-      'gás', 'internet', 'telefone', 'celular', 'reforma', 'obra',
-      'móveis', 'eletrodoméstico', 'decoração', 'limpeza', 'faxina',
+    keywords: ['gás', 'reforma', 'obra', 'móveis', 'eletrodoméstico', 'decoração', 'limpeza', 'faxina', 'diarista'],
+    subcategories: [
+      { name: 'Aluguel/Condomínio', icon: 'home', keywords: ['aluguel', 'condomínio', 'iptu'] },
+      { name: 'Energia', icon: 'zap', keywords: ['luz', 'energia', 'enel', 'coelba', 'cosern', 'cemig', 'cpfl'] },
+      { name: 'Água', icon: 'droplet', keywords: ['água', 'sabesp', 'cagece', 'copasa'] },
+      { name: 'Internet/TV', icon: 'wifi', keywords: ['internet', 'wifi', 'telefone', 'celular'] },
     ],
   },
   {
@@ -50,10 +52,11 @@ export const defaultCategories: DefaultCategory[] = [
     icon: 'heart-pulse',
     color: '#ef4444',
     type: 'EXPENSE',
-    keywords: [
-      'médico', 'consulta', 'exame', 'remédio', 'farmácia', 'hospital',
-      'dentista', 'plano de saúde', 'academia', 'psicólogo', 'terapia',
-      'vacina', 'óculos', 'lente', 'fisioterapia', 'nutricionista',
+    keywords: ['academia', 'óculos', 'lente'],
+    subcategories: [
+      { name: 'Farmácia', icon: 'pill', keywords: ['farmácia', 'drogaria', 'remédio', 'vacina'] },
+      { name: 'Consulta/Exame', icon: 'stethoscope', keywords: ['médico', 'consulta', 'exame', 'hospital', 'dentista', 'psicólogo', 'terapia', 'fisioterapia', 'nutricionista'] },
+      { name: 'Plano de Saúde', icon: 'shield-plus', keywords: ['plano de saúde', 'unimed', 'amil', 'hapvida'] },
     ],
   },
   {

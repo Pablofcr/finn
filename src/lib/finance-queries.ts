@@ -176,19 +176,23 @@ export async function getPendingBills(
 
 /**
  * Transações num período com filtros opcionais.
+ * Se categoryIds for passado, filtra por qualquer categoria da lista — útil
+ * pra rollup de categoria pai + suas subcategorias.
  */
 export async function getTransactionsByPeriod(
   userId: string,
   start: Date,
   end: Date,
-  opts: { type?: TransactionType; categoryId?: string; limit?: number } = {}
+  opts: { type?: TransactionType; categoryIds?: string[]; limit?: number } = {}
 ): Promise<TransactionSummary[]> {
   const txs = await prisma.transaction.findMany({
     where: {
       userId,
       date: { gte: start, lte: end },
       ...(opts.type ? { type: opts.type } : {}),
-      ...(opts.categoryId ? { categoryId: opts.categoryId } : {}),
+      ...(opts.categoryIds && opts.categoryIds.length > 0
+        ? { categoryId: { in: opts.categoryIds } }
+        : {}),
     },
     include: {
       category: { select: { name: true } },

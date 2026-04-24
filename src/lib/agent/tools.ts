@@ -317,6 +317,23 @@ async function resolveCategoryId(userId: string, name: string): Promise<string |
   return cat?.id ?? null
 }
 
+/**
+ * Resolves a category by name and returns its id PLUS all subcategory ids
+ * underneath it. Used so a query for "Alimentação" also rolls up Mercado,
+ * Restaurante, Delivery, Lanche.
+ */
+async function resolveCategoryIdsWithChildren(
+  userId: string,
+  name: string
+): Promise<string[] | null> {
+  const cat = await prisma.category.findFirst({
+    where: { userId, name: { contains: name, mode: 'insensitive' } },
+    select: { id: true, subcategories: { select: { id: true } } },
+  })
+  if (!cat) return null
+  return [cat.id, ...cat.subcategories.map((s) => s.id)]
+}
+
 async function resolveAccountId(userId: string, name: string): Promise<string | null> {
   const acc = await prisma.account.findFirst({
     where: { userId, isActive: true, name: { contains: name, mode: 'insensitive' } },
@@ -347,19 +364,19 @@ export async function executeTool(
           toolInput.type === 'INCOME' || toolInput.type === 'EXPENSE'
             ? (toolInput.type as TransactionType)
             : undefined
-        let categoryId: string | undefined
+        let categoryIds: string[] | undefined
         if (typeof toolInput.category_name === 'string' && toolInput.category_name.trim()) {
-          const resolved = await resolveCategoryId(userId, toolInput.category_name.trim())
+          const resolved = await resolveCategoryIdsWithChildren(userId, toolInput.category_name.trim())
           if (!resolved) {
             return {
               ok: true,
               data: { note: `Nenhuma categoria encontrada com o nome "${toolInput.category_name}"`, transactions: [] },
             }
           }
-          categoryId = resolved
+          categoryIds = resolved
         }
         const limit = typeof toolInput.limit === 'number' ? toolInput.limit : undefined
-        const data = await getTransactionsByPeriod(userId, start, end, { type, categoryId, limit })
+        const data = await getTransactionsByPeriod(userId, start, end, { type, categoryIds, limit })
         return { ok: true, data }
       }
 
