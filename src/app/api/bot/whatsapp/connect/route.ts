@@ -12,14 +12,17 @@ export async function GET() {
     where: { userId: user.id, platform: 'WHATSAPP' },
   })
 
+  const whatsappNumber = process.env.WHATSAPP_DISPLAY_NUMBER || ''
+
   return Response.json({
     data: connection
       ? {
           connected: connection.isVerified,
           platformUserId: connection.platformUserId,
           verificationCode: connection.isVerified ? null : connection.verificationCode,
+          whatsappNumber,
         }
-      : { connected: false },
+      : { connected: false, whatsappNumber },
   })
 }
 

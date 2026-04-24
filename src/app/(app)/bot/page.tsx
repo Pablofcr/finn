@@ -282,6 +282,121 @@ function ConnectedState({ onDisconnect }: { onDisconnect: () => void }) {
   )
 }
 
+function WhatsAppBubble({
+  from,
+  children,
+  delay = 0,
+}: {
+  from: 'bot' | 'user'
+  children: React.ReactNode
+  delay?: number
+}) {
+  return (
+    <div
+      className={cn('flex animate-fade-in', from === 'user' ? 'justify-end' : 'justify-start')}
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <div
+        className={cn(
+          'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm',
+          from === 'bot'
+            ? 'bg-white dark:bg-muted text-foreground rounded-bl-md border border-border/50'
+            : 'bg-[#DCF8C6] dark:bg-green-900/40 text-foreground dark:text-green-100 rounded-br-md'
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function WhatsAppTutorialChat({
+  whatsappNumber,
+  verificationCode,
+}: {
+  whatsappNumber: string
+  verificationCode: string
+}) {
+  const displayNumber = whatsappNumber || '+55 85 98794-2255'
+  const waLinkNumber = displayNumber.replace(/\D/g, '')
+  const waLink = `https://wa.me/${waLinkNumber}?text=${encodeURIComponent(verificationCode)}`
+
+  return (
+    <Card className="border-dashed border-green-300 dark:border-green-900/50 bg-gradient-to-b from-green-50/40 to-transparent dark:from-green-500/5">
+      <CardContent className="pt-5 pb-5">
+        <div className="flex items-center gap-2 mb-4">
+          <MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide">
+            Como conectar o WhatsApp — passo a passo
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <WhatsAppBubble from="bot" delay={0}>
+            Olá! Eu sou o <strong>Finn</strong> 💚<br />
+            Vou te ajudar a registrar e acompanhar suas finanças pelo WhatsApp.
+          </WhatsAppBubble>
+
+          <WhatsAppBubble from="bot" delay={100}>
+            <strong>Passo 1:</strong> Toque no botão abaixo &mdash; vai abrir o WhatsApp já com a conversa pronta.
+          </WhatsAppBubble>
+
+          <WhatsAppBubble from="bot" delay={200}>
+            <strong>Passo 2:</strong> Envie esta mensagem com seu código de verificação:
+            <div className="mt-2 flex items-center gap-2 bg-black/5 dark:bg-white/10 rounded-lg px-3 py-2">
+              <code className="font-mono text-xs flex-1">{verificationCode}</code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(verificationCode)
+                  toast.success('Código copiado!')
+                }}
+                className="p-1 hover:bg-black/10 rounded transition-colors"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </WhatsAppBubble>
+
+          <WhatsAppBubble from="user" delay={300}>
+            {verificationCode}
+          </WhatsAppBubble>
+
+          <WhatsAppBubble from="bot" delay={400}>
+            <strong>✅ Conectado com sucesso!</strong><br />
+            A partir de agora você pode registrar transações por aqui.
+          </WhatsAppBubble>
+
+          <WhatsAppBubble from="bot" delay={500}>
+            <strong>Exemplos do que você pode me enviar:</strong>
+            <ul className="mt-1.5 space-y-0.5">
+              <li>• "Gastei 50 no mercado"</li>
+              <li>• Foto do cupom fiscal 📷</li>
+              <li>• Áudio: "paguei 120 de luz ontem" 🎙️</li>
+            </ul>
+          </WhatsAppBubble>
+        </div>
+
+        <div className="mt-5 pt-4 border-t">
+          <a href={waLink} target="_blank" rel="noopener noreferrer">
+            <Button className="w-full gap-2 bg-[#25D366] hover:bg-[#20bf5b] text-white shadow-md shadow-green-500/25 border-0">
+              <Send className="h-4 w-4" />
+              Abrir no WhatsApp
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Button>
+          </a>
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Ou envie manualmente <strong>{displayNumber}</strong> · código <strong>{verificationCode}</strong>
+          </p>
+          <p className="text-xs text-muted-foreground text-center mt-3 flex items-center justify-center gap-1.5">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+            Aguardando sua mensagem…
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 function AdminWhatsAppTool() {
   const [status, setStatus] = useState<ConnectionStatus | null>(null)
   const [whatsappNumber, setWhatsappNumber] = useState('')
@@ -293,6 +408,7 @@ function AdminWhatsAppTool() {
       if (res.ok) {
         const result = await res.json()
         setStatus(result.data)
+        if (result.data.whatsappNumber) setWhatsappNumber(result.data.whatsappNumber)
       }
     } catch { /* ignore */ }
   }, [])
@@ -357,38 +473,32 @@ function AdminWhatsAppTool() {
       </div>
 
       {status?.connected ? (
-        <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
-          <div className="flex items-center gap-2 text-sm">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <span>WhatsApp conectado · <code className="text-xs">{status.platformUserId}</code></span>
-          </div>
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={handleDisconnect}>
-            Desconectar
-          </Button>
-        </div>
+        <Card className="border-green-200 dark:border-green-900/30 bg-green-50/50 dark:bg-green-500/5">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">WhatsApp conectado</p>
+                  <p className="text-xs text-muted-foreground">
+                    Número vinculado: <code className="text-xs">{status.platformUserId}</code>
+                  </p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={handleDisconnect}>
+                <Unplug className="h-3.5 w-3.5 mr-1" />
+                Desconectar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : status?.verificationCode ? (
-        <div className="rounded-lg border bg-muted/30 px-4 py-3 space-y-2">
-          <p className="text-sm">
-            Envie este código pra <strong>{whatsappNumber || '+55 85 98794-2255'}</strong> no WhatsApp:
-          </p>
-          <div className="flex items-center gap-2">
-            <code className="bg-background border rounded px-2 py-1 font-mono text-sm flex-1">
-              {status.verificationCode}
-            </code>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2"
-              onClick={() => {
-                navigator.clipboard.writeText(status.verificationCode!)
-                toast.success('Código copiado')
-              }}
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">Aguardando confirmação no WhatsApp…</p>
-        </div>
+        <WhatsAppTutorialChat
+          whatsappNumber={whatsappNumber}
+          verificationCode={status.verificationCode}
+        />
       ) : (
         <Button variant="outline" size="sm" onClick={handleConnect} disabled={connecting} className="gap-2">
           <MessageCircle className="h-3.5 w-3.5" />
