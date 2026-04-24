@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/shared/empty-state'
 import { COLORS } from '@/lib/constants'
-import { Plus, Tags, Trash2, Pencil } from 'lucide-react'
+import { Plus, Tags, Trash2, Pencil, ChevronDown } from 'lucide-react'
 import { getCategoryIcon } from '@/lib/category-icon'
 import { toast } from 'sonner'
 import {
@@ -336,6 +336,7 @@ function CategoryGroup({
 }) {
   const subs = category.subcategories ?? []
   const hasChildren = subs.length > 0
+  const [expanded, setExpanded] = useState(true)
   const typeLabel = category.type === 'EXPENSE' ? 'Despesa' : 'Receita'
   const typeBadge =
     category.type === 'EXPENSE'
@@ -348,7 +349,10 @@ function CategoryGroup({
   return (
     <div className="space-y-3">
       {/* Parent card — solid-color icon block, subtle hover lift */}
-      <Card className="group relative transition-all duration-200 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/40 hover:-translate-y-0.5 ring-1 ring-inset ring-black/0 hover:ring-black/5 dark:hover:ring-white/5">
+      <Card
+        className={`group relative transition-all duration-200 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/40 hover:-translate-y-0.5 ring-1 ring-inset ring-black/0 hover:ring-black/5 dark:hover:ring-white/5 ${hasChildren ? 'cursor-pointer' : ''}`}
+        onClick={hasChildren ? () => setExpanded((v) => !v) : undefined}
+      >
         <CardContent className="pt-4 pb-4 px-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -377,41 +381,48 @@ function CategoryGroup({
                 </div>
               </div>
             </div>
-            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                onClick={() => onEdit(category)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" />}>
-                  <Trash2 className="h-4 w-4" />
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir &ldquo;{category.name}&rdquo;?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {hasChildren
-                        ? `Esta categoria tem ${subs.length} subcategorias. Excluir a pai também apaga as filhas.`
-                        : 'Suas transações anteriores serão mantidas, mas ficarão sem categoria.'}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(category.id)}>Excluir</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { e.stopPropagation(); onEdit(category) }}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={(e) => e.stopPropagation()} />}>
+                    <Trash2 className="h-4 w-4" />
+                  </AlertDialogTrigger>
+                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir &ldquo;{category.name}&rdquo;?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {hasChildren
+                          ? `Esta categoria tem ${subs.length} subcategorias. Excluir a pai também apaga as filhas.`
+                          : 'Suas transações anteriores serão mantidas, mas ficarão sem categoria.'}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onDelete(category.id)}>Excluir</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+              {hasChildren && (
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${expanded ? '' : '-rotate-90'}`}
+                />
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Subcategories — hairline rail, tinted icon tiles (icon-on-color) */}
-      {hasChildren && (
+      {hasChildren && expanded && (
         <div className="ml-5 pl-5 border-l border-border/60 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           {subs.map((sub) => {
             const SubIcon = getCategoryIcon(sub.icon)
