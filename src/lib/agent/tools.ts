@@ -11,8 +11,8 @@ import {
   getGoalProgress,
   searchTransactions,
 } from '@/lib/finance-queries'
-import { markRecurringAsPaid } from '@/lib/finance-actions'
-import type { TransactionType } from '@/generated/prisma/enums'
+import { markRecurringAsPaid, updateTransaction } from '@/lib/finance-actions'
+import type { TransactionType, PaymentMethod } from '@/generated/prisma/enums'
 
 // ============================================================
 // Tool schemas — Anthropic tool_use spec
@@ -242,7 +242,7 @@ export const AGENT_TOOLS: readonly ToolDefinition[] = [
   {
     name: 'mark_recurring_as_paid',
     description:
-      'Marca UMA recorrência (conta recorrente) como paga: cria a transação, aplica saldo na conta vinculada e avança a próxima data de vencimento. Use APENAS quando o usuário disser explicitamente que uma conta foi paga (ex: "o condomínio foi pago", "quitei a internet", "paguei o aluguel"). NUNCA use pra registrar uma compra nova — pra isso o parser de transação existente cuida.\n\nFLUXO CORRETO: 1) Primeiro chame get_pending_bills pra listar as recorrências. 2) Identifique qual(is) o usuário mencionou. 3) Chame esta tool uma vez por recorrência, passando o `id` que veio do get_pending_bills (onde source="recurring").',
+      'Marca UMA recorrência (conta recorrente) como paga: cria a transação, aplica saldo na conta vinculada e avança a próxima data de vencimento. Use APENAS quando o usuário disser explicitamente que uma conta foi paga (ex: "o condomínio foi pago", "quitei a internet", "paguei o aluguel"). NUNCA use pra registrar uma compra nova — pra isso o parser de transação existente cuida.\n\nFLUXO CORRETO: 1) Primeiro chame get_pending_bills pra listar as recorrências. 2) Identifique qual(is) o usuário mencionou. 3) Chame esta tool uma vez por recorrência, passando o `id` que veio do get_pending_bills (onde source="recurring"). A tool retorna qual conta e forma de pagamento foram usadas — reporte isso ao usuário.',
     input_schema: {
       type: 'object',
       properties: {
@@ -258,6 +258,35 @@ export const AGENT_TOOLS: readonly ToolDefinition[] = [
         },
       },
       required: ['recurring_id'],
+    },
+  },
+  {
+    name: 'update_transaction',
+    description:
+      'Atualiza uma transação existente: troca a conta, a forma de pagamento ou a data. Use quando o usuário pedir correção de uma baixa recém-registrada ("corrige o Zen pra Nubank PIX", "na verdade paguei pelo Itaú", "foi no crédito não no débito").\n\nFLUXO CORRETO: 1) Primeiro chame search_transactions pra achar a transação pelo nome (passe os últimos dias como filtro). 2) Pegue o `id` da transação certa. 3) Chame esta tool passando `transaction_id` + só os campos a alterar.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        transaction_id: {
+          type: 'string',
+          description: 'ID da transação (do campo `id` retornado por search_transactions)',
+        },
+        account_name: {
+          type: 'string',
+          description:
+            'Nome (parcial, case-insensitive) da nova conta. Omita se não for pra mudar a conta.',
+        },
+        payment_method: {
+          type: 'string',
+          enum: ['PIX', 'DEBIT', 'CREDIT', 'CASH', 'BOLETO', 'TRANSFER'],
+          description: 'Nova forma de pagamento. Omita se não for pra mudar.',
+        },
+        date: {
+          type: 'string',
+          description: 'Nova data YYYY-MM-DD. Omita se não for pra mudar.',
+        },
+      },
+      required: ['transaction_id'],
     },
   },
 ] as const
@@ -451,6 +480,33 @@ export async function executeTool(
         }
         const result = await markRecurringAsPaid(userId, recurringId, paidDate ?? undefined)
         return result.ok ? { ok: true, data: result } : { ok: false, error: result.error ?? 'falha ao marcar como pago' }
+      }
+
+      case 'update_transaction': {
+        const transactionId = typeof toolInput.transaction_id === 'string' ? toolInput.transaction_id : ''
+        if (!transactionId) return { ok: false, error: 'transaction_id é obrigatório' }
+        const accountName =
+          typeof toolInput.account_name === 'string' && toolInput.account_name.trim()
+            ? toolInput.account_name.trim()
+            : undefined
+        const method =
+          typeof toolInput.payment_method === 'string' &&
+          ['PIX', 'DEBIT', 'CREDIT', 'CASH', 'BOLETO', 'TRANSFER'].includes(toolInput.payment_method)
+            ? (toolInput.payment_method as PaymentMethod)
+            : undefined
+        const date = toolInput.date ? parseDate(toolInput.date) : undefined
+        if (toolInput.date && !date) {
+          return { ok: false, error: 'date inválida (use YYYY-MM-DD)' }
+        }
+        if (!accountName && !method && !date) {
+          return { ok: false, error: 'passe ao menos um campo pra atualizar: account_name, payment_method ou date' }
+        }
+        const result = await updateTransaction(userId, transactionId, {
+          accountName,
+          paymentMethod: method,
+          date: date ?? undefined,
+        })
+        return result.ok ? { ok: true, data: result } : { ok: false, error: result.error ?? 'falha ao atualizar' }
       }
 
       default:
