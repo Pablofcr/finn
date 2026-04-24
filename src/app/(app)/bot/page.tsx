@@ -16,6 +16,8 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { useAuth } from '@/contexts/auth-context'
+import { isAdmin } from '@/lib/admin'
 
 interface ConnectionStatus {
   connected: boolean
@@ -280,7 +282,126 @@ function ConnectedState({ onDisconnect }: { onDisconnect: () => void }) {
   )
 }
 
+function AdminWhatsAppTool() {
+  const [status, setStatus] = useState<ConnectionStatus | null>(null)
+  const [whatsappNumber, setWhatsappNumber] = useState('')
+  const [connecting, setConnecting] = useState(false)
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/bot/whatsapp/connect')
+      if (res.ok) {
+        const result = await res.json()
+        setStatus(result.data)
+      }
+    } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => { fetchStatus() }, [fetchStatus])
+
+  useEffect(() => {
+    if (!status?.verificationCode || status.connected) return
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/bot/whatsapp/connect')
+        if (res.ok) {
+          const result = await res.json()
+          if (result.data.connected) {
+            setStatus(result.data)
+            toast.success('WhatsApp conectado! 🎉')
+            clearInterval(interval)
+          }
+        }
+      } catch { /* ignore */ }
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [status?.verificationCode, status?.connected])
+
+  async function handleConnect() {
+    setConnecting(true)
+    try {
+      const res = await fetch('/api/bot/whatsapp/connect', { method: 'POST' })
+      if (res.ok) {
+        const result = await res.json()
+        setStatus({ connected: false, verificationCode: result.data.verificationCode })
+        setWhatsappNumber(result.data.whatsappNumber)
+      } else {
+        const err = await res.json()
+        toast.error(err.error || 'Falha ao gerar código.')
+      }
+    } catch {
+      toast.error('Falha ao gerar código.')
+    }
+    setConnecting(false)
+  }
+
+  async function handleDisconnect() {
+    try {
+      const res = await fetch('/api/bot/whatsapp/connect', { method: 'DELETE' })
+      if (res.ok) {
+        setStatus({ connected: false })
+        toast.success('WhatsApp desconectado.')
+      }
+    } catch {
+      toast.error('Falha ao desconectar.')
+    }
+  }
+
+  return (
+    <div className="mt-10 pt-6 border-t border-dashed">
+      <div className="flex items-center gap-2 mb-3">
+        <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Admin · Teste WhatsApp
+        </p>
+      </div>
+
+      {status?.connected ? (
+        <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span>WhatsApp conectado · <code className="text-xs">{status.platformUserId}</code></span>
+          </div>
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={handleDisconnect}>
+            Desconectar
+          </Button>
+        </div>
+      ) : status?.verificationCode ? (
+        <div className="rounded-lg border bg-muted/30 px-4 py-3 space-y-2">
+          <p className="text-sm">
+            Envie este código pra <strong>{whatsappNumber || '+55 85 98794-2255'}</strong> no WhatsApp:
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="bg-background border rounded px-2 py-1 font-mono text-sm flex-1">
+              {status.verificationCode}
+            </code>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              onClick={() => {
+                navigator.clipboard.writeText(status.verificationCode!)
+                toast.success('Código copiado')
+              }}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">Aguardando confirmação no WhatsApp…</p>
+        </div>
+      ) : (
+        <Button variant="outline" size="sm" onClick={handleConnect} disabled={connecting} className="gap-2">
+          <MessageCircle className="h-3.5 w-3.5" />
+          {connecting ? 'Gerando código…' : 'Conectar WhatsApp'}
+        </Button>
+      )}
+    </div>
+  )
+}
+
 export default function BotPage() {
+  const { user } = useAuth()
+  const userIsAdmin = isAdmin(user?.email)
   const [status, setStatus] = useState<ConnectionStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState(false)
@@ -420,6 +541,8 @@ export default function BotPage() {
           </CardContent>
         </Card>
       )}
+
+      {userIsAdmin && <AdminWhatsAppTool />}
     </div>
   )
 }
