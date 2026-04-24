@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 
-export type Intent = 'REGISTER' | 'QUERY' | 'CONFIRMATION' | 'OTHER'
+export type Intent = 'REGISTER' | 'QUERY' | 'ACTION' | 'CONFIRMATION' | 'OTHER'
 
 export type Classification = {
   intent: Intent
@@ -11,11 +11,14 @@ const CLASSIFIER_SYSTEM = `Você é um classificador de intenção para um assis
 
 Classifique a mensagem do usuário em UMA das intenções:
 
-REGISTER — usuário quer registrar uma transação financeira nova (gasto, receita, pagamento, compra, recebimento).
-  Exemplos: "gastei 50 no mercado", "recebi 2000 de salário", "paguei 120 de luz", "comprei um celular de 5 mil reais parcelado em 10 vezes", "pix de 200 pro joão", "abasteci 150", "500 no restaurante"
+REGISTER — usuário quer registrar uma transação financeira NOVA e avulsa (gasto, receita, compra que acabou de fazer). Tem verbo de transação + menção de valor.
+  Exemplos: "gastei 50 no mercado", "recebi 2000 de salário", "comprei um celular de 5 mil reais parcelado em 10 vezes", "pix de 200 pro joão", "abasteci 150", "500 no restaurante"
 
-QUERY — usuário faz uma pergunta sobre as finanças dele (pede informação, resumo, análise).
-  Exemplos: "quanto gastei este mês?", "quais contas tenho pra pagar?", "meu saldo", "quais foram meus maiores gastos?", "como tá meu orçamento de lazer?", "resumo do mês", "quanto recebi de salário este ano?", "compara março com abril"
+ACTION — usuário quer executar uma AÇÃO sobre algo que JÁ existe no sistema — tipicamente dar baixa em conta recorrente ("X foi pago", "paguei o condomínio", "quitei a internet", "registra o pagamento"). O usuário NÃO menciona um valor novo — está se referindo a uma conta/recorrência que já estava cadastrada.
+  Exemplos: "o condomínio foi pago", "os dois condomínios foram pagos, registre o pagamento", "quitei a fatura", "paga a conta de luz", "já paguei o aluguel", "dá baixa no netflix"
+
+QUERY — usuário faz uma pergunta sobre as finanças dele (pede informação, resumo, análise, não manda executar nada).
+  Exemplos: "quanto gastei este mês?", "quais contas tenho pra pagar?", "meu saldo", "quais foram meus maiores gastos?", "como tá meu orçamento de lazer?", "resumo do mês", "compara março com abril"
 
 CONFIRMATION — usuário está confirmando ou negando algo que o bot perguntou/sugeriu.
   Exemplos: "sim", "confirma", "não", "nope", "ok", "certo", "isso mesmo", "tá errado"
@@ -24,9 +27,13 @@ OTHER — saudação, agradecimento, pergunta fora do escopo financeiro, comando
   Exemplos: "oi", "bom dia", "obrigado", "quem é você?", "como você funciona?"
 
 Responda APENAS com JSON válido, sem markdown, sem explicação:
-{"intent": "REGISTER|QUERY|CONFIRMATION|OTHER", "confidence": 0.0-1.0}
+{"intent": "REGISTER|ACTION|QUERY|CONFIRMATION|OTHER", "confidence": 0.0-1.0}
 
-Regra importante: se mencionou quantia (R$, reais, mil, valor numérico) com verbo de transação (gastei, paguei, recebi, comprei, etc), é REGISTER, não QUERY.`
+Regras importantes:
+- REGISTER = transação NOVA com valor mencionado. ACTION = mexer em algo existente (normalmente sem mencionar valor, porque o valor já está no sistema).
+- "Paguei 50 de farmácia" = REGISTER (transação nova avulsa).
+- "Paguei o condomínio" / "o condomínio foi pago" = ACTION (conta recorrente existente, sem valor novo).
+- Quando em dúvida entre REGISTER e ACTION, prefira REGISTER (o parser consegue lidar com falsos positivos melhor que ações não executadas).`
 
 let _client: Anthropic | null = null
 function getClient(): Anthropic {
@@ -94,7 +101,13 @@ function parseJson(text: string): { intent?: unknown; confidence?: unknown } | n
 function normalizeIntent(v: unknown): Intent | null {
   if (typeof v !== 'string') return null
   const upper = v.toUpperCase().trim()
-  if (upper === 'REGISTER' || upper === 'QUERY' || upper === 'CONFIRMATION' || upper === 'OTHER') {
+  if (
+    upper === 'REGISTER' ||
+    upper === 'QUERY' ||
+    upper === 'ACTION' ||
+    upper === 'CONFIRMATION' ||
+    upper === 'OTHER'
+  ) {
     return upper
   }
   return null

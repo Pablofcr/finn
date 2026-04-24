@@ -16,7 +16,11 @@ export async function maybeRunAgent(
 ): Promise<string | null> {
   const classification = await classifyIntent(text)
 
-  if (classification.intent === 'QUERY' && classification.confidence >= 0.6) {
+  const shouldRunAgent =
+    (classification.intent === 'QUERY' || classification.intent === 'ACTION') &&
+    classification.confidence >= 0.6
+
+  if (shouldRunAgent) {
     try {
       const result = await runQueryAgent(userId, text)
       return result.text

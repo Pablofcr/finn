@@ -11,6 +11,7 @@ import {
   getGoalProgress,
   searchTransactions,
 } from '@/lib/finance-queries'
+import { markRecurringAsPaid } from '@/lib/finance-actions'
 import type { TransactionType } from '@/generated/prisma/enums'
 
 // ============================================================
@@ -238,6 +239,27 @@ export const AGENT_TOOLS: readonly ToolDefinition[] = [
       required: ['query'],
     },
   },
+  {
+    name: 'mark_recurring_as_paid',
+    description:
+      'Marca UMA recorrência (conta recorrente) como paga: cria a transação, aplica saldo na conta vinculada e avança a próxima data de vencimento. Use APENAS quando o usuário disser explicitamente que uma conta foi paga (ex: "o condomínio foi pago", "quitei a internet", "paguei o aluguel"). NUNCA use pra registrar uma compra nova — pra isso o parser de transação existente cuida.\n\nFLUXO CORRETO: 1) Primeiro chame get_pending_bills pra listar as recorrências. 2) Identifique qual(is) o usuário mencionou. 3) Chame esta tool uma vez por recorrência, passando o `id` que veio do get_pending_bills (onde source="recurring").',
+    input_schema: {
+      type: 'object',
+      properties: {
+        recurring_id: {
+          type: 'string',
+          description:
+            'ID da recorrência (vem do campo `id` de um item de get_pending_bills com source="recurring")',
+        },
+        paid_date: {
+          type: 'string',
+          description:
+            'Data em que foi pago, formato YYYY-MM-DD. Se omitido, usa a data de vencimento da recorrência.',
+        },
+      },
+      required: ['recurring_id'],
+    },
+  },
 ] as const
 
 // ============================================================
@@ -418,6 +440,17 @@ export async function executeTool(
           limit,
         })
         return { ok: true, data }
+      }
+
+      case 'mark_recurring_as_paid': {
+        const recurringId = typeof toolInput.recurring_id === 'string' ? toolInput.recurring_id : ''
+        if (!recurringId) return { ok: false, error: 'recurring_id é obrigatório' }
+        const paidDate = toolInput.paid_date ? parseDate(toolInput.paid_date) : undefined
+        if (toolInput.paid_date && !paidDate) {
+          return { ok: false, error: 'paid_date inválida (use YYYY-MM-DD)' }
+        }
+        const result = await markRecurringAsPaid(userId, recurringId, paidDate ?? undefined)
+        return result.ok ? { ok: true, data: result } : { ok: false, error: result.error ?? 'falha ao marcar como pago' }
       }
 
       default:
