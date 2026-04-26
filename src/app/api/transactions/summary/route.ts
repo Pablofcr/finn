@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
   const recentTransactions = await prisma.transaction.findMany({
     where: { userId: user.id, date: { lte: todayEnd } },
     include: {
-      category: { select: { name: true, color: true } },
+      category: { select: { name: true, color: true, icon: true } },
     },
     orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     take: 5,
@@ -116,6 +116,7 @@ export async function GET(request: NextRequest) {
     date: t.date.toISOString(),
     categoryName: t.category?.name,
     categoryColor: t.category?.color,
+    categoryIcon: t.category?.icon,
   }))
 
   // Budget progress
