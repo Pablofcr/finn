@@ -98,7 +98,9 @@ export default function TransactionsPage() {
               </div>
               <Select value={typeFilter} onValueChange={(v) => { if (v) { setTypeFilter(v); setPage(1) } }}>
                 <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Tipo" />
+                  <SelectValue placeholder="Tipo">
+                    {{ all: 'Todos', INCOME: 'Receitas', EXPENSE: 'Despesas', TRANSFER: 'Transferências' }[typeFilter] || 'Tipo'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>

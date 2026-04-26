@@ -241,7 +241,9 @@ export default function SettingsPage() {
               <Label>Moeda Padrão</Label>
               <Select value={currency} onValueChange={(v) => v && setCurrency(v)}>
                 <SelectTrigger className="h-11 rounded-xl">
-                  <SelectValue />
+                  <SelectValue>
+                    {CURRENCIES.find((c) => c.value === currency)?.label || ''}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {CURRENCIES.map((c) => (
@@ -254,7 +256,9 @@ export default function SettingsPage() {
               <Label>Fuso Horário</Label>
               <Select value={timezone} onValueChange={(v) => v && setTimezone(v)}>
                 <SelectTrigger className="h-11 rounded-xl">
-                  <SelectValue />
+                  <SelectValue>
+                    {TIMEZONES.find((tz) => tz.value === timezone)?.label || ''}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {TIMEZONES.map((tz) => (

@@ -183,7 +183,9 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
                     <label className="text-sm font-medium">De qual conta sai o pagamento?</label>
                     <Select onValueChange={(v) => v && setPayingFrom(v)} value={payingFrom}>
                       <SelectTrigger className="h-11 rounded-xl">
-                        <SelectValue placeholder="Selecione a conta" />
+                        <SelectValue placeholder="Selecione a conta">
+                          {accounts.find((a) => a.id === payingFrom)?.name || <span className="text-muted-foreground">Selecione a conta</span>}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {accounts.map(a => (

@@ -12,8 +12,13 @@ import { EmptyState } from '@/components/shared/empty-state'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { BUDGET_PERIOD_LABELS } from '@/lib/constants'
-import { Plus, PieChart } from 'lucide-react'
+import { Plus, PieChart, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 
 function getProgressColor(percentage: number) {
   if (percentage <= 60) return 'progress-gradient-success'
@@ -32,6 +37,7 @@ export default function BudgetsPage() {
   const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [categoryId, setCategoryId] = useState('')
   const [amount, setAmount] = useState('')
   const [period, setPeriod] = useState('MONTHLY')
@@ -55,11 +61,29 @@ export default function BudgetsPage() {
     fetchData()
   }, [fetchData])
 
-  async function handleCreate() {
+  function openNew() {
+    setEditingId(null)
+    setCategoryId('')
+    setAmount('')
+    setPeriod('MONTHLY')
+    setDialogOpen(true)
+  }
+
+  function openEdit(b: any) {
+    setEditingId(b.id)
+    setCategoryId(b.categoryId)
+    setAmount(String(b.amount))
+    setPeriod(b.period)
+    setDialogOpen(true)
+  }
+
+  async function handleSave() {
     if (!categoryId || !amount) return
     try {
-      const res = await fetch('/api/budgets', {
-        method: 'POST',
+      const url = editingId ? `/api/budgets/${editingId}` : '/api/budgets'
+      const method = editingId ? 'PUT' : 'POST'
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           categoryId,
@@ -69,39 +93,58 @@ export default function BudgetsPage() {
         }),
       })
       if (res.ok) {
-        toast.success('Orçamento criado! Acompanhe seus gastos por aqui.')
+        toast.success(editingId ? 'Orçamento atualizado.' : 'Orçamento criado! Acompanhe seus gastos por aqui.')
         setDialogOpen(false)
+        setEditingId(null)
         setCategoryId('')
         setAmount('')
         fetchData()
       } else {
         const err = await res.json()
-        toast.error(err.error || 'Não foi possível criar o orçamento. Verifique os dados e tente novamente.')
+        toast.error(err.error || 'Não foi possível salvar o orçamento. Verifique os dados e tente novamente.')
       }
     } catch {
-      toast.error('Não foi possível criar o orçamento. Tente novamente em instantes.')
+      toast.error('Não foi possível salvar o orçamento. Tente novamente em instantes.')
     }
   }
+
+  async function handleDelete(id: string) {
+    try {
+      const res = await fetch(`/api/budgets/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        toast.success('Orçamento excluído.')
+        fetchData()
+      } else {
+        toast.error('Não foi possível excluir o orçamento.')
+      }
+    } catch {
+      toast.error('Não foi possível excluir o orçamento.')
+    }
+  }
+
+  const selectedCategoryName = categories.find((c) => c.id === categoryId)?.name
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Orçamentos</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger render={<Button className="gap-2 gradient-primary shadow-md shadow-primary/25 border-0" />}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingId(null) }}>
+          <DialogTrigger render={<Button className="gap-2 gradient-primary shadow-md shadow-primary/25 border-0" onClick={openNew} />}>
               <Plus className="h-4 w-4" />
               Novo Orçamento
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Novo Orçamento</DialogTitle>
+              <DialogTitle>{editingId ? 'Editar Orçamento' : 'Novo Orçamento'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Categoria</Label>
                 <Select value={categoryId} onValueChange={(v) => v && setCategoryId(v)}>
                   <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue placeholder="Selecione" />
+                    <SelectValue placeholder="Selecione">
+                      {selectedCategoryName || <span className="text-muted-foreground">Selecione</span>}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((c: any) => (
@@ -127,7 +170,9 @@ export default function BudgetsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full gradient-primary shadow-md shadow-primary/25 border-0" onClick={handleCreate}>Criar Orçamento</Button>
+              <Button className="w-full gradient-primary shadow-md shadow-primary/25 border-0" onClick={handleSave}>
+                {editingId ? 'Salvar Alterações' : 'Criar Orçamento'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -184,7 +229,7 @@ export default function BudgetsPage() {
             icon={<PieChart className="h-12 w-12" />}
             title="Defina seu primeiro limite de gastos"
             description="Escolha uma categoria (ex: Alimentação), defina um valor máximo por mês e o Finn cuida do resto. Simples assim."
-            action={<Button onClick={() => setDialogOpen(true)} className="gap-2"><Plus className="h-4 w-4" /> Criar meu primeiro orçamento</Button>}
+            action={<Button onClick={openNew} className="gap-2"><Plus className="h-4 w-4" /> Criar meu primeiro orçamento</Button>}
           />
         </div>
       ) : (
@@ -194,11 +239,41 @@ export default function BudgetsPage() {
             const percentage = Number(b.amount) > 0 ? Math.round((spent / Number(b.amount)) * 100) : 0
             const pct = Math.min(percentage, 100)
             return (
-              <Card key={b.id}>
+              <Card key={b.id} className="group">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base">{b.category?.name}</CardTitle>
-                    <span className="text-xs text-muted-foreground">{BUDGET_PERIOD_LABELS[b.period]}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{BUDGET_PERIOD_LABELS[b.period]}</span>
+                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => openEdit(b)}
+                          aria-label="Editar orçamento"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" aria-label="Excluir orçamento" />}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir orçamento de &ldquo;{b.category?.name}&rdquo;?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. Suas transações continuam preservadas — só o limite de gastos será removido.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(b.id)}>Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">

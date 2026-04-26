@@ -162,7 +162,9 @@ export default function CategoriesPage() {
                 <Label>Tipo</Label>
                 <Select value={type} onValueChange={(v) => v && setType(v)}>
                   <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue />
+                    <SelectValue>
+                      {type === 'EXPENSE' ? 'Despesa - dinheiro que sai' : type === 'INCOME' ? 'Receita - dinheiro que entra' : ''}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="EXPENSE">Despesa - dinheiro que sai</SelectItem>
