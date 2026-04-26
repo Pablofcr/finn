@@ -312,20 +312,28 @@ export default function AccountsPage() {
                   Definir como conta principal
                 </label>
               </div>
-              <div className="space-y-2">
-                <Label>Cor</Label>
-                <div className="flex flex-wrap gap-2">
-                  {COLORS.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      className={`h-7 w-7 rounded-full border-2 transition-all ${watch('color') === color ? 'border-foreground scale-110' : 'border-transparent'}`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setValue('color', color)}
-                    />
-                  ))}
+              {/* Color picker — only when name doesn't match a known brand */}
+              {!detectBankFromName(watch('name') || '') && (
+                <div className="space-y-2">
+                  <Label>Cor</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`h-7 w-7 rounded-full border-2 transition-all ${watch('color') === color ? 'border-foreground scale-110' : 'border-transparent'}`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setValue('color', color)}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+              {detectBankFromName(watch('name') || '') && (
+                <p className="text-xs text-muted-foreground">
+                  💡 Cor e logo da marca já aplicados automaticamente.
+                </p>
+              )}
               <Button type="submit" className="w-full gradient-primary shadow-md shadow-primary/25 border-0">
                 {editingId ? 'Atualizar' : 'Criar Conta'}
               </Button>

@@ -14,6 +14,28 @@ export type SimpleIconKey =
   | 'mercadopago'
   | 'picpay'
 
+/** Custom SVG components for brands without an official SimpleIcons entry */
+export type CustomLogoKey =
+  | 'itau'
+  | 'bradesco'
+  | 'bb'
+  | 'caixa'
+  | 'santander'
+  | 'inter'
+  | 'c6'
+  | 'btg'
+  | 'pagbank'
+  | 'will'
+  | 'neon'
+  | 'original'
+  | 'safra'
+  | 'xp'
+  | 'sicoob'
+  | 'sicredi'
+  | 'brb'
+  | 'hipercard'
+  | 'elo'
+
 export type BankInfo = {
   /** Canonical short name */
   name: string
@@ -23,8 +45,10 @@ export type BankInfo = {
   bgColor: string
   /** Foreground (text/icon) color */
   fgColor: string
-  /** SimpleIcon if there's an official SVG; undefined → use monogram */
+  /** SimpleIcon (react-icons/si) if there's an official SVG */
   iconKey?: SimpleIconKey
+  /** Custom inline SVG component if we hand-rolled one */
+  customLogo?: CustomLogoKey
   /** Keywords (lowercase, no diacritics) that should match this bank */
   keywords: string[]
 }
@@ -36,34 +60,34 @@ export const BANKS: BankInfo[] = [
   { name: 'Amex', monogram: 'AMEX', bgColor: '#006FCF', fgColor: '#FFFFFF', iconKey: 'amex', keywords: ['amex', 'american express'] },
   { name: 'Diners', monogram: 'DC', bgColor: '#0079BE', fgColor: '#FFFFFF', iconKey: 'diners', keywords: ['diners'] },
   { name: 'Discover', monogram: 'DISC', bgColor: '#FF6000', fgColor: '#FFFFFF', iconKey: 'discover', keywords: ['discover'] },
-  { name: 'Elo', monogram: 'ELO', bgColor: '#000000', fgColor: '#FCEC32', keywords: ['elo'] },
-  { name: 'Hipercard', monogram: 'HC', bgColor: '#B11E2C', fgColor: '#FFFFFF', keywords: ['hipercard'] },
+  { name: 'Elo', monogram: 'ELO', bgColor: '#000000', fgColor: '#FCEC32', customLogo: 'elo', keywords: ['elo'] },
+  { name: 'Hipercard', monogram: 'HC', bgColor: '#B11E2C', fgColor: '#FFFFFF', customLogo: 'hipercard', keywords: ['hipercard'] },
 
   // ─── Digital banks / fintechs ─────────────────────────────────────────────
   { name: 'Nubank', monogram: 'N', bgColor: '#820AD1', fgColor: '#FFFFFF', iconKey: 'nubank', keywords: ['nubank', 'nu bank', 'nu pagamentos'] },
   { name: 'Mercado Pago', monogram: 'MP', bgColor: '#00B1EA', fgColor: '#FFFFFF', iconKey: 'mercadopago', keywords: ['mercado pago', 'mercadopago'] },
   { name: 'PicPay', monogram: 'P', bgColor: '#21C25E', fgColor: '#FFFFFF', iconKey: 'picpay', keywords: ['picpay', 'pic pay'] },
-  { name: 'Inter', monogram: 'i', bgColor: '#FF7A00', fgColor: '#FFFFFF', keywords: ['inter', 'banco inter'] },
-  { name: 'C6 Bank', monogram: 'C6', bgColor: '#000000', fgColor: '#D2A26A', keywords: ['c6', 'c6 bank'] },
-  { name: 'PagBank', monogram: 'PB', bgColor: '#00BF63', fgColor: '#FFFFFF', keywords: ['pagbank', 'pagseguro', 'pag bank', 'pag seguro'] },
-  { name: 'Will Bank', monogram: 'W', bgColor: '#00C4B0', fgColor: '#FFFFFF', keywords: ['will bank', 'willbank'] },
-  { name: 'Neon', monogram: 'N', bgColor: '#08DDA1', fgColor: '#0E2540', keywords: ['neon'] },
-  { name: 'Original', monogram: 'O', bgColor: '#EC7100', fgColor: '#FFFFFF', keywords: ['original', 'banco original'] },
-  { name: 'BTG Pactual', monogram: 'BTG', bgColor: '#001E62', fgColor: '#FFFFFF', keywords: ['btg', 'btg pactual'] },
-  { name: 'XP', monogram: 'XP', bgColor: '#000000', fgColor: '#FCD700', keywords: ['xp', 'xp investimentos'] },
+  { name: 'Inter', monogram: 'i', bgColor: '#FF7A00', fgColor: '#FFFFFF', customLogo: 'inter', keywords: ['inter', 'banco inter'] },
+  { name: 'C6 Bank', monogram: 'C6', bgColor: '#000000', fgColor: '#D2A26A', customLogo: 'c6', keywords: ['c6', 'c6 bank'] },
+  { name: 'PagBank', monogram: 'PB', bgColor: '#00BF63', fgColor: '#FFFFFF', customLogo: 'pagbank', keywords: ['pagbank', 'pagseguro', 'pag bank', 'pag seguro'] },
+  { name: 'Will Bank', monogram: 'W', bgColor: '#00C4B0', fgColor: '#FFFFFF', customLogo: 'will', keywords: ['will bank', 'willbank'] },
+  { name: 'Neon', monogram: 'N', bgColor: '#08DDA1', fgColor: '#0E2540', customLogo: 'neon', keywords: ['neon'] },
+  { name: 'Original', monogram: 'O', bgColor: '#EC7100', fgColor: '#FFFFFF', customLogo: 'original', keywords: ['original', 'banco original'] },
+  { name: 'BTG Pactual', monogram: 'BTG', bgColor: '#001E62', fgColor: '#FFFFFF', customLogo: 'btg', keywords: ['btg', 'btg pactual'] },
+  { name: 'XP', monogram: 'XP', bgColor: '#000000', fgColor: '#FCD700', customLogo: 'xp', keywords: ['xp', 'xp investimentos'] },
 
   // ─── Cooperatives ─────────────────────────────────────────────────────────
-  { name: 'Sicoob', monogram: 'SO', bgColor: '#00603A', fgColor: '#FFFFFF', keywords: ['sicoob'] },
-  { name: 'Sicredi', monogram: 'SR', bgColor: '#1A5632', fgColor: '#FFFFFF', keywords: ['sicredi'] },
+  { name: 'Sicoob', monogram: 'SO', bgColor: '#00603A', fgColor: '#FFFFFF', customLogo: 'sicoob', keywords: ['sicoob'] },
+  { name: 'Sicredi', monogram: 'SR', bgColor: '#1A5632', fgColor: '#FFFFFF', customLogo: 'sicredi', keywords: ['sicredi'] },
 
   // ─── Traditional banks ────────────────────────────────────────────────────
-  { name: 'Bradesco', monogram: 'B', bgColor: '#CC092F', fgColor: '#FFFFFF', keywords: ['bradesco'] },
-  { name: 'Itaú', monogram: 'I', bgColor: '#EC7000', fgColor: '#003399', keywords: ['itau', 'itaú', 'iti'] },
-  { name: 'Banco do Brasil', monogram: 'BB', bgColor: '#FAE128', fgColor: '#003D8C', keywords: ['banco do brasil', 'bb'] },
-  { name: 'Caixa', monogram: 'C', bgColor: '#0070AF', fgColor: '#F39200', keywords: ['caixa', 'caixa economica', 'cef'] },
-  { name: 'Santander', monogram: 'S', bgColor: '#EC0000', fgColor: '#FFFFFF', keywords: ['santander'] },
-  { name: 'Safra', monogram: 'Sa', bgColor: '#00A0E3', fgColor: '#FFFFFF', keywords: ['safra'] },
-  { name: 'BRB', monogram: 'BRB', bgColor: '#0066B2', fgColor: '#FFFFFF', keywords: ['brb'] },
+  { name: 'Bradesco', monogram: 'B', bgColor: '#CC092F', fgColor: '#FFFFFF', customLogo: 'bradesco', keywords: ['bradesco'] },
+  { name: 'Itaú', monogram: 'I', bgColor: '#EC7000', fgColor: '#003399', customLogo: 'itau', keywords: ['itau', 'itaú', 'iti'] },
+  { name: 'Banco do Brasil', monogram: 'BB', bgColor: '#FAE128', fgColor: '#003D8C', customLogo: 'bb', keywords: ['banco do brasil', 'bb'] },
+  { name: 'Caixa', monogram: 'C', bgColor: '#0070AF', fgColor: '#F39200', customLogo: 'caixa', keywords: ['caixa', 'caixa economica', 'cef'] },
+  { name: 'Santander', monogram: 'S', bgColor: '#EC0000', fgColor: '#FFFFFF', customLogo: 'santander', keywords: ['santander'] },
+  { name: 'Safra', monogram: 'Sa', bgColor: '#00A0E3', fgColor: '#FFFFFF', customLogo: 'safra', keywords: ['safra'] },
+  { name: 'BRB', monogram: 'BRB', bgColor: '#0066B2', fgColor: '#FFFFFF', customLogo: 'brb', keywords: ['brb'] },
 ]
 
 function normalize(s: string): string {
