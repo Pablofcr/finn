@@ -10,7 +10,6 @@ import { getOrCreateInvoiceFor, adjustInvoiceTotal } from '@/lib/invoice'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 import { maybeRunAgent } from '@/lib/agent'
 import { findCategoryForDescription } from '@/lib/resolve-category'
-import { augmentLinksTelegram } from '@/lib/agent/link-augment'
 
 export const maxDuration = 60
 
@@ -121,8 +120,7 @@ async function handleMessage(message: any) {
   // Try conversational agent first (for QUERY-type intents)
   const agentReply = await maybeRunAgent(connection.userId, text, connection.id)
   if (agentReply) {
-    const { text: linkedText, hasLinks } = augmentLinksTelegram(agentReply)
-    await sendMessage({ chatId, text: linkedText, disableWebPagePreview: hasLinks })
+    await sendMessage({ chatId, text: agentReply })
     return
   }
 
@@ -504,8 +502,7 @@ async function handleVoiceMessage(
   // Try conversational agent first (for QUERY-type intents)
   const agentReply = await maybeRunAgent(connection.userId, transcription, connection.id)
   if (agentReply) {
-    const { text: linkedText, hasLinks } = augmentLinksTelegram(agentReply)
-    await sendMessage({ chatId, text: linkedText, disableWebPagePreview: hasLinks })
+    await sendMessage({ chatId, text: agentReply })
     return
   }
 
