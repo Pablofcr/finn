@@ -16,6 +16,7 @@ import { formatCurrency } from '@/lib/utils'
 import { ACCOUNT_TYPE_LABELS, COLORS } from '@/lib/constants'
 import { Plus, Wallet, Trash2, Pencil, Star, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { BankIcon } from '@/components/bank-icon'
 import { toast } from 'sonner'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -315,12 +316,12 @@ export default function AccountsPage() {
               <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${account.color}, ${account.color}88)` }} />
               <CardHeader className="flex flex-row items-start justify-between pb-2">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-md"
-                    style={{ background: `linear-gradient(135deg, ${account.color}, ${account.color}cc)` }}
-                  >
-                    <Wallet className="h-5 w-5" />
-                  </div>
+                  <BankIcon
+                    accountName={account.name}
+                    accountType={account.type}
+                    fallbackColor={account.color}
+                    size="lg"
+                  />
                   <div>
                     <CardTitle className="text-base flex items-center gap-1.5">
                       {account.name}
