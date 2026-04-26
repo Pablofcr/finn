@@ -13,12 +13,24 @@ import { EmptyState } from '@/components/shared/empty-state'
 import { COLORS } from '@/lib/constants'
 import { Plus, Tags, Trash2, Pencil, ChevronDown } from 'lucide-react'
 import { getCategoryIcon } from '@/lib/category-icon'
+import { suggestMetadataForName } from '@/lib/keyword-map'
 import { toast } from 'sonner'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+
+// Curated icon shortlist for the picker — same set used across the app
+const ICON_PICKER_OPTIONS = [
+  'tag', 'utensils', 'shopping-cart', 'utensils-crossed', 'bike', 'coffee',
+  'car', 'fuel', 'car-taxi-front', 'bus', 'wrench',
+  'home', 'zap', 'droplet', 'wifi', 'sparkles',
+  'heart-pulse', 'pill', 'stethoscope', 'shield-plus',
+  'graduation-cap', 'gamepad-2', 'shirt', 'shopping-bag',
+  'repeat', 'gift', 'circle-ellipsis',
+  'briefcase', 'laptop', 'trending-up', 'coins',
+] as const
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([])
@@ -27,7 +39,12 @@ export default function CategoriesPage() {
   const [name, setName] = useState('')
   const [type, setType] = useState<string>('EXPENSE')
   const [color, setColor] = useState('#6366f1')
+  const [icon, setIcon] = useState<string>('tag')
+  const [parentId, setParentId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
+  // Whether the current icon/color/parent came from a smart-suggestion (so we
+  // can show a subtle "sugerido" pill).
+  const [autoFilled, setAutoFilled] = useState(false)
 
   const fetchCategories = useCallback(async () => {
     setLoading(true)
@@ -52,6 +69,9 @@ export default function CategoriesPage() {
     setName('')
     setType('EXPENSE')
     setColor('#6366f1')
+    setIcon('tag')
+    setParentId(null)
+    setAutoFilled(false)
     setDialogOpen(true)
   }
 
@@ -60,17 +80,52 @@ export default function CategoriesPage() {
     setName(category.name)
     setType(category.type)
     setColor(category.color || '#6366f1')
+    setIcon(category.icon || 'tag')
+    setParentId(category.parentId ?? null)
+    setAutoFilled(false)
     setDialogOpen(true)
   }
+
+  // Smart-fill: when name changes, try to suggest icon/color/parent.
+  // Only when creating (not editing) and only if the user hasn't manually
+  // overridden the auto-fill.
+  useEffect(() => {
+    if (editingId) return
+    const handle = setTimeout(() => {
+      const suggestion = suggestMetadataForName(name)
+      if (suggestion.meta && suggestion.meta.type === type) {
+        setIcon(suggestion.meta.icon)
+        setColor(suggestion.meta.color)
+        if (suggestion.meta.parentName) {
+          const parent = categories.find(
+            (c) => c.name === suggestion.meta!.parentName && c.type === type
+          )
+          if (parent) setParentId(parent.id)
+        }
+        setAutoFilled(true)
+      } else if (autoFilled && !suggestion.meta) {
+        setAutoFilled(false)
+      }
+    }, 220)
+    return () => clearTimeout(handle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, type, editingId])
 
   async function handleSave() {
     if (!name.trim()) return
     try {
+      const payload = {
+        name: name.trim(),
+        type,
+        color,
+        icon,
+        ...(parentId ? { parentId } : {}),
+      }
       if (editingId) {
         const res = await fetch(`/api/categories/${editingId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, type, color, icon: 'tag' }),
+          body: JSON.stringify(payload),
         })
         if (res.ok) {
           toast.success('Categoria atualizada com sucesso!')
@@ -79,19 +134,23 @@ export default function CategoriesPage() {
           setName('')
           fetchCategories()
         } else {
-          toast.error('Não foi possível atualizar a categoria. Tente novamente.')
+          const err = await res.json()
+          toast.error(err.error || 'Não foi possível atualizar a categoria.')
         }
       } else {
         const res = await fetch('/api/categories', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, type, color, icon: 'tag' }),
+          body: JSON.stringify(payload),
         })
         if (res.ok) {
           toast.success('Categoria criada! Use-a para organizar suas transações.')
           setDialogOpen(false)
           setName('')
           fetchCategories()
+        } else {
+          const err = await res.json()
+          toast.error(err.error || 'Não foi possível criar a categoria.')
         }
       }
     } catch {
@@ -137,44 +196,144 @@ export default function CategoriesPage() {
               <Plus className="h-4 w-4" />
               Nova Categoria
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Editar Categoria' : 'Nova Categoria'}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Nome da categoria</Label>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="h-10 w-10 rounded-xl shrink-0 shadow-sm"
-                    style={{ backgroundColor: color }}
-                  />
-                  <Input
-                    placeholder="Ex: Alimentação, Transporte, Salário..."
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="h-11 rounded-xl"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">Escolha um nome que identifique facilmente o tipo de transação.</p>
-              </div>
+            {/* Live preview — what the avatar will look like once saved */}
+            <div className="flex items-center gap-3 pb-3 border-b">
+              {(() => {
+                const PreviewIcon = getCategoryIcon(icon)
+                const parentName = parentId
+                  ? categories.find((c) => c.id === parentId)?.name
+                  : null
+                return (
+                  <>
+                    <div
+                      className="h-12 w-12 rounded-2xl flex items-center justify-center shadow-sm shrink-0 ring-1 ring-inset ring-black/5"
+                      style={{ backgroundColor: color }}
+                    >
+                      <PreviewIcon className="h-5 w-5 text-white" strokeWidth={1.75} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[15px] font-semibold tracking-tight truncate">
+                        {name.trim() || (
+                          <span className="text-muted-foreground font-normal">Prévia da categoria</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {type === 'EXPENSE' ? 'Despesa' : 'Receita'}
+                        {parentName && <> · em <strong>{parentName}</strong></>}
+                        {autoFilled && !editingId && (
+                          <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium">
+                            sugerido
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </>
+                )
+              })()}
+            </div>
+
+            <div className="space-y-4 pt-3">
+              {/* Tipo (segmented control — gates the parent options) */}
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                <Select value={type} onValueChange={(v) => v && setType(v)}>
-                  <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue>
-                      {type === 'EXPENSE' ? 'Despesa - dinheiro que sai' : type === 'INCOME' ? 'Receita - dinheiro que entra' : ''}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EXPENSE">Despesa - dinheiro que sai</SelectItem>
-                    <SelectItem value="INCOME">Receita - dinheiro que entra</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-muted/40 h-11">
+                  <button
+                    type="button"
+                    onClick={() => { setType('EXPENSE'); setParentId(null) }}
+                    className={`rounded-lg text-sm font-medium transition-all ${type === 'EXPENSE' ? 'bg-background shadow-sm text-red-600 dark:text-red-400' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Despesa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setType('INCOME'); setParentId(null) }}
+                    className={`rounded-lg text-sm font-medium transition-all ${type === 'INCOME' ? 'bg-background shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Receita
+                  </button>
+                </div>
               </div>
+
+              {/* Nome */}
+              <div className="space-y-2">
+                <Label>Nome da categoria</Label>
+                <Input
+                  autoFocus
+                  placeholder="Ex: Mercado, Restaurante, Salário..."
+                  value={name}
+                  onChange={(e) => { setName(e.target.value); setAutoFilled(false) }}
+                  className="h-11 rounded-xl"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Se o nome bater com algo conhecido (Mercado, Uber, Salário…), eu já sugiro ícone, cor e categoria pai.
+                </p>
+              </div>
+
+              {/* Categoria pai */}
+              {(() => {
+                const eligibleParents = categories.filter(
+                  (c) => !c.parentId && c.type === type && c.id !== editingId
+                )
+                return (
+                  <div className="space-y-2">
+                    <Label>Categoria pai (opcional)</Label>
+                    {eligibleParents.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic px-1">
+                        Você ainda não tem categorias principais desse tipo. Crie uma primeiro pra agrupar subcategorias depois.
+                      </p>
+                    ) : (
+                      <Select
+                        value={parentId ?? '__none__'}
+                        onValueChange={(v) => { setParentId(v === '__none__' ? null : v); setAutoFilled(false) }}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl">
+                          <SelectValue>
+                            {parentId
+                              ? eligibleParents.find((c) => c.id === parentId)?.name || 'Nenhuma'
+                              : 'Nenhuma (categoria principal)'}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Nenhuma (categoria principal)</SelectItem>
+                          {eligibleParents.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* Ícone picker */}
+              <div className="space-y-2">
+                <Label>Ícone</Label>
+                <div className="grid grid-cols-8 gap-2 p-2 rounded-xl bg-muted/30 max-h-44 overflow-y-auto">
+                  {ICON_PICKER_OPTIONS.map((iconKey) => {
+                    const IconComp = getCategoryIcon(iconKey)
+                    const selected = icon === iconKey
+                    return (
+                      <button
+                        key={iconKey}
+                        type="button"
+                        onClick={() => { setIcon(iconKey); setAutoFilled(false) }}
+                        aria-label={iconKey}
+                        className={`h-9 w-9 rounded-lg flex items-center justify-center transition-all ${selected ? 'bg-background ring-2 ring-primary shadow-sm' : 'hover:bg-background/60'}`}
+                      >
+                        <IconComp className="h-4 w-4" strokeWidth={1.75} style={{ color: selected ? color : undefined }} />
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Cor */}
               <div className="space-y-2">
                 <Label>Cor</Label>
-                <p className="text-xs text-muted-foreground mb-1">Escolha uma cor para identificar visualmente esta categoria.</p>
                 <div className="flex flex-wrap gap-2">
                   {COLORS.map((c) => (
                     <button
@@ -182,11 +341,13 @@ export default function CategoriesPage() {
                       type="button"
                       className={`h-8 w-8 rounded-full border-2 transition-all hover:scale-110 ${color === c ? 'border-foreground scale-110 ring-2 ring-foreground/20' : 'border-transparent'}`}
                       style={{ backgroundColor: c }}
-                      onClick={() => setColor(c)}
+                      onClick={() => { setColor(c); setAutoFilled(false) }}
+                      aria-label={`Cor ${c}`}
                     />
                   ))}
                 </div>
               </div>
+
               <Button className="w-full gradient-primary shadow-md shadow-primary/25 border-0" onClick={handleSave}>
                 {editingId ? 'Salvar Alterações' : 'Criar Categoria'}
               </Button>

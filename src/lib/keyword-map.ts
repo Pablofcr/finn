@@ -348,6 +348,50 @@ export function getCategoryMeta(categoryName: string): CategoryMeta | null {
   return CATEGORY_METADATA[categoryName] ?? null
 }
 
+function normalize(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim()
+}
+
+/**
+ * Suggest icon, color, and parent for a category name being typed by the user.
+ * Used by the "Nova Categoria" form to preload smart defaults.
+ *
+ * Match order:
+ *   1. Exact (case/diacritics-insensitive) match against a CATEGORY_METADATA name.
+ *   2. KEYWORD_MAP word-boundary match (e.g. user types "Mercado da semana").
+ */
+export function suggestMetadataForName(name: string): {
+  matchedName?: string
+  meta?: CategoryMeta
+} {
+  const trimmed = name.trim()
+  if (!trimmed) return {}
+
+  const norm = normalize(trimmed)
+
+  // Pass 1 — direct match by canonical name
+  for (const [canonical, meta] of Object.entries(CATEGORY_METADATA)) {
+    if (normalize(canonical) === norm) {
+      return { matchedName: canonical, meta }
+    }
+  }
+
+  // Pass 2 — keyword match
+  for (const [keyword, canonical] of Object.entries(KEYWORD_MAP)) {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    if (new RegExp(`\\b${escaped}\\b`, 'u').test(norm)) {
+      const meta = CATEGORY_METADATA[canonical]
+      if (meta) return { matchedName: canonical, meta }
+    }
+  }
+
+  return {}
+}
+
 /**
  * Find the category name for a keyword, matching whole words only
  * (so "gas" doesn't match "gastei"). Returns null if no keyword matches.
