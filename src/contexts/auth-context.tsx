@@ -47,7 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) return { error: error.message }
-    router.push('/dashboard')
+    // Honor ?next= from the login URL — guarded against open-redirect (must be a relative path).
+    let target = '/dashboard'
+    if (typeof window !== 'undefined') {
+      const next = new URLSearchParams(window.location.search).get('next')
+      if (next && next.startsWith('/') && !next.startsWith('//')) target = next
+    }
+    router.push(target)
     return { error: null }
   }, [supabase.auth, router])
 
@@ -64,10 +70,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase.auth])
 
   const signInWithGoogle = useCallback(async () => {
+    let next = ''
+    const fromUrl = new URLSearchParams(window.location.search).get('next')
+    if (fromUrl && fromUrl.startsWith('/') && !fromUrl.startsWith('//')) {
+      next = `?next=${encodeURIComponent(fromUrl)}`
+    }
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
+        redirectTo: `${window.location.origin}/api/auth/callback${next}`,
       },
     })
   }, [supabase.auth])

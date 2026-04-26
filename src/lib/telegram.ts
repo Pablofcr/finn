@@ -9,16 +9,21 @@ interface SendMessageOptions {
   chatId: string | number
   text: string
   parseMode?: 'HTML' | 'MarkdownV2'
+  /** When true, suppresses the OG preview Telegram fetches for the first URL — required when the link points behind auth. */
+  disableWebPagePreview?: boolean
   replyMarkup?: {
     inline_keyboard: InlineKeyboardButton[][]
   }
 }
 
-export async function sendMessage({ chatId, text, parseMode = 'HTML', replyMarkup }: SendMessageOptions) {
+export async function sendMessage({ chatId, text, parseMode = 'HTML', disableWebPagePreview, replyMarkup }: SendMessageOptions) {
   const body: Record<string, unknown> = {
     chat_id: chatId,
     text,
     parse_mode: parseMode,
+  }
+  if (disableWebPagePreview) {
+    body.disable_web_page_preview = true
   }
   if (replyMarkup) {
     body.reply_markup = JSON.stringify(replyMarkup)

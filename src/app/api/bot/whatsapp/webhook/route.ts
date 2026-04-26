@@ -10,6 +10,7 @@ import { getOrCreateInvoiceFor, adjustInvoiceTotal } from '@/lib/invoice'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 import { maybeRunAgent } from '@/lib/agent'
 import { findCategoryForDescription } from '@/lib/resolve-category'
+import { augmentLinksWhatsApp } from '@/lib/agent/link-augment'
 
 export const maxDuration = 60
 
@@ -142,7 +143,7 @@ async function handleTextMessage(from: string, text: string, connection: { userI
   // Try conversational agent first (for QUERY-type intents)
   const agentReply = await maybeRunAgent(connection.userId, text, connection.id)
   if (agentReply) {
-    await sendWhatsAppMessage({ to: from, text: agentReply })
+    await sendWhatsAppMessage({ to: from, text: augmentLinksWhatsApp(agentReply) })
     return
   }
 

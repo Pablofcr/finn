@@ -44,7 +44,12 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname !== '/security'
   ) {
     const url = request.nextUrl.clone()
+    const originalPath = request.nextUrl.pathname + request.nextUrl.search
     url.pathname = '/login'
+    url.search = ''
+    if (originalPath && originalPath !== '/' && originalPath !== '/login') {
+      url.searchParams.set('next', originalPath)
+    }
     return NextResponse.redirect(url)
   }
 
