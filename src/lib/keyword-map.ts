@@ -50,6 +50,7 @@ export const CATEGORY_METADATA: Record<string, CategoryMeta> = {
   'Energia':             { color: '#a855f7', icon: 'zap',             parentName: 'Moradia', type: 'EXPENSE' },
   'Água':                { color: '#6366f1', icon: 'droplet',         parentName: 'Moradia', type: 'EXPENSE' },
   'Internet/TV':         { color: '#8b5cf6', icon: 'wifi',            parentName: 'Moradia', type: 'EXPENSE' },
+  'Serviços Domésticos': { color: '#14b8a6', icon: 'sparkles',        parentName: 'Moradia', type: 'EXPENSE' },
 
   // ─── Saúde children ──────────────────────────────────────
   'Farmácia':            { color: '#fca5a5', icon: 'pill',            parentName: 'Saúde', type: 'EXPENSE' },
@@ -186,10 +187,21 @@ export const KEYWORD_MAP: Record<string, string> = {
   internet: 'Internet/TV',
   wifi: 'Internet/TV',
 
+  // ─── Moradia > Serviços Domésticos ────────────────────────
+  diarista: 'Serviços Domésticos',
+  faxina: 'Serviços Domésticos',
+  faxineira: 'Serviços Domésticos',
+  empregada: 'Serviços Domésticos',
+  'empregada domestica': 'Serviços Domésticos',
+  mensalista: 'Serviços Domésticos',
+  baba: 'Serviços Domésticos',
+  jardineiro: 'Serviços Domésticos',
+  governanta: 'Serviços Domésticos',
+  cuidadora: 'Serviços Domésticos',
+  cuidador: 'Serviços Domésticos',
+
   // ─── Moradia (generic parent fallback) ────────────────────
   gas: 'Moradia',
-  faxina: 'Moradia',
-  diarista: 'Moradia',
   limpeza: 'Moradia',
   reforma: 'Moradia',
   obra: 'Moradia',
