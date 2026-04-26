@@ -95,9 +95,12 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  // Recent transactions
+  // Recent transactions — only past/today, never future installments,
+  // so the feed reflects what actually happened (not projected parcels).
+  const todayEnd = new Date()
+  todayEnd.setHours(23, 59, 59, 999)
   const recentTransactions = await prisma.transaction.findMany({
-    where: { userId: user.id },
+    where: { userId: user.id, date: { lte: todayEnd } },
     include: {
       category: { select: { name: true, color: true } },
     },
