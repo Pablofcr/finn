@@ -17,6 +17,9 @@ import { ACCOUNT_TYPE_LABELS, COLORS } from '@/lib/constants'
 import { Plus, Wallet, Trash2, Pencil, Star, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { BankIcon } from '@/components/bank-icon'
+import { BankPicker } from '@/components/bank-picker'
+import { detectBankFromName } from '@/lib/bank-info'
+import { defaultsForAccountType, type AccountTypeKey } from '@/lib/account-presets'
 import { toast } from 'sonner'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -30,6 +33,8 @@ export default function AccountsPage() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  // Two-step flow: false = picker (after type chosen), true = full form
+  const [pickerSkipped, setPickerSkipped] = useState(false)
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<AccountInput>({
     resolver: zodResolver(accountSchema),
@@ -89,13 +94,26 @@ export default function AccountsPage() {
       dueDay: account.dueDay || undefined,
       linkedAccountId: account.linkedAccountId || null,
     })
+    setPickerSkipped(true) // editing existing → no picker, go straight to form
     setDialogOpen(true)
   }
 
   function openNew() {
     setEditingId(null)
     reset({ color: '#6366f1', icon: 'wallet', balance: 0, isDefault: false })
+    setPickerSkipped(false)
     setDialogOpen(true)
+  }
+
+  function handlePickBrand(brandName: string) {
+    const bank = detectBankFromName(brandName)
+    const type = watch('type') as AccountTypeKey
+    const defaults = defaultsForAccountType(type)
+    setValue('name', brandName)
+    if (bank) setValue('color', bank.bgColor)
+    if (defaults.closingDay) setValue('closingDay', defaults.closingDay)
+    if (defaults.dueDay) setValue('dueDay', defaults.dueDay)
+    setPickerSkipped(true)
   }
 
   async function setAsDefault(id: string) {
@@ -185,7 +203,15 @@ export default function AccountsPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label>Tipo de conta</Label>
-                <Select onValueChange={(v) => v && setValue('type', v as any)} value={watch('type')}>
+                <Select
+                  onValueChange={(v) => {
+                    if (!v) return
+                    setValue('type', v as any)
+                    // changing type re-opens the picker if it makes sense for that type
+                    setPickerSkipped(false)
+                  }}
+                  value={watch('type')}
+                >
                   <SelectTrigger className="h-11 rounded-xl">
                     <span className="flex flex-1 text-left truncate">
                       {watch('type')
@@ -200,6 +226,19 @@ export default function AccountsPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Brand picker — shown when a type is selected and user hasn't picked yet */}
+              {watch('type') && !pickerSkipped && watch('type') !== 'CASH' && !editingId && (
+                <BankPicker
+                  accountType={watch('type') as AccountTypeKey}
+                  onPick={handlePickBrand}
+                  onCustom={() => setPickerSkipped(true)}
+                />
+              )}
+
+              {/* Form fields — hidden until picker is dismissed (picked a tile or chose Outros) */}
+              {(pickerSkipped || watch('type') === 'CASH' || editingId) && (
+              <>
               <div className="space-y-2">
                 <Label>Nome</Label>
                 <Input
@@ -290,6 +329,8 @@ export default function AccountsPage() {
               <Button type="submit" className="w-full gradient-primary shadow-md shadow-primary/25 border-0">
                 {editingId ? 'Atualizar' : 'Criar Conta'}
               </Button>
+              </>
+              )}
             </form>
           </DialogContent>
         </Dialog>
