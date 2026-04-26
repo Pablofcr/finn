@@ -43,6 +43,7 @@ export const CATEGORY_METADATA: Record<string, CategoryMeta> = {
   'Combustível':         { color: '#60a5fa', icon: 'fuel',            parentName: 'Transporte', type: 'EXPENSE' },
   'App/Táxi':            { color: '#3b82f6', icon: 'car-taxi-front',  parentName: 'Transporte', type: 'EXPENSE' },
   'Transporte Público':  { color: '#0ea5e9', icon: 'bus',             parentName: 'Transporte', type: 'EXPENSE' },
+  'Manutenção':          { color: '#1e40af', icon: 'wrench',          parentName: 'Transporte', type: 'EXPENSE' },
 
   // ─── Moradia children ─────────────────────────────────────
   'Aluguel/Condomínio':  { color: '#a78bfa', icon: 'home',            parentName: 'Moradia', type: 'EXPENSE' },
@@ -138,17 +139,28 @@ export const KEYWORD_MAP: Record<string, string> = {
   passagem: 'Transporte Público',
   bilhete: 'Transporte Público',
 
+  // ─── Transporte > Manutenção ──────────────────────────────
+  oficina: 'Manutenção',
+  mecanico: 'Manutenção',
+  manutencao: 'Manutenção',
+  revisao: 'Manutenção',
+  pneu: 'Manutenção',
+  oleo: 'Manutenção',
+  'troca de oleo': 'Manutenção',
+  alinhamento: 'Manutenção',
+  balanceamento: 'Manutenção',
+  funilaria: 'Manutenção',
+  lavagem: 'Manutenção',
+  'lava jato': 'Manutenção',
+  'lava-jato': 'Manutenção',
+
   // ─── Transporte (generic parent fallback) ─────────────────
   estacionamento: 'Transporte',
   pedagio: 'Transporte',
   carro: 'Transporte',
-  oficina: 'Transporte',
-  manutencao: 'Transporte',
-  pneu: 'Transporte',
   ipva: 'Transporte',
   licenciamento: 'Transporte',
   'seguro auto': 'Transporte',
-  lavagem: 'Transporte',
 
   // ─── Moradia > Aluguel/Condomínio ─────────────────────────
   aluguel: 'Aluguel/Condomínio',

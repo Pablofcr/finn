@@ -1,6 +1,6 @@
 import {
   Utensils, ShoppingCart, UtensilsCrossed, Bike, Coffee,
-  Car, Fuel, CarTaxiFront, Bus,
+  Car, Fuel, CarTaxiFront, Bus, Wrench,
   Home, Zap, Droplet, Wifi,
   HeartPulse, Pill, Stethoscope, ShieldPlus,
   GraduationCap, Gamepad2, Shirt, ShoppingBag,
@@ -27,6 +27,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   fuel: Fuel,
   'car-taxi-front': CarTaxiFront,
   bus: Bus,
+  wrench: Wrench,
 
   // Moradia family
   home: Home,

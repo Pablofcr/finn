@@ -27,11 +27,12 @@ export const defaultCategories: DefaultCategory[] = [
     icon: 'car',
     color: '#3b82f6',
     type: 'EXPENSE',
-    keywords: ['estacionamento', 'pedágio', 'manutenção carro', 'oficina', 'pneu', 'óleo', 'lavagem', 'ipva', 'licenciamento', 'multa', 'seguro auto'],
+    keywords: ['estacionamento', 'pedágio', 'ipva', 'licenciamento', 'multa', 'seguro auto'],
     subcategories: [
       { name: 'Combustível', icon: 'fuel', keywords: ['gasolina', 'combustível', 'posto', 'abasteci', 'etanol', 'diesel'] },
       { name: 'App/Táxi', icon: 'car-taxi-front', keywords: ['uber', '99', 'taxi', 'indriver'] },
       { name: 'Transporte Público', icon: 'bus', keywords: ['ônibus', 'metrô', 'passagem', 'bilhete'] },
+      { name: 'Manutenção', icon: 'wrench', keywords: ['oficina', 'mecânico', 'manutenção', 'revisão', 'pneu', 'óleo', 'troca de óleo', 'alinhamento', 'balanceamento', 'funilaria', 'lavagem', 'lava jato'] },
     ],
   },
   {
