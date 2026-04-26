@@ -17,8 +17,9 @@ REGISTER — usuário quer registrar uma transação financeira NOVA e avulsa (g
 ACTION — usuário quer executar uma AÇÃO sobre algo que JÁ existe no sistema — tipicamente dar baixa em conta recorrente ("X foi pago", "paguei o condomínio", "quitei a internet", "registra o pagamento"). O usuário NÃO menciona um valor novo — está se referindo a uma conta/recorrência que já estava cadastrada.
   Exemplos: "o condomínio foi pago", "os dois condomínios foram pagos, registre o pagamento", "quitei a fatura", "paga a conta de luz", "já paguei o aluguel", "dá baixa no netflix"
 
-QUERY — usuário faz uma pergunta sobre as finanças dele (pede informação, resumo, análise, não manda executar nada).
-  Exemplos: "quanto gastei este mês?", "quais contas tenho pra pagar?", "meu saldo", "quais foram meus maiores gastos?", "como tá meu orçamento de lazer?", "resumo do mês", "compara março com abril"
+QUERY — usuário faz uma pergunta. Pode ser sobre as finanças dele (dados) OU sobre como o Finn funciona (features, conceitos, como usar). Inclui pedidos de explicação, esclarecimento e follow-ups da conversa anterior.
+  Exemplos sobre DADOS: "quanto gastei este mês?", "quais contas tenho pra pagar?", "meu saldo", "quais foram meus maiores gastos?", "como tá meu orçamento de lazer?", "resumo do mês", "compara março com abril"
+  Exemplos sobre o PRODUTO: "como funciona o orçamento?", "o que é uma meta?", "como faço pra definir prazo?", "como funciona essa definição de prazos?", "quem é você?", "o que você sabe fazer?", "me explica isso", "como uso essa categoria?", "qual a diferença entre orçamento e meta?"
 
 CONFIRMATION — usuário está confirmando ou negando algo que o bot perguntou/sugeriu.
   Exemplos: "sim", "confirma", "não", "nope", "ok", "certo", "isso mesmo", "tá errado"
