@@ -10,11 +10,8 @@ export type SimpleIconKey =
   | 'amex'
   | 'diners'
   | 'discover'
-  | 'nubank'
-  | 'mercadopago'
-  | 'picpay'
 
-/** Custom SVG components for brands without an official SimpleIcons entry */
+/** Slugs for brand SVGs — either a real asset under /public/banks or an inline component */
 export type CustomLogoKey =
   | 'itau'
   | 'bradesco'
@@ -35,6 +32,9 @@ export type CustomLogoKey =
   | 'brb'
   | 'hipercard'
   | 'elo'
+  | 'nubank'
+  | 'mercadopago'
+  | 'picpay'
 
 export type BankInfo = {
   /** Canonical short name */
@@ -64,9 +64,9 @@ export const BANKS: BankInfo[] = [
   { name: 'Hipercard', monogram: 'HC', bgColor: '#B11E2C', fgColor: '#FFFFFF', customLogo: 'hipercard', keywords: ['hipercard'] },
 
   // ─── Digital banks / fintechs ─────────────────────────────────────────────
-  { name: 'Nubank', monogram: 'N', bgColor: '#820AD1', fgColor: '#FFFFFF', iconKey: 'nubank', keywords: ['nubank', 'nu bank', 'nu pagamentos'] },
-  { name: 'Mercado Pago', monogram: 'MP', bgColor: '#00B1EA', fgColor: '#FFFFFF', iconKey: 'mercadopago', keywords: ['mercado pago', 'mercadopago'] },
-  { name: 'PicPay', monogram: 'P', bgColor: '#21C25E', fgColor: '#FFFFFF', iconKey: 'picpay', keywords: ['picpay', 'pic pay'] },
+  { name: 'Nubank', monogram: 'N', bgColor: '#820AD1', fgColor: '#FFFFFF', customLogo: 'nubank', keywords: ['nubank', 'nu bank', 'nu pagamentos'] },
+  { name: 'Mercado Pago', monogram: 'MP', bgColor: '#00B1EA', fgColor: '#FFFFFF', customLogo: 'mercadopago', keywords: ['mercado pago', 'mercadopago'] },
+  { name: 'PicPay', monogram: 'P', bgColor: '#21C25E', fgColor: '#FFFFFF', customLogo: 'picpay', keywords: ['picpay', 'pic pay'] },
   { name: 'Inter', monogram: 'i', bgColor: '#FF7A00', fgColor: '#FFFFFF', customLogo: 'inter', keywords: ['inter', 'banco inter'] },
   { name: 'C6 Bank', monogram: 'C6', bgColor: '#000000', fgColor: '#D2A26A', customLogo: 'c6', keywords: ['c6', 'c6 bank'] },
   { name: 'PagBank', monogram: 'PB', bgColor: '#00BF63', fgColor: '#FFFFFF', customLogo: 'pagbank', keywords: ['pagbank', 'pagseguro', 'pag bank', 'pag seguro'] },
