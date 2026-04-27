@@ -67,13 +67,19 @@ export function BottomNav() {
                 </SheetTrigger>
                 <SheetContent
                   side="left"
-                  className="w-[85%] max-w-[320px] sm:max-w-[320px] sidebar-gradient text-white border-0 p-0 overflow-y-auto"
+                  className="w-[85%] max-w-[320px] sm:max-w-[320px] sidebar-gradient text-white border-0 p-0 overflow-y-auto overscroll-contain"
                 >
                   <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
 
-                  <div className="flex flex-col h-full pb-[max(1rem,env(safe-area-inset-bottom))]">
+                  <div
+                    className="flex flex-col min-h-full"
+                    style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+                  >
                     {/* Logo */}
-                    <div className="px-5 pt-5 pb-3 shrink-0">
+                    <div
+                      className="px-5 pb-3 shrink-0"
+                      style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
+                    >
                       <div className="flex items-center gap-3">
                         <img src="/icons/icon-192.svg" alt="Finn" className="h-12 w-12 rounded-xl shadow-lg" />
                         <div>
@@ -94,7 +100,7 @@ export function BottomNav() {
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 min-h-0 px-3 py-2 space-y-3">
+                    <nav className="px-3 py-2 space-y-3">
                       {NAV_SECTIONS.map((section) => (
                         <div key={section.label}>
                           <p className="px-3 mb-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white/40">
@@ -148,8 +154,8 @@ export function BottomNav() {
                       )}
                     </nav>
 
-                    {/* User Profile */}
-                    <div className="px-3 pt-2 pb-2 shrink-0 border-t border-white/15 mt-2">
+                    {/* User Profile — sticks to bottom when there is room, flows naturally otherwise */}
+                    <div className="px-3 pt-3 pb-2 shrink-0 border-t border-white/15 mt-auto">
                       <Link
                         href="/settings"
                         onClick={() => setMoreOpen(false)}
