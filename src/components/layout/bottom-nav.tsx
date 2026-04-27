@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
@@ -37,6 +37,40 @@ export function BottomNav() {
   const { user } = useAuth()
   const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário'
   const [moreOpen, setMoreOpen] = useState(false)
+
+  // iOS Safari deixa o scroll vazar pra página de fundo mesmo quando há um
+  // overlay aberto. Travamos o body via position:fixed (técnica padrão pro
+  // iOS, mais confiável que overflow:hidden) enquanto o drawer está aberto.
+  useEffect(() => {
+    if (!moreOpen) return
+
+    const scrollY = window.scrollY
+    const body = document.body
+    const original = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      overflow: body.style.overflow,
+      width: body.style.width,
+    }
+    body.style.position = 'fixed'
+    body.style.top = `-${scrollY}px`
+    body.style.left = '0'
+    body.style.right = '0'
+    body.style.width = '100%'
+    body.style.overflow = 'hidden'
+
+    return () => {
+      body.style.position = original.position
+      body.style.top = original.top
+      body.style.left = original.left
+      body.style.right = original.right
+      body.style.overflow = original.overflow
+      body.style.width = original.width
+      window.scrollTo(0, scrollY)
+    }
+  }, [moreOpen])
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden glass shadow-[0_-2px_12px_oklch(0_0_0/5%)] pb-[max(0.5rem,env(safe-area-inset-bottom))]">
