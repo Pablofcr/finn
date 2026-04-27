@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation'
 import {
   BarChart3, PieChart, Target, Lightbulb, ArrowLeftRight, Wallet,
   MessageCircle, Mic, Camera, Bell, Shield, Lock, Eye, ChevronRight,
-  Check, Star, Sparkles, CircleDollarSign, Layers, Brain,
+  Check, Star, Sparkles, CircleDollarSign, Layers, Brain, ShieldCheck,
+  AlertCircle, ChevronDown,
 } from 'lucide-react'
 import { LandingPricing } from '@/components/landing-pricing'
 
@@ -36,8 +37,8 @@ export default async function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
+      {/* 1. Hero */}
+      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-indigo-50 dark:from-emerald-950/20 dark:via-[#0f0f12] dark:to-indigo-950/20" />
         <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-r from-emerald-400/20 to-indigo-400/20 rounded-full blur-3xl" />
 
@@ -54,10 +55,14 @@ export default async function LandingPage() {
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            O Finn é um app de finanças com inteligência artificial integrada ao WhatsApp.
-            Pergunte em linguagem natural, registre por áudio, mande foto do cupom e dê baixa em
-            recorrências só dizendo &ldquo;paguei o condomínio&rdquo;. Tudo isso e muito mais — começando grátis.
+          <p className="text-lg sm:text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-4 leading-relaxed">
+            Sabe aquela ansiedade do dia 25, sem saber pra onde foi o salário?
+            <br className="hidden sm:block" />
+            <strong className="text-slate-700 dark:text-slate-200">Acabou.</strong>
+          </p>
+          <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+            O Finn é seu assistente financeiro com IA, conectado ao seu WhatsApp.
+            Você fala — ele organiza, alerta, classifica e responde. Começa grátis.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -74,19 +79,80 @@ export default async function LandingPage() {
             <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> Sem cartão</span>
             <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> Sem pegadinha</span>
             <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> Dados protegidos (LGPD)</span>
-            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> Instale como app no celular</span>
+            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> Cancele quando quiser</span>
           </div>
         </div>
       </section>
 
-      {/* WhatsApp AI Assistant — Hero Feature */}
+      {/* 2. Pain Recognition */}
+      <section className="py-16 lg:py-24 bg-gradient-to-b from-white via-rose-50/40 to-white dark:from-[#0f0f12] dark:via-rose-950/10 dark:to-[#0f0f12]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 max-w-2xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-sm font-medium mb-6">
+              <AlertCircle className="h-4 w-4" />
+              Antes da gente conversar sobre solução…
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4 leading-tight">
+              Reconhece alguma dessas?
+            </h2>
+            <p className="text-lg text-slate-500 dark:text-slate-400">
+              Se você marcou pelo menos uma, você não tá sozinho — e não é falta de disciplina.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            {[
+              {
+                emoji: '😩',
+                pain: 'Dia 20 e você já não sabe pra onde foi o salário.',
+                detail: 'Olha o extrato e os gastos parecem brotar do nada.',
+              },
+              {
+                emoji: '😰',
+                pain: 'A fatura do cartão chega e dá um aperto no peito.',
+                detail: 'Você adia abrir, finge que não viu, paga o mínimo e os juros comem a próxima.',
+              },
+              {
+                emoji: '🙃',
+                pain: '"Mês que vem eu começo a poupar" — há 6 meses.',
+                detail: 'A meta da viagem, da reserva, do curso… continua igual no papel.',
+              },
+              {
+                emoji: '😵',
+                pain: 'Já baixou 3 apps de finanças e nunca passou da semana.',
+                detail: 'Cadastrar tudo na mão é chato. Em 4 dias você esquece.',
+              },
+            ].map((item) => (
+              <div key={item.pain} className="flex items-start gap-3 p-5 rounded-2xl bg-white dark:bg-white/5 border border-rose-100 dark:border-rose-900/20 shadow-sm">
+                <span className="text-2xl shrink-0">{item.emoji}</span>
+                <div>
+                  <p className="text-sm sm:text-base font-semibold text-slate-900 dark:text-white leading-snug mb-1">
+                    {item.pain}
+                  </p>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {item.detail}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-center text-sm sm:text-base text-slate-600 dark:text-slate-300 mt-10 max-w-2xl mx-auto leading-relaxed">
+            O problema não é você. É que organizar finanças <em>do jeito tradicional</em> exige
+            disciplina diária que nenhum humano normal sustenta. <br className="hidden sm:block" />
+            <strong className="text-slate-900 dark:text-white">Existe um jeito mais leve.</strong>
+          </p>
+        </div>
+      </section>
+
+      {/* 3. WhatsApp AI Assistant — The Solution */}
       <section className="py-20 lg:py-28 bg-gradient-to-br from-emerald-50/60 via-white to-emerald-50/30 dark:from-emerald-950/20 dark:via-[#0f0f12] dark:to-emerald-950/10 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-300/10 dark:bg-emerald-500/5 rounded-full blur-3xl" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-sm font-medium mb-6">
               <Brain className="h-4 w-4" />
-              Inteligência artificial conversacional
+              A saída
             </div>
             <h2 className="text-3xl sm:text-5xl font-bold text-slate-900 dark:text-white mb-6 leading-tight">
               Não é um bot.{' '}
@@ -105,7 +171,6 @@ export default async function LandingPage() {
             {/* Left — WhatsApp chat mockup */}
             <div className="relative">
               <div className="bg-white dark:bg-[#1a1a22] rounded-3xl shadow-2xl shadow-emerald-500/10 border border-slate-200/50 dark:border-white/10 overflow-hidden">
-                {/* Chat header */}
                 <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 py-4 flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                     <img src="/icons/icon-192.svg" alt="Finn" className="h-7 w-7 rounded-full" />
@@ -116,7 +181,6 @@ export default async function LandingPage() {
                   </div>
                 </div>
 
-                {/* Chat messages */}
                 <div className="p-5 space-y-3 bg-[#ECE5DD] dark:bg-[#0b141a] min-h-[440px]">
                   <div className="flex justify-end">
                     <div className="max-w-[80%] rounded-2xl rounded-br-md px-3.5 py-2 bg-[#DCF8C6] dark:bg-emerald-900/40 text-slate-900 dark:text-emerald-100 text-sm shadow-sm">
@@ -157,7 +221,7 @@ export default async function LandingPage() {
               </div>
             </div>
 
-            {/* Right — Capabilities list */}
+            {/* Right — Capabilities */}
             <div className="space-y-6">
               {[
                 {
@@ -211,10 +275,40 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-20 lg:py-28">
+      {/* 4. How it works */}
+      <section className="py-20 lg:py-24 bg-slate-50/50 dark:bg-white/[0.02]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              Comece em menos de 2 minutos
+            </h2>
+            <p className="text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+              Sem planilha. Sem extrato manual. Sem complicação.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {[
+              { step: '1', title: 'Crie sua conta grátis', desc: 'Cadastro com Google ou e-mail. Sem cartão de crédito, sem instalação.', icon: CircleDollarSign },
+              { step: '2', title: 'Conecte o WhatsApp', desc: 'Mande um código pra +55 85 98794-2255 e o Finn vira seu assistente. Levam 30 segundos.', icon: MessageCircle },
+              { step: '3', title: 'Converse com o Finn', desc: 'Registre por texto, áudio ou foto. Pergunte sobre seus gastos. Receba alertas. Tudo no chat.', icon: Sparkles },
+            ].map((s) => (
+              <div key={s.step} className="text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-indigo-500 text-white text-2xl font-bold mx-auto mb-5 shadow-lg shadow-emerald-500/25">
+                  {s.step}
+                </div>
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{s.title}</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Features */}
+      <section className="py-20 lg:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
               Mais do que um app —{' '}
               <span className="bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
@@ -250,40 +344,10 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="py-20 lg:py-28 bg-slate-50/50 dark:bg-white/[0.02]">
+      {/* 6. Insights examples */}
+      <section className="py-20 lg:py-24 bg-slate-50/50 dark:bg-white/[0.02]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              Comece em menos de 2 minutos
-            </h2>
-            <p className="text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-              Sem planilha. Sem extrato manual. Sem complicação.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {[
-              { step: '1', title: 'Crie sua conta grátis', desc: 'Cadastro com Google ou e-mail. Sem cartão de crédito, sem instalação.', icon: CircleDollarSign },
-              { step: '2', title: 'Conecte o WhatsApp', desc: 'Mande um código pra +55 85 98794-2255 e o Finn vira seu assistente. Levam 30 segundos.', icon: MessageCircle },
-              { step: '3', title: 'Converse com o Finn', desc: 'Registre por texto, áudio ou foto. Pergunte sobre seus gastos. Receba alertas. Tudo no chat.', icon: Sparkles },
-            ].map((s) => (
-              <div key={s.step} className="text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-indigo-500 text-white text-2xl font-bold mx-auto mb-5 shadow-lg shadow-emerald-500/25">
-                  {s.step}
-                </div>
-                <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{s.title}</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Insights — Real examples */}
-      <section className="py-20 lg:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 max-w-3xl mx-auto">
+          <div className="text-center mb-14 max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-sm font-medium mb-6">
               <Lightbulb className="h-4 w-4" />
               Insights automáticos
@@ -361,63 +425,10 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Security */}
-      <section className="py-20 lg:py-28 bg-slate-50/50 dark:bg-white/[0.02]">
+      {/* 7. Finn se paga (value anchor BEFORE pricing) */}
+      <section className="py-20 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              Seus dados são seus. Ponto final.
-            </h2>
-            <p className="text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-              Privacidade é princípio aqui — não promessa de marketing.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {[
-              { icon: Lock, title: 'Criptografia bancária', desc: 'TLS 1.3 em trânsito, senhas hasheadas com algoritmo irreversível. O mesmo padrão usado por bancos.' },
-              { icon: Shield, title: 'Conformidade LGPD', desc: 'Você tem direito de acessar, exportar e excluir seus dados a qualquer momento, direto nas Configurações.' },
-              { icon: Eye, title: 'Zero compartilhamento', desc: 'Seus dados financeiros nunca são vendidos, compartilhados ou usados pra publicidade. Nem com investidores.' },
-            ].map((item) => (
-              <div key={item.title} className="text-center p-6">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 mx-auto mb-5">
-                  <item.icon className="h-7 w-7 text-emerald-500" />
-                </div>
-                <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{item.title}</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="py-20 lg:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              Comece grátis.{' '}
-              <span className="bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
-                Evolua quando quiser.
-              </span>
-            </h2>
-            <p className="text-lg text-slate-500 dark:text-slate-400">
-              Sem surpresas. Sem taxas escondidas. Sem cartão pra começar.
-            </p>
-          </div>
-
-          <LandingPricing />
-
-          <p className="text-center text-sm text-slate-400 mt-8">
-            Um único insight de economia já cobre meses de assinatura.
-          </p>
-        </div>
-      </section>
-
-      {/* Finn se paga — Financial Examples */}
-      <section className="py-20 lg:py-28 bg-slate-50/50 dark:bg-white/[0.02]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
               R$ 14,90 que{' '}
               <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
@@ -494,16 +505,66 @@ export default async function LandingPage() {
             ))}
           </div>
 
-          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-10 max-w-lg mx-auto">
-            Cada real que o Finn te impede de perder é um real que volta pro seu bolso. A assinatura se paga no primeiro mês.
+          <p className="text-center text-base text-slate-700 dark:text-slate-200 mt-12 max-w-xl mx-auto font-semibold">
+            Cada real que o Finn te impede de perder é um real que volta pro seu bolso.
+          </p>
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-lg mx-auto">
+            A assinatura se paga no primeiro mês. Olha só quanto custa <em>não</em> usar:
           </p>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-20 lg:py-28">
+      {/* 8. Pricing */}
+      <section className="py-20 lg:py-24 bg-slate-50/50 dark:bg-white/[0.02]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              Comece grátis.{' '}
+              <span className="bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
+                Evolua quando quiser.
+              </span>
+            </h2>
+            <p className="text-lg text-slate-500 dark:text-slate-400">
+              Sem surpresas. Sem taxas escondidas. Sem cartão pra começar.
+            </p>
+          </div>
+
+          <LandingPricing />
+        </div>
+      </section>
+
+      {/* 9. Guarantee / Risk reversal */}
+      <section className="py-20 lg:py-24">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative p-8 sm:p-10 rounded-3xl border-2 border-emerald-200 dark:border-emerald-900/40 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-500/10 dark:to-transparent text-center overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-300/20 rounded-full blur-3xl" />
+            <div className="relative">
+              <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 mx-auto mb-5">
+                <ShieldCheck className="h-8 w-8" />
+              </div>
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2">
+                Garantia incondicional
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-4 leading-tight">
+                Use 30 dias. Se o Finn não economizar mais que paga,{' '}
+                <span className="text-emerald-600 dark:text-emerald-400">devolvo seu dinheiro.</span>
+              </h2>
+              <p className="text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl mx-auto mb-6">
+                Sem perguntas. Sem ligação de retenção. Sem &ldquo;preencha esse formulário&rdquo;.
+                Mandou um email? Reembolso na hora.
+              </p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 italic max-w-lg mx-auto">
+                A gente acredita tanto na IA do Finn que prefere arcar com o risco em vez de você.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 10. Testimonials */}
+      <section className="py-20 lg:py-24 bg-slate-50/50 dark:bg-white/[0.02]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
               Quem usa, recomenda
             </h2>
@@ -546,8 +607,104 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-20 lg:py-28 bg-gradient-to-br from-slate-900 via-emerald-950 to-indigo-950 text-white relative overflow-hidden">
+      {/* 11. Security (objection handler — moved down) */}
+      <section className="py-20 lg:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              Seus dados são seus. Ponto final.
+            </h2>
+            <p className="text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+              Privacidade é princípio aqui — não promessa de marketing.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {[
+              { icon: Lock, title: 'Criptografia bancária', desc: 'TLS 1.3 em trânsito, senhas hasheadas com algoritmo irreversível. O mesmo padrão usado por bancos.' },
+              { icon: Shield, title: 'Conformidade LGPD', desc: 'Você tem direito de acessar, exportar e excluir seus dados a qualquer momento, direto nas Configurações.' },
+              { icon: Eye, title: 'Zero compartilhamento', desc: 'Seus dados financeiros nunca são vendidos, compartilhados ou usados pra publicidade. Nem com investidores.' },
+            ].map((item) => (
+              <div key={item.title} className="text-center p-6">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 mx-auto mb-5">
+                  <item.icon className="h-7 w-7 text-emerald-500" />
+                </div>
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{item.title}</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 12. FAQ */}
+      <section className="py-20 lg:py-24 bg-slate-50/50 dark:bg-white/[0.02]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              Perguntas frequentes
+            </h2>
+            <p className="text-lg text-slate-500 dark:text-slate-400">
+              Tirou a dúvida principal? Bora começar.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              {
+                q: 'Preciso conectar minha conta bancária pra usar?',
+                a: 'Não. Você registra as transações pelo app, pelo WhatsApp ou tirando foto do cupom. Sua escolha — nunca pedimos senha de banco. Open Finance está no roadmap pra quem quiser conectar voluntariamente, mas não é obrigatório.',
+              },
+              {
+                q: 'Onde meus dados ficam armazenados?',
+                a: 'Banco PostgreSQL gerenciado (Supabase, AWS São Paulo) com criptografia em trânsito (TLS 1.3) e senhas com hash irreversível. A aplicação roda na Vercel. Conformidade total com a LGPD.',
+              },
+              {
+                q: 'Funciona se eu não usar WhatsApp toda hora?',
+                a: 'Sim, perfeitamente. O app principal continua funcionando 100%. O WhatsApp é um atalho pra quem quer registrar/consultar sem abrir o app — mas você decide quando usar.',
+              },
+              {
+                q: 'Como cancelo?',
+                a: 'Em 1 clique nas Configurações da sua conta. Sem multa, sem retenção, sem ligação. Você mantém acesso ao final do período já pago.',
+              },
+              {
+                q: 'O plano Família vale a pena?',
+                a: 'Se vocês querem ver gastos compartilhados (até 5 pessoas) e dashboards consolidados, sim — sai R$ 6,98 por pessoa. Se você usa só pra você, o Pro é o ideal.',
+              },
+              {
+                q: 'Posso usar no iPhone? Android? Desktop?',
+                a: 'Sim, todos. O Finn é um Progressive Web App (PWA): você instala como app no celular ou acessa pelo navegador no computador. A experiência é a mesma em qualquer aparelho.',
+              },
+              {
+                q: 'E se eu não gostar?',
+                a: 'Tem garantia incondicional de 30 dias no plano Pro. Se não economizar mais que paga, devolvo seu dinheiro — basta mandar um email. Sem perguntas.',
+              },
+            ].map((item, i) => (
+              <details
+                key={i}
+                className="group rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20 transition-all overflow-hidden"
+              >
+                <summary className="flex items-center justify-between gap-4 px-5 py-4 cursor-pointer list-none">
+                  <span className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base">
+                    {item.q}
+                  </span>
+                  <ChevronDown className="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180 shrink-0" />
+                </summary>
+                <div className="px-5 pb-5 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  {item.a}
+                </div>
+              </details>
+            ))}
+          </div>
+
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-10">
+            Outra dúvida? Manda um e-mail pra <strong>contato@finn.com.br</strong> que respondemos rápido.
+          </p>
+        </div>
+      </section>
+
+      {/* 13. Final CTA */}
+      <section className="py-20 lg:py-24 bg-gradient-to-br from-slate-900 via-emerald-950 to-indigo-950 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.15),transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_100%,rgba(102,126,234,0.15),transparent_60%)]" />
 
@@ -559,7 +716,7 @@ export default async function LandingPage() {
             </span>
           </h2>
           <p className="text-lg text-slate-300 mb-10 max-w-lg mx-auto">
-            Plano gratuito, conexão com WhatsApp em 30 segundos, dados protegidos pela LGPD.
+            Plano gratuito, conexão com WhatsApp em 30 segundos, garantia de 30 dias no Pro.
             Não custa nada começar.
           </p>
           <Link href="/register" className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-indigo-500 text-white font-semibold text-lg shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all">
