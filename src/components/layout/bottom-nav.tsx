@@ -67,109 +67,107 @@ export function BottomNav() {
                 </SheetTrigger>
                 <SheetContent
                   side="left"
-                  className="w-[85%] max-w-[320px] sm:max-w-[320px] sidebar-gradient text-white border-0 p-0 overflow-y-auto overscroll-contain"
+                  className="w-[85%] max-w-[320px] sm:max-w-[320px] sidebar-gradient text-white border-0 p-0 gap-0 flex flex-col overflow-hidden"
                 >
                   <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
 
+                  {/* Header — fixed at top */}
                   <div
-                    className="flex flex-col min-h-full"
-                    style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+                    className="px-5 pb-3 shrink-0"
+                    style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
                   >
-                    {/* Logo */}
-                    <div
-                      className="px-5 pb-3 shrink-0"
-                      style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <img src="/icons/icon-192.svg" alt="Finn" className="h-12 w-12 rounded-xl shadow-lg" />
-                        <div>
-                          <p className="text-xl font-extrabold tracking-tight leading-tight">Finn</p>
-                          <p className="text-xs text-white/70">Suas finanças</p>
-                        </div>
+                    <div className="flex items-center gap-3">
+                      <img src="/icons/icon-192.svg" alt="Finn" className="h-12 w-12 rounded-xl shadow-lg" />
+                      <div>
+                        <p className="text-xl font-extrabold tracking-tight leading-tight">Finn</p>
+                        <p className="text-xs text-white/70">Suas finanças</p>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Nova Transação */}
-                    <div className="px-5 pb-3 shrink-0">
-                      <Link href="/transactions/new" onClick={() => setMoreOpen(false)}>
-                        <button className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-white/95 hover:bg-white text-[#5568d3] rounded-xl font-semibold text-sm shadow-md transition-all">
-                          <Plus className="h-4 w-4" />
-                          Nova Transação
-                        </button>
-                      </Link>
-                    </div>
+                  {/* Nova Transação — fixed under header */}
+                  <div className="px-5 pb-3 shrink-0">
+                    <Link href="/transactions/new" onClick={() => setMoreOpen(false)}>
+                      <button className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-white/95 hover:bg-white text-[#5568d3] rounded-xl font-semibold text-sm shadow-md transition-all">
+                        <Plus className="h-4 w-4" />
+                        Nova Transação
+                      </button>
+                    </Link>
+                  </div>
 
-                    {/* Navigation */}
-                    <nav className="px-3 py-2 space-y-3">
-                      {NAV_SECTIONS.map((section) => (
-                        <div key={section.label}>
-                          <p className="px-3 mb-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white/40">
-                            {section.label}
-                          </p>
-                          <div className="space-y-0.5">
-                            {section.items.map((sItem) => {
-                              const SIcon = iconMap[sItem.icon]
-                              const sActive = pathname === sItem.href || pathname.startsWith(sItem.href + '/')
-                              return (
-                                <Link
-                                  key={sItem.href}
-                                  href={sItem.href}
-                                  onClick={() => setMoreOpen(false)}
-                                  aria-current={sActive ? 'page' : undefined}
-                                  className={cn(
-                                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
-                                    sActive
-                                      ? 'bg-white/20 text-white font-semibold'
-                                      : 'text-white/75 hover:bg-white/10 hover:text-white'
-                                  )}
-                                >
-                                  {SIcon && <SIcon className={cn('h-5 w-5 shrink-0', sActive ? 'opacity-100' : 'opacity-75')} />}
-                                  <span className="flex-1">{sItem.label}</span>
-                                </Link>
-                              )
-                            })}
-                          </div>
+                  {/* Navigation — scrollable middle */}
+                  <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-2 space-y-3">
+                    {NAV_SECTIONS.map((section) => (
+                      <div key={section.label}>
+                        <p className="px-3 mb-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white/40">
+                          {section.label}
+                        </p>
+                        <div className="space-y-0.5">
+                          {section.items.map((sItem) => {
+                            const SIcon = iconMap[sItem.icon]
+                            const sActive = pathname === sItem.href || pathname.startsWith(sItem.href + '/')
+                            return (
+                              <Link
+                                key={sItem.href}
+                                href={sItem.href}
+                                onClick={() => setMoreOpen(false)}
+                                aria-current={sActive ? 'page' : undefined}
+                                className={cn(
+                                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                                  sActive
+                                    ? 'bg-white/20 text-white font-semibold'
+                                    : 'text-white/75 hover:bg-white/10 hover:text-white'
+                                )}
+                              >
+                                {SIcon && <SIcon className={cn('h-5 w-5 shrink-0', sActive ? 'opacity-100' : 'opacity-75')} />}
+                                <span className="flex-1">{sItem.label}</span>
+                              </Link>
+                            )
+                          })}
                         </div>
-                      ))}
+                      </div>
+                    ))}
 
-                      {isAdmin(user?.email) && (
-                        <div>
-                          <p className="px-3 mb-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white/40">
-                            Admin
-                          </p>
-                          <Link
-                            href="/admin"
-                            onClick={() => setMoreOpen(false)}
-                            className={cn(
-                              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
-                              pathname === '/admin'
-                                ? 'bg-white/20 text-white font-semibold'
-                                : 'text-white/75 hover:bg-white/10 hover:text-white'
-                            )}
-                          >
-                            <LayoutDashboard className="h-5 w-5 shrink-0" />
-                            <span className="flex-1">Painel admin</span>
-                          </Link>
-                        </div>
-                      )}
-                    </nav>
+                    {isAdmin(user?.email) && (
+                      <div>
+                        <p className="px-3 mb-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white/40">
+                          Admin
+                        </p>
+                        <Link
+                          href="/admin"
+                          onClick={() => setMoreOpen(false)}
+                          className={cn(
+                            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                            pathname === '/admin'
+                              ? 'bg-white/20 text-white font-semibold'
+                              : 'text-white/75 hover:bg-white/10 hover:text-white'
+                          )}
+                        >
+                          <LayoutDashboard className="h-5 w-5 shrink-0" />
+                          <span className="flex-1">Painel admin</span>
+                        </Link>
+                      </div>
+                    )}
+                  </nav>
 
-                    {/* User Profile — sticks to bottom when there is room, flows naturally otherwise */}
-                    <div className="px-3 pt-3 pb-2 shrink-0 border-t border-white/15 mt-auto">
-                      <Link
-                        href="/settings"
-                        onClick={() => setMoreOpen(false)}
-                        className="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/15 rounded-xl transition-all"
-                      >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 border-2 border-white/30 text-sm font-semibold shrink-0">
-                          {getInitials(displayName)}
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-semibold truncate">{displayName}</span>
-                          <span className="text-xs text-white/60">Visualizar perfil</span>
-                        </div>
-                      </Link>
-                    </div>
+                  {/* User Profile — fixed at bottom, respects iPhone home indicator */}
+                  <div
+                    className="px-3 pt-3 shrink-0 border-t border-white/15"
+                    style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+                  >
+                    <Link
+                      href="/settings"
+                      onClick={() => setMoreOpen(false)}
+                      className="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/15 rounded-xl transition-all"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 border-2 border-white/30 text-sm font-semibold shrink-0">
+                        {getInitials(displayName)}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-semibold truncate">{displayName}</span>
+                        <span className="text-xs text-white/60">Visualizar perfil</span>
+                      </div>
+                    </Link>
                   </div>
                 </SheetContent>
               </Sheet>
