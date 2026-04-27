@@ -40,9 +40,9 @@ const SECURITY_ITEMS = [
   },
   {
     icon: MessageCircle,
-    title: 'Bot Telegram protegido',
+    title: 'Assistente WhatsApp protegido',
     description:
-      'A comunicação com o bot é verificada por token secreto. Áudios são transcritos e imediatamente descartados — não armazenamos gravações.',
+      'A comunicação com o assistente passa pela WhatsApp Cloud API com verificação de assinatura. Áudios são transcritos e imediatamente descartados — não armazenamos gravações.',
     color: 'text-cyan-500',
     bg: 'bg-cyan-500/10',
   },

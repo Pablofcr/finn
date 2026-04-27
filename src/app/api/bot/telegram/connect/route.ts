@@ -1,6 +1,9 @@
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
-import { generateVerificationCode } from '@/lib/telegram'
+
+// Telegram foi descontinuado. Mantemos GET (pra detectar usuários antigos
+// e mostrar o banner de migração) e DELETE (pra limpar a conexão antiga).
+// POST retorna 410 Gone — não geramos novos códigos.
 
 export async function GET() {
   const user = await getAuthUser()
@@ -11,52 +14,22 @@ export async function GET() {
   })
 
   return Response.json({
-    data: connection
-      ? {
-          connected: connection.isVerified,
-          platformUserId: connection.platformUserId,
-          verificationCode: connection.isVerified ? null : connection.verificationCode,
-        }
-      : { connected: false },
+    data: {
+      connected: false,
+      hadTelegram: !!connection,
+      discontinued: true,
+    },
   })
 }
 
 export async function POST() {
-  const user = await getAuthUser()
-  if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
-
-  const existing = await prisma.botConnection.findFirst({
-    where: { userId: user.id, platform: 'TELEGRAM' },
-  })
-
-  if (existing?.isVerified) {
-    return Response.json({ error: 'Telegram já conectado' }, { status: 400 })
-  }
-
-  const code = generateVerificationCode()
-
-  if (existing) {
-    await prisma.botConnection.update({
-      where: { id: existing.id },
-      data: { verificationCode: code },
-    })
-  } else {
-    await prisma.botConnection.create({
-      data: {
-        userId: user.id,
-        platform: 'TELEGRAM',
-        platformUserId: '',
-        verificationCode: code,
-      },
-    })
-  }
-
-  return Response.json({
-    data: {
-      verificationCode: code,
-      botUsername: process.env.TELEGRAM_BOT_USERNAME || 'FinnFinancasBot',
+  return Response.json(
+    {
+      error: 'Telegram descontinuado',
+      message: 'A integração com o Telegram foi encerrada. Conecte-se pelo WhatsApp.',
     },
-  })
+    { status: 410 },
+  )
 }
 
 export async function DELETE() {

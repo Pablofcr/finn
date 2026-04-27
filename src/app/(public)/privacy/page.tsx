@@ -27,7 +27,7 @@ export default function PrivacyPage() {
           <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5">
             <li><strong>Dados de cadastro:</strong> nome, e-mail e senha (criptografada)</li>
             <li><strong>Dados financeiros:</strong> transações, contas, categorias, orçamentos e metas que você cadastra</li>
-            <li><strong>Dados do Telegram e WhatsApp:</strong> ID do chat para envio de alertas (não armazenamos conversas)</li>
+            <li><strong>Dados do WhatsApp:</strong> número do chat para envio de alertas (não armazenamos conversas)</li>
             <li><strong>Áudios:</strong> transcritos em tempo real e imediatamente descartados — não armazenamos gravações</li>
             <li><strong>Fotos de cupons:</strong> processadas em tempo real e não armazenadas</li>
           </ul>
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
           <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5">
             <li>Exibir suas finanças no painel do Finn</li>
             <li>Gerar insights financeiros personalizados via inteligência artificial</li>
-            <li>Enviar lembretes de pagamento pelo Telegram e WhatsApp</li>
+            <li>Enviar lembretes de pagamento pelo WhatsApp</li>
             <li>Melhorar a experiência do produto</li>
           </ul>
           <p className="text-sm text-muted-foreground mt-2">
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-bold mt-6 mb-3">3. Base legal (LGPD)</h2>
           <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5">
             <li><strong>Execução de contrato:</strong> processar seus dados para fornecer o serviço que você contratou</li>
-            <li><strong>Consentimento:</strong> para funcionalidades opcionais como insights por IA e integração com Telegram/WhatsApp</li>
+            <li><strong>Consentimento:</strong> para funcionalidades opcionais como insights por IA e integração com WhatsApp</li>
             <li><strong>Obrigação legal:</strong> manter registros financeiros por 5 anos conforme legislação fiscal</li>
           </ul>
 
@@ -65,8 +65,7 @@ export default function PrivacyPage() {
             <li><strong>Vercel:</strong> hospedagem da aplicação</li>
             <li><strong>Anthropic (Claude):</strong> geração de insights e interpretação de transações</li>
             <li><strong>OpenAI (Whisper):</strong> transcrição de áudio (dados não são retidos)</li>
-            <li><strong>Telegram:</strong> envio de alertas de pagamento</li>
-            <li><strong>Meta (WhatsApp):</strong> envio de alertas de pagamento via WhatsApp Business</li>
+            <li><strong>Meta (WhatsApp):</strong> envio de mensagens, alertas de pagamento e conversa com o assistente via WhatsApp Business</li>
           </ul>
           <p className="text-sm text-muted-foreground mt-2">
             Estes serviços processam dados conforme suas próprias políticas de privacidade e não têm acesso ao conjunto completo dos seus dados financeiros.

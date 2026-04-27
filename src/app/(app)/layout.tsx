@@ -9,7 +9,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard'
 import { InstallPrompt } from '@/components/install-prompt'
 import { AppTutorial } from '@/components/app-tutorial'
-import { TelegramPrompt } from '@/components/telegram-prompt'
 
 function AppContent({ children }: { children: React.ReactNode }) {
   const { loading, user } = useAuth()
@@ -59,7 +58,6 @@ function AppContent({ children }: { children: React.ReactNode }) {
         </main>
         <BottomNav />
         <InstallPrompt />
-        <TelegramPrompt />
         <AppTutorial />
       </div>
     </div>

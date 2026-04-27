@@ -90,7 +90,7 @@ export async function resolveCategoryForText(
 }
 
 /**
- * Legacy-shape wrapper used by the Telegram and WhatsApp webhooks.
+ * Legacy-shape wrapper used by the WhatsApp webhook.
  * Returns { categoryId, categoryName } | null. Prefer `resolveCategoryForText`
  * for new code.
  */

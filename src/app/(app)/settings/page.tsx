@@ -46,6 +46,8 @@ interface NotificationSettings {
   monthlyReport: boolean
   botConfirmations: boolean
   autoInsights: boolean
+  // Backend ainda guarda telegramInsights/telegramAlerts (reusados como flags
+  // genéricas pra alertas no bot). UI não expõe mais esses nomes.
   telegramInsights: boolean
   telegramAlerts: boolean
   eveningPaymentReminder: boolean
@@ -294,8 +296,8 @@ export default function SettingsPage() {
             { key: 'monthlyReport' as const, label: 'Resumo mensal', desc: 'Relatório completo todo mês' },
             { key: 'botConfirmations' as const, label: 'Confirmações do bot', desc: 'Confirmar transações criadas pelo assistente' },
             { key: 'autoInsights' as const, label: 'Insights automáticos', desc: 'Gerar análises financeiras semanalmente com IA' },
-            { key: 'telegramInsights' as const, label: 'Insights pelo Telegram', desc: 'Receber insights importantes no Telegram' },
-            { key: 'telegramAlerts' as const, label: 'Alertas pelo Telegram', desc: 'Receber lembretes de vencimento no Telegram' },
+            { key: 'telegramInsights' as const, label: 'Insights pelo WhatsApp', desc: 'Receber insights importantes no WhatsApp' },
+            { key: 'telegramAlerts' as const, label: 'Alertas pelo WhatsApp', desc: 'Receber lembretes de vencimento no WhatsApp' },
             { key: 'eveningPaymentReminder' as const, label: 'Lembrete de fim de dia', desc: 'Reenvio às 18h no vencimento se ainda não foi marcado como pago' },
           ].map((item) => (
             <div key={item.key} className="flex items-center justify-between py-1">

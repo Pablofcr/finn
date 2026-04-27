@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import Anthropic from '@anthropic-ai/sdk'
-import { sendMessage } from '@/lib/telegram'
+import { sendWhatsAppMessage } from '@/lib/whatsapp'
 
 export const maxDuration = 120
 
@@ -17,13 +17,13 @@ export async function GET(request: NextRequest) {
     include: {
       notificationSetting: true,
       botConnections: {
-        where: { platform: 'TELEGRAM', isVerified: true },
+        where: { platform: 'WHATSAPP', isVerified: true },
       },
     },
   })
 
   let insightsGenerated = 0
-  let telegramSent = 0
+  let whatsappSent = 0
 
   for (const user of users) {
     // Check if auto insights are enabled
@@ -41,17 +41,19 @@ export async function GET(request: NextRequest) {
       if (!insights || insights.length === 0) continue
       insightsGenerated += insights.length
 
-      // Send important insights via Telegram
-      const telegramEnabled = user.notificationSetting?.telegramInsights ?? true
+      // Send important insights via WhatsApp (telegramInsights flag is reused
+      // as a generic "send insights via bot" toggle — not renamed to avoid
+      // a Prisma migration; the UI no longer exposes it.)
+      const insightsEnabled = user.notificationSetting?.telegramInsights ?? true
       const connection = user.botConnections[0]
 
-      if (telegramEnabled && connection) {
+      if (insightsEnabled && connection) {
         const importantInsights = insights.filter(
           (i: any) => i.severity === 'warning' || i.severity === 'alert'
         )
 
         if (importantInsights.length > 0) {
-          let message = '<b>💡 Insights da semana</b>\n\n'
+          let message = '*💡 Insights da semana*\n\n'
 
           for (const insight of importantInsights) {
             const emoji =
@@ -59,13 +61,13 @@ export async function GET(request: NextRequest) {
               insight.severity === 'warning' ? '🟡' :
               insight.severity === 'success' ? '🟢' : '🔵'
 
-            message += `${emoji} <b>${insight.title}</b>\n${insight.body}\n\n`
+            message += `${emoji} *${insight.title}*\n${insight.body}\n\n`
           }
 
-          message += '<i>Veja todos os insights no app Finn.</i>'
+          message += '_Veja todos os insights no app Finn._'
 
-          await sendMessage({ chatId: connection.platformUserId, text: message })
-          telegramSent++
+          await sendWhatsAppMessage({ to: connection.platformUserId, text: message })
+          whatsappSent++
         }
       }
     } catch (err) {
@@ -77,7 +79,7 @@ export async function GET(request: NextRequest) {
     data: {
       usersProcessed: users.length,
       insightsGenerated,
-      telegramSent,
+      whatsappSent,
       timestamp: new Date().toISOString(),
     },
   })

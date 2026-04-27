@@ -24,7 +24,7 @@ const TUTORIAL_STEPS = [
   {
     title: 'Registre suas movimentações',
     description:
-      'Adicione receitas e despesas em segundos. E se preferir, registre pelo nosso bot no Telegram — por texto, áudio ou até foto do cupom fiscal. Rápido e prático!',
+      'Adicione receitas e despesas em segundos. E se preferir, registre pelo nosso assistente no WhatsApp — por texto, áudio ou até foto do cupom fiscal. Rápido e prático!',
     trustBadge: null,
     icon: '💰',
     highlight: '/transactions',

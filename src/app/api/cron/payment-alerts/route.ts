@@ -45,7 +45,7 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
         include: {
           notificationSetting: true,
           botConnections: {
-            where: { isVerified: true },
+            where: { isVerified: true, platform: 'WHATSAPP' },
           },
         },
       },
@@ -159,7 +159,7 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
       user: {
         include: {
           notificationSetting: true,
-          botConnections: { where: { isVerified: true } },
+          botConnections: { where: { isVerified: true, platform: 'WHATSAPP' } },
         },
       },
     },

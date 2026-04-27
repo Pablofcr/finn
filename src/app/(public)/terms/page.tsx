@@ -31,7 +31,7 @@ export default function TermsPage() {
           <p className="text-sm text-muted-foreground mb-2">O Finn é um aplicativo de finanças pessoais com inteligência artificial que permite:</p>
           <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5">
             <li>Registrar transações por texto, áudio ou foto de cupom fiscal</li>
-            <li>Receber alertas de vencimento via WhatsApp e Telegram</li>
+            <li>Receber alertas de vencimento via WhatsApp</li>
             <li>Visualizar insights financeiros gerados por IA</li>
             <li>Gerenciar contas, categorias, orçamentos e metas</li>
           </ul>
@@ -76,7 +76,7 @@ export default function TermsPage() {
             <li>Insights gerados por IA são sugestões, não aconselhamento financeiro profissional</li>
             <li>Decisões tomadas com base em dados do Finn são de sua exclusiva responsabilidade</li>
             <li>Não garantimos que o Serviço estará sempre disponível, livre de erros ou atenderá a todas suas expectativas</li>
-            <li>Não somos responsáveis por indisponibilidades de serviços de terceiros (Supabase, Vercel, Telegram, WhatsApp, etc.)</li>
+            <li>Não somos responsáveis por indisponibilidades de serviços de terceiros (Supabase, Vercel, WhatsApp Business, etc.)</li>
           </ul>
 
           <h2 className="text-lg font-bold mt-6 mb-3">8. Encerramento da conta</h2>

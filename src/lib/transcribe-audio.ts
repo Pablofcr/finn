@@ -5,7 +5,7 @@ import OpenAI, { toFile } from 'openai'
 // "Fim", "fim", etc) and for common Brazilian-Portuguese finance terms that
 // Whisper sometimes mangles.
 const WHISPER_VOCAB_PROMPT =
-  'Finn é um assistente financeiro pessoal via WhatsApp e Telegram. Vocabulário comum: ' +
+  'Finn é um assistente financeiro pessoal via WhatsApp. Vocabulário comum: ' +
   'Finn, gastei, paguei, recebi, comprei, ganhei, PIX, débito, crédito, boleto, dinheiro, ' +
   'R$ reais, mil reais, condomínio, aluguel, fatura, cartão, Nubank, Bradesco, Itaú, Inter, ' +
   'Caixa, Santander, salário, mercado, farmácia, uber, ifood, delivery, parcelado, vezes, ' +
