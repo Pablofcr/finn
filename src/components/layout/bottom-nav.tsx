@@ -72,25 +72,32 @@ export function BottomNav() {
                   <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
 
                   {/*
-                    Inline-styled absolute layout so we don't fight base-ui's
-                    default flex+gap on the Popup. Three zones: header (top),
-                    scrollable nav (middle), user pill (bottom).
+                    Bulletproof iOS pattern: the Popup is the positioning
+                    parent. We put two absolutely-positioned children inside:
+                    a scrolling content area that fills the sheet (with bottom
+                    padding reserved for the fixed pill), and the user pill
+                    pinned to the bottom. No flex juggling, no fighting with
+                    base-ui's defaults.
                   */}
+
+                  {/* Scrollable content — fills the sheet, bottom-padded for pill */}
                   <div
                     style={{
                       position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      flexDirection: 'column',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      overflowY: 'auto',
+                      WebkitOverflowScrolling: 'touch',
+                      overscrollBehavior: 'contain',
+                      paddingBottom: 'calc(96px + env(safe-area-inset-bottom))',
                     }}
                   >
-                    {/* Header — fixed top */}
+                    {/* Header */}
                     <div
                       className="px-5 pb-3"
-                      style={{
-                        flex: '0 0 auto',
-                        paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
-                      }}
+                      style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
                     >
                       <div className="flex items-center gap-3">
                         <img src="/icons/icon-192.svg" alt="Finn" className="h-12 w-12 rounded-xl shadow-lg" />
@@ -101,8 +108,8 @@ export function BottomNav() {
                       </div>
                     </div>
 
-                    {/* Nova Transação — fixed under header */}
-                    <div className="px-5 pb-3" style={{ flex: '0 0 auto' }}>
+                    {/* Nova Transação */}
+                    <div className="px-5 pb-3">
                       <Link href="/transactions/new" onClick={() => setMoreOpen(false)}>
                         <button className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-white/95 hover:bg-white text-[#5568d3] rounded-xl font-semibold text-sm shadow-md transition-all">
                           <Plus className="h-4 w-4" />
@@ -111,16 +118,8 @@ export function BottomNav() {
                       </Link>
                     </div>
 
-                    {/* Navigation — scrollable middle */}
-                    <nav
-                      className="px-3 py-2 space-y-3 overscroll-contain"
-                      style={{
-                        flex: '1 1 auto',
-                        minHeight: 0,
-                        overflowY: 'auto',
-                        WebkitOverflowScrolling: 'touch',
-                      }}
-                    >
+                    {/* Nav items — flow naturally inside the scroll container */}
+                    <nav className="px-3 py-2 space-y-3">
                       {NAV_SECTIONS.map((section) => (
                         <div key={section.label}>
                           <p className="px-3 mb-1 text-[0.65rem] font-semibold uppercase tracking-wider text-white/40">
@@ -173,29 +172,36 @@ export function BottomNav() {
                         </div>
                       )}
                     </nav>
+                  </div>
 
-                    {/* User Profile — fixed bottom */}
-                    <div
-                      className="px-3 pt-3 border-t border-white/15"
-                      style={{
-                        flex: '0 0 auto',
-                        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
-                      }}
+                  {/* User Profile — pinned to bottom, never scrolls */}
+                  <div
+                    className="border-t border-white/15"
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      paddingTop: '0.75rem',
+                      paddingLeft: '0.75rem',
+                      paddingRight: '0.75rem',
+                      paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+                      background: 'linear-gradient(135deg, #667eea 0%, #7158c9 50%, #764ba2 100%)',
+                    }}
+                  >
+                    <Link
+                      href="/settings"
+                      onClick={() => setMoreOpen(false)}
+                      className="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/15 rounded-xl transition-all"
                     >
-                      <Link
-                        href="/settings"
-                        onClick={() => setMoreOpen(false)}
-                        className="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/15 rounded-xl transition-all"
-                      >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 border-2 border-white/30 text-sm font-semibold shrink-0">
-                          {getInitials(displayName)}
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-semibold truncate">{displayName}</span>
-                          <span className="text-xs text-white/60">Visualizar perfil</span>
-                        </div>
-                      </Link>
-                    </div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 border-2 border-white/30 text-sm font-semibold shrink-0">
+                        {getInitials(displayName)}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-semibold truncate">{displayName}</span>
+                        <span className="text-xs text-white/60">Visualizar perfil</span>
+                      </div>
+                    </Link>
                   </div>
                 </SheetContent>
               </Sheet>
