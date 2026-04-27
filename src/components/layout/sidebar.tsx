@@ -9,7 +9,7 @@ import { NAV_SECTIONS } from '@/lib/constants'
 import { isAdmin } from '@/lib/admin'
 import {
   LayoutDashboard, ArrowLeftRight, Wallet, Tags, PieChart,
-  Target, BarChart3, Bot, Lightbulb, Settings, Plus, Shield, Crown
+  Target, BarChart3, Bot, Lightbulb, Settings, Plus, Shield, Crown, CreditCard
 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
@@ -18,6 +18,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'arrow-left-right': ArrowLeftRight,
   'wallet': Wallet,
   'tags': Tags,
+  'credit-card': CreditCard,
   'pie-chart': PieChart,
   'target': Target,
   'bar-chart-3': BarChart3,
