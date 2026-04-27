@@ -69,114 +69,124 @@ export function BottomNav() {
                   side="left"
                   className="w-[85%] max-w-[300px] sm:max-w-[300px] sidebar-gradient text-white border-0 p-0"
                   style={{
-                    overflowY: 'auto',
-                    WebkitOverflowScrolling: 'touch',
-                    overscrollBehavior: 'contain',
+                    display: 'grid',
+                    gridTemplateRows: 'auto auto 1fr auto',
+                    height: '100dvh',
                   }}
                 >
                   <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
 
                   {/*
-                    Compact layout — every item visible on a normal iPhone
-                    without scrolling. The SheetContent itself owns the scroll
-                    for shorter screens (SE, mini) as a fallback.
+                    CSS Grid layout — bulletproof on iOS Safari.
+                    Row 1: Header (auto height)
+                    Row 2: Nova Transação (auto height)
+                    Row 3: Nav (1fr — takes remaining space, scrolls internally)
+                    Row 4: User pill (auto height)
                   */}
+
+                  {/* Row 1: Header */}
                   <div
-                    style={{
-                      paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
-                      paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
-                    }}
+                    className="px-4 pb-2"
+                    style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
                   >
-                    {/* Header — compact */}
-                    <div className="px-4 pb-2">
-                      <div className="flex items-center gap-2.5">
-                        <img src="/icons/icon-192.svg" alt="Finn" className="h-9 w-9 rounded-lg shadow-md" />
-                        <div className="leading-tight">
-                          <p className="text-base font-extrabold tracking-tight">Finn</p>
-                          <p className="text-[10px] text-white/70">Suas finanças</p>
-                        </div>
+                    <div className="flex items-center gap-2.5">
+                      <img src="/icons/icon-192.svg" alt="Finn" className="h-9 w-9 rounded-lg shadow-md" />
+                      <div className="leading-tight">
+                        <p className="text-base font-extrabold tracking-tight">Finn</p>
+                        <p className="text-[10px] text-white/70">Suas finanças</p>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Nova Transação — compact */}
-                    <div className="px-4 pb-2">
-                      <Link href="/transactions/new" onClick={() => setMoreOpen(false)}>
-                        <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white/95 hover:bg-white text-[#5568d3] rounded-lg font-semibold text-[13px] shadow-sm transition-all">
-                          <Plus className="h-3.5 w-3.5" />
-                          Nova Transação
-                        </button>
-                      </Link>
-                    </div>
+                  {/* Row 2: Nova Transação */}
+                  <div className="px-4 pb-2">
+                    <Link href="/transactions/new" onClick={() => setMoreOpen(false)}>
+                      <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white/95 hover:bg-white text-[#5568d3] rounded-lg font-semibold text-[13px] shadow-sm transition-all">
+                        <Plus className="h-3.5 w-3.5" />
+                        Nova Transação
+                      </button>
+                    </Link>
+                  </div>
 
-                    {/* Nav — every item visible, tight spacing */}
-                    <nav className="px-2 pt-1 pb-1">
-                      {NAV_SECTIONS.map((section) => (
-                        <div key={section.label} className="mb-2">
-                          <p className="px-3 mb-0.5 text-[0.6rem] font-semibold uppercase tracking-wider text-white/40">
-                            {section.label}
-                          </p>
-                          {section.items.map((sItem) => {
-                            const SIcon = iconMap[sItem.icon]
-                            const sActive = pathname === sItem.href || pathname.startsWith(sItem.href + '/')
-                            return (
-                              <Link
-                                key={sItem.href}
-                                href={sItem.href}
-                                onClick={() => setMoreOpen(false)}
-                                aria-current={sActive ? 'page' : undefined}
-                                className={cn(
-                                  'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all',
-                                  sActive
-                                    ? 'bg-white/20 text-white font-semibold'
-                                    : 'text-white/80 hover:bg-white/10 hover:text-white'
-                                )}
-                              >
-                                {SIcon && <SIcon className="h-4 w-4 shrink-0" />}
-                                <span className="flex-1">{sItem.label}</span>
-                              </Link>
-                            )
-                          })}
-                        </div>
-                      ))}
+                  {/* Row 3: Nav — scrolls internally */}
+                  <nav
+                    className="px-2 pt-1 pb-1"
+                    style={{
+                      overflowY: 'auto',
+                      WebkitOverflowScrolling: 'touch',
+                      overscrollBehavior: 'contain',
+                      minHeight: 0,
+                    }}
+                  >
+                    {NAV_SECTIONS.map((section) => (
+                      <div key={section.label} className="mb-2">
+                        <p className="px-3 mb-0.5 text-[0.6rem] font-semibold uppercase tracking-wider text-white/40">
+                          {section.label}
+                        </p>
+                        {section.items.map((sItem) => {
+                          const SIcon = iconMap[sItem.icon]
+                          const sActive = pathname === sItem.href || pathname.startsWith(sItem.href + '/')
+                          return (
+                            <Link
+                              key={sItem.href}
+                              href={sItem.href}
+                              onClick={() => setMoreOpen(false)}
+                              aria-current={sActive ? 'page' : undefined}
+                              className={cn(
+                                'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all',
+                                sActive
+                                  ? 'bg-white/20 text-white font-semibold'
+                                  : 'text-white/80 hover:bg-white/10 hover:text-white'
+                              )}
+                            >
+                              {SIcon && <SIcon className="h-4 w-4 shrink-0" />}
+                              <span className="flex-1">{sItem.label}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    ))}
 
-                      {isAdmin(user?.email) && (
-                        <div className="mb-2">
-                          <p className="px-3 mb-0.5 text-[0.6rem] font-semibold uppercase tracking-wider text-white/40">
-                            Admin
-                          </p>
-                          <Link
-                            href="/admin"
-                            onClick={() => setMoreOpen(false)}
-                            className={cn(
-                              'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all',
-                              pathname === '/admin'
-                                ? 'bg-white/20 text-white font-semibold'
-                                : 'text-white/80 hover:bg-white/10 hover:text-white'
-                            )}
-                          >
-                            <LayoutDashboard className="h-4 w-4 shrink-0" />
-                            <span className="flex-1">Painel admin</span>
-                          </Link>
-                        </div>
-                      )}
-                    </nav>
+                    {isAdmin(user?.email) && (
+                      <div className="mb-2">
+                        <p className="px-3 mb-0.5 text-[0.6rem] font-semibold uppercase tracking-wider text-white/40">
+                          Admin
+                        </p>
+                        <Link
+                          href="/admin"
+                          onClick={() => setMoreOpen(false)}
+                          className={cn(
+                            'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all',
+                            pathname === '/admin'
+                              ? 'bg-white/20 text-white font-semibold'
+                              : 'text-white/80 hover:bg-white/10 hover:text-white'
+                          )}
+                        >
+                          <LayoutDashboard className="h-4 w-4 shrink-0" />
+                          <span className="flex-1">Painel admin</span>
+                        </Link>
+                      </div>
+                    )}
+                  </nav>
 
-                    {/* User Profile — flows after nav, padded properly */}
-                    <div className="px-2 pt-2 mt-1 border-t border-white/15">
-                      <Link
-                        href="/settings"
-                        onClick={() => setMoreOpen(false)}
-                        className="flex items-center gap-2.5 p-2.5 bg-white/10 hover:bg-white/15 rounded-lg transition-all"
-                      >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 border border-white/30 text-xs font-semibold shrink-0">
-                          {getInitials(displayName)}
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-[13px] font-semibold truncate leading-tight">{displayName}</span>
-                          <span className="text-[10px] text-white/60">Visualizar perfil</span>
-                        </div>
-                      </Link>
-                    </div>
+                  {/* Row 4: User Profile — pinned bottom by grid */}
+                  <div
+                    className="px-2 pt-2 border-t border-white/15"
+                    style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+                  >
+                    <Link
+                      href="/settings"
+                      onClick={() => setMoreOpen(false)}
+                      className="flex items-center gap-2.5 p-2.5 bg-white/10 hover:bg-white/15 rounded-lg transition-all"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 border border-white/30 text-xs font-semibold shrink-0">
+                        {getInitials(displayName)}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[13px] font-semibold truncate leading-tight">{displayName}</span>
+                        <span className="text-[10px] text-white/60">Visualizar perfil</span>
+                      </div>
+                    </Link>
                   </div>
                 </SheetContent>
               </Sheet>
