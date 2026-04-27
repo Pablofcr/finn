@@ -40,9 +40,10 @@ export const defaultCategories: DefaultCategory[] = [
     icon: 'home',
     color: '#8b5cf6',
     type: 'EXPENSE',
-    keywords: ['gás', 'reforma', 'obra', 'móveis', 'eletrodoméstico', 'decoração', 'limpeza'],
+    keywords: ['iptu', 'gás', 'reforma', 'obra', 'móveis', 'eletrodoméstico', 'decoração', 'limpeza'],
     subcategories: [
-      { name: 'Aluguel/Condomínio', icon: 'home', keywords: ['aluguel', 'condomínio', 'iptu'] },
+      { name: 'Aluguel', icon: 'key', keywords: ['aluguel', 'aluguéis', 'inquilino', 'locação', 'imobiliária'] },
+      { name: 'Condomínio', icon: 'building-2', keywords: ['condomínio', 'condomínios', 'taxa condominial', 'síndico'] },
       { name: 'Energia', icon: 'zap', keywords: ['luz', 'energia', 'enel', 'coelba', 'cosern', 'cemig', 'cpfl'] },
       { name: 'Água', icon: 'droplet', keywords: ['água', 'sabesp', 'cagece', 'copasa'] },
       { name: 'Internet/TV', icon: 'wifi', keywords: ['internet', 'wifi', 'telefone', 'celular'] },

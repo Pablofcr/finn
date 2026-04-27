@@ -136,8 +136,8 @@ export default async function LandingPage() {
                   <div className="flex justify-start">
                     <div className="max-w-[85%] rounded-2xl rounded-bl-md px-3.5 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm shadow-sm border border-slate-100 dark:border-white/5">
                       ✅ Registrei:<br />
-                      🏠 <strong>Condomínio Zen</strong> — <strong>R$ 620,00</strong> na conta <strong>Itaú</strong> · <em>débito</em><br />
-                      🏠 <strong>Condomínio Terras 2</strong> — <strong>R$ 1.070,00</strong> na conta <strong>Nubank</strong> · <em>débito</em><br /><br />
+                      🏠 <strong>Condomínio Aurora</strong> — <strong>R$ 620,00</strong> na conta <strong>Itaú</strong> · <em>débito</em><br />
+                      🏠 <strong>Condomínio Vista Verde</strong> — <strong>R$ 1.070,00</strong> na conta <strong>Nubank</strong> · <em>débito</em><br /><br />
                       Se pagou em outra conta, é só me dizer que eu corrijo.
                     </div>
                   </div>

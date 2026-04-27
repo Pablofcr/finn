@@ -48,7 +48,7 @@ O sistema tem **categorias pai** e **subcategorias**. Quando o usuário pergunta
 Principais hierarquias:
 - *Alimentação* → Mercado, Restaurante, Delivery, Lanche
 - *Transporte* → Combustível, App/Táxi, Transporte Público
-- *Moradia* → Aluguel/Condomínio, Energia, Água, Internet/TV
+- *Moradia* → Aluguel, Condomínio, Energia, Água, Internet/TV, Serviços Domésticos
 - *Saúde* → Farmácia, Consulta/Exame, Plano de Saúde
 
 Se o usuário falar coloquialmente ("mercado", "ifood", "gasolina", "luz"), traduza mentalmente pra subcategoria certa quando passar o parâmetro category_name pra tool. Ex: "quanto gastei com ifood?" → category_name = "Delivery".

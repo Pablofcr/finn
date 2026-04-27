@@ -46,7 +46,8 @@ export const CATEGORY_METADATA: Record<string, CategoryMeta> = {
   'Manutenção':          { color: '#1e40af', icon: 'wrench',          parentName: 'Transporte', type: 'EXPENSE' },
 
   // ─── Moradia children ─────────────────────────────────────
-  'Aluguel/Condomínio':  { color: '#a78bfa', icon: 'home',            parentName: 'Moradia', type: 'EXPENSE' },
+  'Aluguel':             { color: '#a78bfa', icon: 'key',             parentName: 'Moradia', type: 'EXPENSE' },
+  'Condomínio':          { color: '#7c3aed', icon: 'building-2',      parentName: 'Moradia', type: 'EXPENSE' },
   'Energia':             { color: '#a855f7', icon: 'zap',             parentName: 'Moradia', type: 'EXPENSE' },
   'Água':                { color: '#6366f1', icon: 'droplet',         parentName: 'Moradia', type: 'EXPENSE' },
   'Internet/TV':         { color: '#8b5cf6', icon: 'wifi',            parentName: 'Moradia', type: 'EXPENSE' },
@@ -163,10 +164,18 @@ export const KEYWORD_MAP: Record<string, string> = {
   licenciamento: 'Transporte',
   'seguro auto': 'Transporte',
 
-  // ─── Moradia > Aluguel/Condomínio ─────────────────────────
-  aluguel: 'Aluguel/Condomínio',
-  condominio: 'Aluguel/Condomínio',
-  iptu: 'Aluguel/Condomínio',
+  // ─── Moradia > Aluguel ────────────────────────────────────
+  aluguel: 'Aluguel',
+  alugueis: 'Aluguel',
+  inquilino: 'Aluguel',
+  locacao: 'Aluguel',
+  imobiliaria: 'Aluguel',
+
+  // ─── Moradia > Condomínio ─────────────────────────────────
+  condominio: 'Condomínio',
+  condominios: 'Condomínio',
+  'taxa condominial': 'Condomínio',
+  sindico: 'Condomínio',
 
   // ─── Moradia > Energia ────────────────────────────────────
   luz: 'Energia',
@@ -201,6 +210,7 @@ export const KEYWORD_MAP: Record<string, string> = {
   cuidador: 'Serviços Domésticos',
 
   // ─── Moradia (generic parent fallback) ────────────────────
+  iptu: 'Moradia',
   gas: 'Moradia',
   limpeza: 'Moradia',
   reforma: 'Moradia',
