@@ -8,7 +8,7 @@ import { MOBILE_NAV_ITEMS } from '@/lib/constants'
 import {
   LayoutDashboard, ArrowLeftRight, PlusCircle, BarChart3, Menu,
 } from 'lucide-react'
-import { MobileMenuDrawer, DRAWER_BUILD } from './mobile-menu-drawer'
+import { MobileMenuDrawer } from './mobile-menu-drawer'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'layout-dashboard': LayoutDashboard,
@@ -39,15 +39,12 @@ export function BottomNav() {
                   type="button"
                   onClick={() => setMoreOpen(true)}
                   aria-label={item.label}
-                  className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg text-muted-foreground"
+                  className="flex flex-col items-center gap-1 px-3 py-1 text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg text-muted-foreground"
                 >
                   <div className="flex flex-col items-center gap-1">
                     {Icon && <Icon className="h-5 w-5" />}
                   </div>
                   <span>{item.label}</span>
-                  <span className="text-[8px] text-muted-foreground/60 font-mono leading-none">
-                    {DRAWER_BUILD}
-                  </span>
                 </button>
               )
             }

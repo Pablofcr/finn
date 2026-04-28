@@ -14,9 +14,9 @@ import {
   CreditCard, Plus, X,
 } from 'lucide-react'
 
-// Diagnostic build stamp — bumped on each commit so we can confirm visually
-// whether the iPhone is running the latest bundle or a stale cached one.
-export const DRAWER_BUILD = 'v6-04/28-fullheight'
+// Diagnostic build stamp — kept in source as a tiny marker we can flip back
+// on if cache issues come back. Not rendered in the UI in normal operation.
+export const DRAWER_BUILD = 'v6'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'layout-dashboard': LayoutDashboard,
@@ -118,16 +118,14 @@ export function MobileMenuDrawer({
             <img src="/icons/icon-192.svg" alt="Finn" className="h-9 w-9 rounded-lg shadow-md shrink-0" />
             <div className="leading-tight min-w-0">
               <p className="text-base font-extrabold tracking-tight">Finn</p>
-              <p className="text-[9px] text-white/60 font-mono truncate">
-                {DRAWER_BUILD}
-              </p>
+              <p className="text-[10px] text-white/70">Suas finanças</p>
             </div>
           </div>
           <button
             type="button"
             aria-label="Fechar"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
@@ -136,8 +134,8 @@ export function MobileMenuDrawer({
         {/* Row 2 — Nova Transação */}
         <div className="px-4 pb-2">
           <Link href="/transactions/new" onClick={onClose}>
-            <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white/95 hover:bg-white text-[#5568d3] rounded-lg font-semibold text-[13px] shadow-sm transition-all">
-              <Plus className="h-3.5 w-3.5" />
+            <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] bg-white/95 hover:bg-white text-[#5568d3] rounded-lg font-semibold text-[14px] shadow-sm transition-all">
+              <Plus className="h-4 w-4" />
               Nova Transação
             </button>
           </Link>
@@ -154,8 +152,8 @@ export function MobileMenuDrawer({
           }}
         >
           {NAV_SECTIONS.map((section) => (
-            <div key={section.label} className="mb-2">
-              <p className="px-3 mb-0.5 text-[0.6rem] font-semibold uppercase tracking-wider text-white/40">
+            <div key={section.label} className="mb-2.5">
+              <p className="px-3 mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-white/40">
                 {section.label}
               </p>
               {section.items.map((sItem) => {
@@ -168,13 +166,13 @@ export function MobileMenuDrawer({
                     onClick={onClose}
                     aria-current={sActive ? 'page' : undefined}
                     className={cn(
-                      'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all',
+                      'flex items-center gap-3 rounded-lg px-3 py-1.5 min-h-[36px] text-[14px] font-medium transition-all',
                       sActive
                         ? 'bg-white/20 text-white font-semibold'
                         : 'text-white/80 hover:bg-white/10 hover:text-white'
                     )}
                   >
-                    {SIcon && <SIcon className="h-4 w-4 shrink-0" />}
+                    {SIcon && <SIcon className="h-[18px] w-[18px] shrink-0" />}
                     <span className="flex-1">{sItem.label}</span>
                   </Link>
                 )
@@ -183,21 +181,21 @@ export function MobileMenuDrawer({
           ))}
 
           {isUserAdmin && (
-            <div className="mb-2">
-              <p className="px-3 mb-0.5 text-[0.6rem] font-semibold uppercase tracking-wider text-white/40">
+            <div className="mb-2.5">
+              <p className="px-3 mb-1 text-[10.5px] font-semibold uppercase tracking-wider text-white/40">
                 Admin
               </p>
               <Link
                 href="/admin"
                 onClick={onClose}
                 className={cn(
-                  'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all',
+                  'flex items-center gap-3 rounded-lg px-3 py-1.5 min-h-[36px] text-[14px] font-medium transition-all',
                   pathname === '/admin'
                     ? 'bg-white/20 text-white font-semibold'
                     : 'text-white/80 hover:bg-white/10 hover:text-white'
                 )}
               >
-                <LayoutDashboard className="h-4 w-4 shrink-0" />
+                <LayoutDashboard className="h-[18px] w-[18px] shrink-0" />
                 <span className="flex-1">Painel admin</span>
               </Link>
             </div>
@@ -212,14 +210,14 @@ export function MobileMenuDrawer({
           <Link
             href="/settings"
             onClick={onClose}
-            className="flex items-center gap-2.5 p-2.5 bg-white/10 hover:bg-white/15 rounded-lg transition-all"
+            className="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/15 rounded-lg transition-all"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 border border-white/30 text-xs font-semibold shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-sm font-semibold shrink-0">
               {getInitials(displayName)}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-[13px] font-semibold truncate leading-tight">{displayName}</span>
-              <span className="text-[10px] text-white/60">Visualizar perfil</span>
+              <span className="text-[14px] font-semibold truncate leading-tight">{displayName}</span>
+              <span className="text-[11px] text-white/60">Visualizar perfil</span>
             </div>
           </Link>
         </div>
