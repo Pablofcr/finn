@@ -254,6 +254,38 @@ export async function GET(request: NextRequest) {
     })),
   ].sort((a, b) => a.daysUntil - b.daysUntil)
 
+  // Weekly stats — pra alimentar o empty state evolutivo do insight card
+  const weekStart = new Date(now)
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay()) // domingo passado
+  weekStart.setHours(0, 0, 0, 0)
+
+  const weeklyTxs = await prisma.transaction.findMany({
+    where: { userId: user.id, date: { gte: weekStart, lte: now } },
+    select: { categoryId: true, amount: true, type: true, date: true },
+  })
+
+  const weeklyTxCount = weeklyTxs.length
+  const weeklyDays = new Set(weeklyTxs.map((t) => t.date.toISOString().slice(0, 10))).size
+
+  // Categoria que mais apareceu (por contagem) — usada na cópia "X liderando"
+  const weeklyCategoryCounts: Record<string, number> = {}
+  for (const t of weeklyTxs) {
+    if (t.categoryId && t.type === 'EXPENSE') {
+      weeklyCategoryCounts[t.categoryId] = (weeklyCategoryCounts[t.categoryId] || 0) + 1
+    }
+  }
+  const topCatId = Object.entries(weeklyCategoryCounts).sort(([, a], [, b]) => b - a)[0]?.[0]
+  const topCat = topCatId ? await prisma.category.findUnique({
+    where: { id: topCatId },
+    select: { name: true },
+  }) : null
+
+  // Próximo domingo às 9h (quando o cron de insights costuma rodar)
+  const nextSunday = new Date(now)
+  const daysToSunday = (7 - nextSunday.getDay()) % 7 || 7 // se hoje é domingo, próxima semana
+  nextSunday.setDate(nextSunday.getDate() + daysToSunday)
+  nextSunday.setHours(9, 0, 0, 0)
+
   // Latest active insight (priority: alert > warning > success > info, then most recent)
   const insights = await prisma.insight.findMany({
     where: { userId: user.id, isDismissed: false },
@@ -314,6 +346,13 @@ export async function GET(request: NextRequest) {
       accounts,
       upcomingBills,
       latestInsight,
+      // contexto pra empty state evolutivo do insight
+      insightContext: {
+        weeklyTxCount,
+        weeklyDays,
+        topCategoryName: topCat?.name || null,
+        nextInsightDate: nextSunday.toISOString(),
+      },
     },
   })
 }

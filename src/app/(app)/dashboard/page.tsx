@@ -109,8 +109,12 @@ export default function DashboardPage() {
         <PeriodSelector month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y) }} />
       </div>
 
-      {/* Insight da semana — hero da IA, no topo absoluto */}
-      <WeeklyInsightCard insight={data?.latestInsight ?? null} />
+      {/* Insight da semana — hero da IA, no topo absoluto. Empty state evolui
+          com base em tx desta semana + data do próximo cron domingo. */}
+      <WeeklyInsightCard
+        insight={data?.latestInsight ?? null}
+        context={data?.insightContext}
+      />
 
       {/* KPI Cards — 3 colunas (cortei "Taxa de Poupança") */}
       <KpiCards

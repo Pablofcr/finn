@@ -14,8 +14,16 @@ interface Insight {
   createdAt: string
 }
 
+interface InsightContext {
+  weeklyTxCount: number
+  weeklyDays: number
+  topCategoryName: string | null
+  nextInsightDate: string  // ISO
+}
+
 interface WeeklyInsightCardProps {
   insight: Insight | null
+  context?: InsightContext
 }
 
 type Severity = 'info' | 'success' | 'warning' | 'alert'
@@ -84,20 +92,72 @@ function formatRelative(dateStr: string): string {
   return `há ${Math.floor(diffDays / 30)} meses`
 }
 
-export function WeeklyInsightCard({ insight }: WeeklyInsightCardProps) {
-  // Empty state — placeholder convidativo
+function formatNextSunday(iso: string): string {
+  const d = new Date(iso)
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  return `domingo ${day}/${month}`
+}
+
+function buildEvolvingCopy(ctx: InsightContext): { line1: string; line2: string } {
+  const sunday = formatNextSunday(ctx.nextInsightDate)
+  const n = ctx.weeklyTxCount
+
+  // Estado 0 — nenhuma tx essa semana
+  if (n === 0) {
+    return {
+      line1: 'Me conta o que rolou hoje.',
+      line2: `Manda os gastos pelo WhatsApp ou registra no app. No ${sunday} eu fecho a leitura e te trago a primeira análise da semana.`,
+    }
+  }
+
+  // Estado 1-4 — alguma atividade, ainda pouco pra ler padrão
+  if (n <= 4) {
+    if (ctx.topCategoryName) {
+      return {
+        line1: `Já registrei ${n} ${n === 1 ? 'lançamento' : 'lançamentos'} essa semana, com ${ctx.topCategoryName} liderando.`,
+        line2: `No ${sunday} fecho a leitura e te trago o primeiro insight de verdade — comparando com o que vier nas próximas semanas.`,
+      }
+    }
+    return {
+      line1: `Já registrei ${n} ${n === 1 ? 'lançamento' : 'lançamentos'} essa semana.`,
+      line2: `No ${sunday} eu fecho a leitura e te trago a primeira análise.`,
+    }
+  }
+
+  // Estado 5+ — bom volume, criando expectativa pro domingo
+  return {
+    line1: `Tô vendo movimento bom essa semana — ${n} lançamentos.`,
+    line2: `No ${sunday} às 9h o primeiro insight cai aqui. Vai valer a leitura.`,
+  }
+}
+
+export function WeeklyInsightCard({ insight, context }: WeeklyInsightCardProps) {
+  // Empty state evolutivo — copy muda conforme o user registra. Sem barra
+  // (antipattern por gamificação), sem "em breve" (vago demais).
+  // Mostra data concreta do próximo domingo + reflexão do que já foi visto.
   if (!insight) {
+    const copy = context
+      ? buildEvolvingCopy(context)
+      : {
+          line1: 'Tô conhecendo seus hábitos.',
+          line2: 'Conforme você registra transações, descubro padrões e te aviso aqui toda semana.',
+        }
+
     return (
       <Card className="relative overflow-hidden border-dashed border-violet-200/60 dark:border-violet-500/20 bg-violet-50/30 dark:bg-violet-500/5">
-        <CardContent className="flex flex-col items-center justify-center text-center py-10 px-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500/10 mb-3">
-            <Sparkles className="h-6 w-6 text-violet-500" strokeWidth={1.75} />
+        <CardContent className="flex items-start gap-3 py-5 px-5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 shrink-0">
+            <Sparkles className="h-5 w-5 text-violet-500" strokeWidth={1.75} />
           </div>
-          <p className="text-sm font-medium">Seu primeiro insight chega em breve</p>
-          <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-            Ainda estou conhecendo seus hábitos. Conforme você registra transações,
-            descubro padrões e te aviso aqui toda semana.
-          </p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white leading-snug">
+              {copy.line1}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              {copy.line2}
+            </p>
+          </div>
         </CardContent>
       </Card>
     )
