@@ -13,12 +13,56 @@ export async function GET(request: NextRequest) {
   const startDate = new Date(year, month - 1, 1)
   const endDate = new Date(year, month, 0, 23, 59, 59)
 
-  // Get total balance from all accounts
-  const accounts = await prisma.account.findMany({
+  // Get accounts with all info needed for "Saldo por conta" card
+  const accountsRaw = await prisma.account.findMany({
     where: { userId: user.id, isActive: true },
-    select: { balance: true },
+    select: {
+      id: true, name: true, type: true, balance: true, color: true, icon: true,
+      creditLimit: true, closingDay: true, dueDay: true,
+    },
+    orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
   })
-  const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0)
+
+  const totalBalance = accountsRaw.reduce(
+    (sum, acc) => acc.type === 'CREDIT_CARD' ? sum : sum + Number(acc.balance),
+    0,
+  )
+
+  // For credit cards, fetch the latest open invoice to compute utilization.
+  const cardIds = accountsRaw.filter((a) => a.type === 'CREDIT_CARD').map((a) => a.id)
+  const cardInvoices = cardIds.length > 0
+    ? await prisma.invoice.findMany({
+        where: { cardId: { in: cardIds }, status: { in: ['OPEN', 'CLOSED', 'OVERDUE'] } },
+        select: { cardId: true, total: true, status: true, dueDate: true, periodEnd: true },
+        orderBy: { periodEnd: 'desc' },
+      })
+    : []
+  const latestInvoiceByCard = new Map<string, typeof cardInvoices[number]>()
+  for (const inv of cardInvoices) {
+    if (!latestInvoiceByCard.has(inv.cardId)) latestInvoiceByCard.set(inv.cardId, inv)
+  }
+
+  const accounts = accountsRaw.map((a) => {
+    const isCard = a.type === 'CREDIT_CARD'
+    const inv = isCard ? latestInvoiceByCard.get(a.id) : null
+    const limit = isCard ? Number(a.creditLimit ?? 0) : null
+    const used = inv ? Number(inv.total) : 0
+    const utilizationPct = limit && limit > 0 ? Math.round((used / limit) * 100) : null
+    return {
+      id: a.id,
+      name: a.name,
+      type: a.type,
+      balance: Number(a.balance),
+      color: a.color,
+      icon: a.icon,
+      // credit card extras
+      creditLimit: limit,
+      currentInvoice: isCard ? used : null,
+      utilizationPct,
+      closingDay: a.closingDay,
+      dueDay: a.dueDay,
+    }
+  })
 
   // Get income and expense totals for the period
   const transactions = await prisma.transaction.findMany({
@@ -149,6 +193,91 @@ export async function GET(request: NextRequest) {
     })
   )
 
+  // Upcoming bills — recurrings + invoices in next 7 days
+  const now = new Date()
+  const sevenDaysOut = new Date(now)
+  sevenDaysOut.setDate(sevenDaysOut.getDate() + 7)
+  sevenDaysOut.setHours(23, 59, 59, 999)
+
+  const [upcomingRecurrings, upcomingInvoices] = await Promise.all([
+    prisma.recurringTransaction.findMany({
+      where: {
+        userId: user.id,
+        status: 'ACTIVE',
+        nextDueDate: { lte: sevenDaysOut },
+      },
+      include: { category: { select: { name: true, icon: true, color: true } } },
+      orderBy: { nextDueDate: 'asc' },
+      take: 10,
+    }),
+    prisma.invoice.findMany({
+      where: {
+        userId: user.id,
+        status: { in: ['OPEN', 'CLOSED', 'OVERDUE'] },
+        dueDate: { lte: sevenDaysOut },
+        total: { gt: 0 },
+      },
+      include: { card: { select: { id: true, name: true, color: true, icon: true } } },
+      orderBy: { dueDate: 'asc' },
+      take: 5,
+    }),
+  ])
+
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  function daysUntil(date: Date): number {
+    const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
+  const upcomingBills = [
+    ...upcomingRecurrings.map((r) => ({
+      id: r.id,
+      kind: 'recurring' as const,
+      description: r.description,
+      amount: Number(r.amount),
+      dueDate: r.nextDueDate.toISOString(),
+      daysUntil: daysUntil(r.nextDueDate),
+      categoryName: r.category?.name,
+      categoryIcon: r.category?.icon,
+      categoryColor: r.category?.color,
+    })),
+    ...upcomingInvoices.map((inv) => ({
+      id: inv.id,
+      kind: 'invoice' as const,
+      description: `Fatura ${inv.card.name}`,
+      amount: Number(inv.total),
+      dueDate: inv.dueDate.toISOString(),
+      daysUntil: daysUntil(inv.dueDate),
+      categoryName: 'Cartão de Crédito',
+      categoryIcon: inv.card.icon || 'credit-card',
+      categoryColor: inv.card.color || '#6366f1',
+    })),
+  ].sort((a, b) => a.daysUntil - b.daysUntil)
+
+  // Latest active insight (priority: alert > warning > success > info, then most recent)
+  const insights = await prisma.insight.findMany({
+    where: { userId: user.id, isDismissed: false },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+  })
+  const severityRank: Record<string, number> = { alert: 0, warning: 1, success: 2, info: 3 }
+  const sortedInsights = insights.sort((a, b) => {
+    const sa = severityRank[a.severity] ?? 4
+    const sb = severityRank[b.severity] ?? 4
+    if (sa !== sb) return sa - sb
+    return b.createdAt.getTime() - a.createdAt.getTime()
+  })
+  const latestInsight = sortedInsights[0]
+    ? {
+        id: sortedInsights[0].id,
+        title: sortedInsights[0].title,
+        body: sortedInsights[0].body,
+        severity: sortedInsights[0].severity,
+        type: sortedInsights[0].type,
+        createdAt: sortedInsights[0].createdAt.toISOString(),
+      }
+    : null
+
   // Calculate deltas vs previous month
   const prevMonth = monthlyData.length >= 2 ? monthlyData[monthlyData.length - 2] : null
   const currentMonth = monthlyData[monthlyData.length - 1]
@@ -181,6 +310,10 @@ export async function GET(request: NextRequest) {
       monthlyData,
       recentTransactions: recent,
       budgetProgress,
+      // novos campos pra os 3 cards do dashboard
+      accounts,
+      upcomingBills,
+      latestInsight,
     },
   })
 }

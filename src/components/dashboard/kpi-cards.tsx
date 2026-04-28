@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/utils'
-import { Wallet, TrendingUp, TrendingDown, PiggyBank } from 'lucide-react'
+import { Wallet, TrendingUp, TrendingDown } from 'lucide-react'
 import { LineChart, Line, ResponsiveContainer } from 'recharts'
 
 interface KpiCardProps {
@@ -38,16 +38,16 @@ function KpiCard({ icon: Icon, label, value, delta, sparkData, iconColor, iconBg
         <p className="text-2xl font-bold tracking-tight">{value}</p>
         <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">{label}</p>
 
-        {/* Sparkline */}
+        {/* Sparkline — sutil mas legível (squad: opacity 60% melhor que 30%) */}
         {sparkData && sparkData.length > 0 && (
-          <div className="absolute bottom-1 right-2 opacity-30 w-16 h-8">
+          <div className="absolute bottom-1 right-2 opacity-60 w-16 h-8 pointer-events-none">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={sparkData}>
                 <Line
                   type="monotone"
                   dataKey="v"
                   stroke={sparkColor}
-                  strokeWidth={1.5}
+                  strokeWidth={1.75}
                   dot={false}
                 />
               </LineChart>
@@ -65,18 +65,19 @@ interface KpiCardsProps {
   totalExpense: number
   incomeChange: number
   expenseChange: number
-  savingsRate: number
   incomeSpark: { v: number }[]
   expenseSpark: { v: number }[]
 }
 
 export function KpiCards({
   totalBalance, totalIncome, totalExpense,
-  incomeChange, expenseChange, savingsRate,
+  incomeChange, expenseChange,
   incomeSpark, expenseSpark,
 }: KpiCardsProps) {
+  // 3 KPIs (cortei "Taxa de Poupança" — abstrato pro brasileiro médio).
+  // Saldo por conta vira card próprio, mais informativo.
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 stagger-children">
       <KpiCard
         icon={Wallet}
         label="Saldo Total"
@@ -105,15 +106,6 @@ export function KpiCards({
         iconColor="text-red-500"
         iconBg="bg-red-50 dark:bg-red-500/10"
         sparkColor="#ef4444"
-      />
-      <KpiCard
-        icon={PiggyBank}
-        label="Taxa de Poupança"
-        value={`${savingsRate}%`}
-        delta={null}
-        iconColor="text-amber-500"
-        iconBg="bg-amber-50 dark:bg-amber-500/10"
-        sparkColor="#f59e0b"
       />
     </div>
   )

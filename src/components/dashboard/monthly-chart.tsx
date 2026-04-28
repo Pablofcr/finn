@@ -179,7 +179,7 @@ export function MonthlyChart({ data, onMonthClick }: MonthlyChartProps) {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={250}>
-          <AreaChart data={data}>
+          <AreaChart data={data} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
             <defs>
               <linearGradient id="incomeArea" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
@@ -236,25 +236,9 @@ export function MonthlyChart({ data, onMonthClick }: MonthlyChartProps) {
           </AreaChart>
         </ResponsiveContainer>
 
-        {/* Clickable month buttons */}
-        <div className="flex justify-between mt-2 px-6">
-          {data.map((item, i) => (
-            <button
-              key={item.month}
-              type="button"
-              onClick={() => {
-                setDrillMonth(item.month)
-                setDrillData(item)
-                const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-                const idx = monthNames.indexOf(item.month)
-                if (idx >= 0 && onMonthClick) onMonthClick(idx)
-              }}
-              className="text-xs font-medium text-primary hover:text-primary/80 hover:bg-primary/10 px-2 py-1 rounded-lg transition-all"
-            >
-              Ver {item.month}
-            </button>
-          ))}
-        </div>
+        <p className="text-[11px] text-muted-foreground text-center mt-3">
+          Toque em qualquer mês pra ver os detalhes
+        </p>
       </CardContent>
     </Card>
   )

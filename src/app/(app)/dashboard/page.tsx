@@ -8,6 +8,9 @@ import { CategoryDonut } from '@/components/dashboard/category-donut'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
 import { BudgetProgressList } from '@/components/dashboard/budget-progress-list'
 import { PeriodSelector } from '@/components/dashboard/period-selector'
+import { WeeklyInsightCard } from '@/components/dashboard/weekly-insight-card'
+import { UpcomingBillsCard } from '@/components/dashboard/upcoming-bills-card'
+import { AccountsBalanceCard } from '@/components/dashboard/accounts-balance-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { RefreshCw } from 'lucide-react'
@@ -59,16 +62,17 @@ export default function DashboardPage() {
           </div>
           <Skeleton className="h-10 w-48 rounded-xl" />
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+        <Skeleton className="h-44 rounded-xl" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-72 rounded-xl" />
+          <Skeleton className="h-72 rounded-xl" />
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
           <Skeleton className="lg:col-span-2 h-80 rounded-xl" />
           <Skeleton className="h-80 rounded-xl" />
-        </div>
-        <div className="grid gap-6 lg:grid-cols-5">
-          <Skeleton className="lg:col-span-3 h-72 rounded-xl" />
-          <Skeleton className="lg:col-span-2 h-72 rounded-xl" />
         </div>
       </div>
     )
@@ -105,17 +109,31 @@ export default function DashboardPage() {
         <PeriodSelector month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y) }} />
       </div>
 
-      {/* KPI Cards — 4 columns */}
+      {/* Insight da semana — hero da IA, no topo absoluto */}
+      <WeeklyInsightCard insight={data?.latestInsight ?? null} />
+
+      {/* KPI Cards — 3 colunas (cortei "Taxa de Poupança") */}
       <KpiCards
         totalBalance={data?.totalBalance ?? 0}
         totalIncome={data?.totalIncome ?? 0}
         totalExpense={data?.totalExpense ?? 0}
         incomeChange={data?.incomeChange ?? 0}
         expenseChange={data?.expenseChange ?? 0}
-        savingsRate={data?.savingsRate ?? 0}
         incomeSpark={data?.incomeSpark ?? []}
         expenseSpark={data?.expenseSpark ?? []}
       />
+
+      {/* Próximas contas + Saldo por conta — par acionável */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <UpcomingBillsCard
+          bills={data?.upcomingBills ?? []}
+          onPaid={fetchData}
+        />
+        <AccountsBalanceCard
+          accounts={data?.accounts ?? []}
+          totalBalance={data?.totalBalance ?? 0}
+        />
+      </div>
 
       {/* Charts — AreaChart 2/3 + Donut 1/3 */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -128,7 +146,7 @@ export default function DashboardPage() {
         <CategoryDonut data={data?.categoryData ?? []} />
       </div>
 
-      {/* Transactions 3/5 + Budgets 2/5 */}
+      {/* Transações 3/5 + Orçamentos 2/5 */}
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <RecentTransactions transactions={data?.recentTransactions ?? []} />
