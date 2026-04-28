@@ -16,7 +16,7 @@ import {
 
 // Diagnostic build stamp — bump on each commit so Pablo can confirm visually
 // whether his iPhone is running the latest bundle or a stale cached one.
-const DRAWER_BUILD = '2026-04-28-PORTAL'
+const DRAWER_BUILD = 'v3-04/28-22h'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'layout-dashboard': LayoutDashboard,
@@ -112,23 +112,25 @@ function MobileMenuDrawer({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Row 1 — Header */}
+        {/* Row 1 — Header com build stamp visível ao lado do logo */}
         <div
           className="px-4 pb-2 flex items-start justify-between"
           style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
         >
-          <div className="flex items-center gap-2.5">
-            <img src="/icons/icon-192.svg" alt="Finn" className="h-9 w-9 rounded-lg shadow-md" />
-            <div className="leading-tight">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img src="/icons/icon-192.svg" alt="Finn" className="h-9 w-9 rounded-lg shadow-md shrink-0" />
+            <div className="leading-tight min-w-0">
               <p className="text-base font-extrabold tracking-tight">Finn</p>
-              <p className="text-[10px] text-white/70">Suas finanças</p>
+              <p className="text-[9px] text-white/60 font-mono truncate">
+                {DRAWER_BUILD}
+              </p>
             </div>
           </div>
           <button
             type="button"
             aria-label="Fechar"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
@@ -223,9 +225,6 @@ function MobileMenuDrawer({
               <span className="text-[10px] text-white/60">Visualizar perfil</span>
             </div>
           </Link>
-          <p className="text-center text-[9px] text-white/30 mt-1.5 font-mono">
-            v {DRAWER_BUILD}
-          </p>
         </div>
       </div>
     </div>,
@@ -256,12 +255,15 @@ export function BottomNav() {
                   type="button"
                   onClick={() => setMoreOpen(true)}
                   aria-label={item.label}
-                  className="flex flex-col items-center gap-1 px-3 py-1 text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg text-muted-foreground"
+                  className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg text-muted-foreground"
                 >
                   <div className="flex flex-col items-center gap-1">
                     {Icon && <Icon className="h-5 w-5" />}
                   </div>
                   <span>{item.label}</span>
+                  <span className="text-[8px] text-muted-foreground/60 font-mono leading-none">
+                    {DRAWER_BUILD}
+                  </span>
                 </button>
               )
             }
