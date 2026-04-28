@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
@@ -12,6 +13,10 @@ import {
   Wallet, Tags, PieChart, Target, Bot, Lightbulb, Settings, Shield,
   Crown, CreditCard, Plus, X,
 } from 'lucide-react'
+
+// Diagnostic build stamp — bump on each commit so Pablo can confirm visually
+// whether his iPhone is running the latest bundle or a stale cached one.
+const DRAWER_BUILD = '2026-04-28-PORTAL'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'layout-dashboard': LayoutDashboard,
@@ -51,33 +56,25 @@ function MobileMenuDrawer({
   displayName: string
   isUserAdmin: boolean
 }) {
-  // Body scroll lock — única implementação, sem conflito.
+  // Body scroll lock — overflow:hidden em html + body é mais confiável no
+  // iOS PWA standalone que position:fixed (que conflita com a address bar
+  // dinâmica do Safari mobile).
   useEffect(() => {
     if (!open) return
-    const scrollY = window.scrollY
+    const html = document.documentElement
     const body = document.body
     const orig = {
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      width: body.style.width,
-      overflow: body.style.overflow,
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyTouchAction: body.style.touchAction,
     }
-    body.style.position = 'fixed'
-    body.style.top = `-${scrollY}px`
-    body.style.left = '0'
-    body.style.right = '0'
-    body.style.width = '100%'
+    html.style.overflow = 'hidden'
     body.style.overflow = 'hidden'
+    body.style.touchAction = 'none'
     return () => {
-      body.style.position = orig.position
-      body.style.top = orig.top
-      body.style.left = orig.left
-      body.style.right = orig.right
-      body.style.width = orig.width
-      body.style.overflow = orig.overflow
-      window.scrollTo(0, scrollY)
+      html.style.overflow = orig.htmlOverflow
+      body.style.overflow = orig.bodyOverflow
+      body.style.touchAction = orig.bodyTouchAction
     }
   }, [open])
 
@@ -89,9 +86,9 @@ function MobileMenuDrawer({
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
-  if (!open) return null
+  if (!open || typeof document === 'undefined') return null
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -226,9 +223,13 @@ function MobileMenuDrawer({
               <span className="text-[10px] text-white/60">Visualizar perfil</span>
             </div>
           </Link>
+          <p className="text-center text-[9px] text-white/30 mt-1.5 font-mono">
+            v {DRAWER_BUILD}
+          </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
