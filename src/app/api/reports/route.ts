@@ -99,9 +99,17 @@ export async function GET(request: NextRequest) {
   })
 
   const categoryIds = categoryBreakdown.map((c) => c.categoryId).filter(Boolean) as string[]
+  // Inclui parent na query — pra construir a hierarquia do Treemap
   const categories = await prisma.category.findMany({
     where: { id: { in: categoryIds } },
-    select: { id: true, name: true, color: true, icon: true },
+    select: {
+      id: true,
+      name: true,
+      color: true,
+      icon: true,
+      parentId: true,
+      parent: { select: { id: true, name: true, color: true } },
+    },
   })
   const categoryMap = new Map(categories.map((c) => [c.id, c]))
 
@@ -113,11 +121,46 @@ export async function GET(request: NextRequest) {
       categoryName: cat?.name || 'Sem categoria',
       categoryColor: cat?.color || '#94a3b8',
       categoryIcon: cat?.icon || 'tag',
+      // Pai (se existir) — usado pra agrupar no treemap
+      parentId: cat?.parentId || null,
+      parentName: cat?.parent?.name || null,
+      parentColor: cat?.parent?.color || null,
       total,
       percentage: totalExpense > 0 ? Math.round((total / totalExpense) * 100) : 0,
       count: c._count,
     }
   })
+
+  // Agrupa em árvore pro Treemap: pais com filhos viram nós com children;
+  // categorias flat ficam direto como folhas no topo.
+  type TreemapLeaf = { name: string; value: number; color: string }
+  type TreemapNode = TreemapLeaf | { name: string; color: string; children: TreemapLeaf[] }
+
+  const grouped = new Map<string, TreemapLeaf[]>()
+  const flat: TreemapLeaf[] = []
+  const parentColors = new Map<string, string>()
+  const parentNames = new Map<string, string>()
+
+  for (const c of categoryData) {
+    if (c.parentId && c.parentName) {
+      if (!grouped.has(c.parentId)) grouped.set(c.parentId, [])
+      grouped.get(c.parentId)!.push({ name: c.categoryName, value: c.total, color: c.categoryColor })
+      parentColors.set(c.parentId, c.parentColor || '#94a3b8')
+      parentNames.set(c.parentId, c.parentName)
+    } else {
+      flat.push({ name: c.categoryName, value: c.total, color: c.categoryColor })
+    }
+  }
+
+  const treeChildren: TreemapNode[] = [
+    ...Array.from(grouped.entries()).map(([parentId, children]): TreemapNode => ({
+      name: parentNames.get(parentId)!,
+      color: parentColors.get(parentId)!,
+      children,
+    })),
+    ...flat,
+  ]
+  const categoryTree = { name: 'Despesas', color: '#6366f1', children: treeChildren }
 
   // Daily spending trend
   const daysInMonth = new Date(year, month, 0).getDate()
@@ -205,6 +248,7 @@ export async function GET(request: NextRequest) {
       },
       monthlyEvolution,
       categoryData,
+      categoryTree,
       incomeData,
       dailyData,
       topExpenses,
