@@ -16,7 +16,7 @@ import {
 
 // Diagnostic build stamp — bumped on each commit so we can confirm visually
 // whether the iPhone is running the latest bundle or a stale cached one.
-export const DRAWER_BUILD = 'v4-04/28-shared'
+export const DRAWER_BUILD = 'v5-04/28-redeploy'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'layout-dashboard': LayoutDashboard,
