@@ -154,6 +154,7 @@ export async function GET(request: NextRequest) {
       date: t.date.toISOString(),
       categoryName: t.category?.name || 'Sem categoria',
       categoryColor: t.category?.color || '#94a3b8',
+      categoryIcon: t.category?.icon || 'tag',
       accountName: t.account?.name || '',
     }))
 

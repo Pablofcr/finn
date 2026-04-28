@@ -9,12 +9,13 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  PieChart, Pie, Cell, AreaChart, Area, LineChart, Line,
+  PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts'
 import {
-  TrendingUp, TrendingDown, DollarSign, Percent,
+  TrendingUp, TrendingDown, DollarSign, Layers,
   ArrowUpRight, ArrowDownRight, Minus,
 } from 'lucide-react'
+import { getCategoryIcon } from '@/lib/category-icon'
 
 function ChangeIndicator({ value }: { value: number }) {
   if (value === 0) return <Minus className="h-3 w-3 text-muted-foreground" />
@@ -99,6 +100,9 @@ export default function ReportsPage() {
   const dailyData = data?.dailyData || []
   const topExpenses = data?.topExpenses || []
 
+  // "Maior categoria" — substitui o KPI "Taxa de Economia" (squad: abstrato pra usuário BR)
+  const topCategory = categoryData[0] as { categoryName: string; total: number; percentage: number; categoryIcon?: string; categoryColor?: string } | undefined
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -161,19 +165,34 @@ export default function ReportsPage() {
         <Card>
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Taxa de Economia</p>
-                <p className={cn('text-xl font-bold', summary.savingsRate >= 0 ? 'text-green-600' : 'text-red-600')}>
-                  {summary.savingsRate}%
-                </p>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Maior categoria</p>
+                {topCategory ? (
+                  <>
+                    <p className="text-xl font-bold truncate" title={topCategory.categoryName}>
+                      {topCategory.categoryName}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground tabular-nums">
+                      {formatCurrency(topCategory.total)} · {topCategory.percentage}% do total
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xl font-bold text-muted-foreground/60">—</p>
+                    <p className="text-[11px] text-muted-foreground">Sem dados no período</p>
+                  </>
+                )}
               </div>
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Percent className="h-4 w-4 text-primary" />
+              <div
+                className="rounded-lg p-2 shrink-0 ring-1 ring-inset ring-black/5 dark:ring-white/10"
+                style={topCategory ? { backgroundColor: `${topCategory.categoryColor}1a` } : { backgroundColor: 'rgba(99,102,241,0.1)' }}
+              >
+                <Layers
+                  className="h-4 w-4"
+                  style={topCategory ? { color: topCategory.categoryColor } : undefined}
+                />
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              {summary.transactionCount} transações no período
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -388,25 +407,36 @@ export default function ReportsPage() {
               {topExpenses.length === 0 ? (
                 <p className="text-center text-sm text-muted-foreground py-8">Sem despesas neste período</p>
               ) : (
-                <div className="space-y-3">
-                  {topExpenses.map((t: any, i: number) => (
-                    <div key={t.id} className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground w-5 text-right font-medium">{i + 1}.</span>
+                <div className="space-y-1">
+                  {topExpenses.map((t: any, i: number) => {
+                    const Icon = getCategoryIcon(t.categoryIcon)
+                    const color = t.categoryColor || '#64748b'
+                    return (
                       <div
-                        className="h-2.5 w-2.5 rounded-sm shrink-0"
-                        style={{ backgroundColor: t.categoryColor }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{t.description}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {t.categoryName} · {formatDate(t.date)}
-                        </p>
+                        key={t.id}
+                        className="flex items-center gap-3 hover:bg-muted/50 rounded-lg transition-colors p-2 -mx-2"
+                      >
+                        <span className="text-xs text-muted-foreground w-5 text-right font-medium tabular-nums">
+                          {i + 1}
+                        </span>
+                        <div
+                          className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0 ring-1 ring-inset ring-black/5 dark:ring-white/10"
+                          style={{ backgroundColor: `${color}1a` }}
+                        >
+                          <Icon className="h-4 w-4" style={{ color }} strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{t.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t.categoryName} · {formatDate(t.date)}
+                          </p>
+                        </div>
+                        <span className="text-sm font-semibold text-red-600 dark:text-red-400 shrink-0 tabular-nums">
+                          {formatCurrency(t.amount)}
+                        </span>
                       </div>
-                      <span className="text-sm font-semibold text-red-600 shrink-0">
-                        {formatCurrency(t.amount)}
-                      </span>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
