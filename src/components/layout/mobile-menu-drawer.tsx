@@ -16,7 +16,7 @@ import {
 
 // Diagnostic build stamp — bumped on each commit so we can confirm visually
 // whether the iPhone is running the latest bundle or a stale cached one.
-export const DRAWER_BUILD = 'v5-04/28-redeploy'
+export const DRAWER_BUILD = 'v6-04/28-fullheight'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'layout-dashboard': LayoutDashboard,
@@ -98,12 +98,14 @@ export function MobileMenuDrawer({
         className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
       />
 
-      {/* Drawer panel */}
+      {/* Drawer panel — força altura total do viewport via 100dvh
+          (mais confiável no iOS Safari que top-0 bottom-0 em absolute) */}
       <div
-        className="absolute top-0 left-0 bottom-0 w-[85%] max-w-[300px] sidebar-gradient text-white shadow-2xl"
+        className="absolute top-0 left-0 w-[85%] max-w-[300px] sidebar-gradient text-white shadow-2xl"
         style={{
           display: 'grid',
           gridTemplateRows: 'auto auto 1fr auto',
+          height: '100dvh',
         }}
         onClick={(e) => e.stopPropagation()}
       >
