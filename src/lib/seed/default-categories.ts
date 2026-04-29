@@ -78,11 +78,33 @@ export const defaultCategories: DefaultCategory[] = [
     icon: 'gamepad-2',
     color: '#eab308',
     type: 'EXPENSE',
-    keywords: [
-      'cinema', 'teatro', 'show', 'ingresso', 'viagem', 'hotel',
-      'passeio', 'parque', 'praia', 'netflix', 'spotify', 'disney',
-      'hbo', 'prime video', 'youtube premium', 'jogo', 'game',
-      'festa', 'bar', 'balada', 'happy hour', 'cerveja', 'drinks',
+    keywords: ['jogo', 'game', 'parque', 'praia', 'festa'],
+    subcategories: [
+      {
+        name: 'Streaming',
+        icon: 'tv',
+        keywords: [
+          'netflix', 'spotify', 'disney', 'disney+', 'disney plus',
+          'hbo', 'hbo max', 'max', 'prime video', 'amazon prime',
+          'youtube premium', 'apple tv', 'apple music', 'globoplay',
+          'paramount', 'deezer',
+        ],
+      },
+      {
+        name: 'Cinema/Eventos',
+        icon: 'ticket',
+        keywords: ['cinema', 'teatro', 'show', 'ingresso', 'ingressos', 'evento', 'festival'],
+      },
+      {
+        name: 'Viagens',
+        icon: 'plane',
+        keywords: ['viagem', 'hotel', 'pousada', 'airbnb', 'passagem', 'passeio'],
+      },
+      {
+        name: 'Bares/Saídas',
+        icon: 'beer',
+        keywords: ['bar', 'balada', 'cerveja', 'drinks', 'happy hour', 'pub', 'boteco'],
+      },
     ],
   },
   {

@@ -22,10 +22,10 @@ export const CATEGORY_METADATA: Record<string, CategoryMeta> = {
   'Transporte':         { color: '#3b82f6', icon: 'car',             type: 'EXPENSE' },
   'Moradia':            { color: '#8b5cf6', icon: 'home',            type: 'EXPENSE' },
   'Saúde':              { color: '#ef4444', icon: 'heart-pulse',     type: 'EXPENSE' },
+  'Lazer':              { color: '#eab308', icon: 'gamepad-2',       type: 'EXPENSE' },
 
   // ─── EXPENSE flat ─────────────────────────────────────────
   'Educação':           { color: '#06b6d4', icon: 'graduation-cap',  type: 'EXPENSE' },
-  'Lazer':              { color: '#eab308', icon: 'gamepad-2',       type: 'EXPENSE' },
   'Vestuário':          { color: '#d946ef', icon: 'shirt',           type: 'EXPENSE' },
   'Compras':            { color: '#ec4899', icon: 'shopping-bag',    type: 'EXPENSE' },
   'Cuidados Pessoais':  { color: '#c026d3', icon: 'sparkles',        type: 'EXPENSE' },
@@ -57,6 +57,12 @@ export const CATEGORY_METADATA: Record<string, CategoryMeta> = {
   'Farmácia':            { color: '#fca5a5', icon: 'pill',            parentName: 'Saúde', type: 'EXPENSE' },
   'Consulta/Exame':      { color: '#f87171', icon: 'stethoscope',     parentName: 'Saúde', type: 'EXPENSE' },
   'Plano de Saúde':      { color: '#dc2626', icon: 'shield-plus',     parentName: 'Saúde', type: 'EXPENSE' },
+
+  // ─── Lazer children ──────────────────────────────────────
+  'Streaming':           { color: '#f59e0b', icon: 'tv',              parentName: 'Lazer', type: 'EXPENSE' },
+  'Cinema/Eventos':      { color: '#ca8a04', icon: 'ticket',          parentName: 'Lazer', type: 'EXPENSE' },
+  'Viagens':             { color: '#facc15', icon: 'plane',           parentName: 'Lazer', type: 'EXPENSE' },
+  'Bares/Saídas':        { color: '#d97706', icon: 'beer',            parentName: 'Lazer', type: 'EXPENSE' },
 
   // ─── INCOME (flat) ────────────────────────────────────────
   'Salário':             { color: '#22c55e', icon: 'briefcase',       type: 'INCOME' },
@@ -256,22 +262,59 @@ export const KEYWORD_MAP: Record<string, string> = {
   ingles: 'Educação',
   idioma: 'Educação',
 
-  // ─── Lazer (flat) ────────────────────────────────────────
-  cinema: 'Lazer',
-  teatro: 'Lazer',
-  show: 'Lazer',
-  ingresso: 'Lazer',
-  viagem: 'Lazer',
-  hotel: 'Lazer',
-  netflix: 'Lazer',
-  spotify: 'Lazer',
-  disney: 'Lazer',
-  'prime video': 'Lazer',
-  hbo: 'Lazer',
-  bar: 'Lazer',
-  balada: 'Lazer',
-  cerveja: 'Lazer',
+  // ─── Lazer > Streaming ───────────────────────────────────
+  netflix: 'Streaming',
+  spotify: 'Streaming',
+  disney: 'Streaming',
+  'disney+': 'Streaming',
+  'disney plus': 'Streaming',
+  hbo: 'Streaming',
+  'hbo max': 'Streaming',
+  max: 'Streaming',
+  'prime video': 'Streaming',
+  'amazon prime': 'Streaming',
+  'youtube premium': 'Streaming',
+  'apple tv': 'Streaming',
+  'apple music': 'Streaming',
+  globoplay: 'Streaming',
+  paramount: 'Streaming',
+  deezer: 'Streaming',
+
+  // ─── Lazer > Cinema/Eventos ──────────────────────────────
+  cinema: 'Cinema/Eventos',
+  teatro: 'Cinema/Eventos',
+  show: 'Cinema/Eventos',
+  ingresso: 'Cinema/Eventos',
+  ingressos: 'Cinema/Eventos',
+  evento: 'Cinema/Eventos',
+  festival: 'Cinema/Eventos',
+
+  // ─── Lazer > Viagens ─────────────────────────────────────
+  viagem: 'Viagens',
+  hotel: 'Viagens',
+  pousada: 'Viagens',
+  airbnb: 'Viagens',
+  'passagem aerea': 'Viagens',
+  'passagem aérea': 'Viagens',
+  'passagem de aviao': 'Viagens',
+  voo: 'Viagens',
+  passeio: 'Viagens',
+
+  // ─── Lazer > Bares/Saídas ────────────────────────────────
+  bar: 'Bares/Saídas',
+  balada: 'Bares/Saídas',
+  cerveja: 'Bares/Saídas',
+  drinks: 'Bares/Saídas',
+  'happy hour': 'Bares/Saídas',
+  pub: 'Bares/Saídas',
+  boteco: 'Bares/Saídas',
+
+  // ─── Lazer (generic parent fallback) ─────────────────────
   jogo: 'Lazer',
+  game: 'Lazer',
+  parque: 'Lazer',
+  praia: 'Lazer',
+  festa: 'Lazer',
 
   // ─── Vestuário (flat) ────────────────────────────────────
   roupa: 'Vestuário',

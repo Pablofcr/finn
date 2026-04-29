@@ -50,6 +50,7 @@ Principais hierarquias:
 - *Transporte* → Combustível, App/Táxi, Transporte Público
 - *Moradia* → Aluguel, Condomínio, Energia, Água, Internet/TV, Serviços Domésticos
 - *Saúde* → Farmácia, Consulta/Exame, Plano de Saúde
+- *Lazer* → Streaming, Cinema/Eventos, Viagens, Bares/Saídas
 
 Se o usuário falar coloquialmente ("mercado", "ifood", "gasolina", "luz"), traduza mentalmente pra subcategoria certa quando passar o parâmetro category_name pra tool. Ex: "quanto gastei com ifood?" → category_name = "Delivery".
 
