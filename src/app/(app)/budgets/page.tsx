@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -9,27 +9,61 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/shared/empty-state'
-import { formatCurrency } from '@/lib/utils'
-import { cn } from '@/lib/utils'
+import { formatCurrency, cn } from '@/lib/utils'
 import { BUDGET_PERIOD_LABELS } from '@/lib/constants'
 import { Plus, PieChart, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getCategoryIcon } from '@/lib/category-icon'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 
-function getProgressColor(percentage: number) {
-  if (percentage <= 60) return 'progress-gradient-success'
-  if (percentage <= 80) return 'progress-gradient-warning'
-  return 'progress-gradient-danger'
+const FALLBACK_CATEGORY_COLOR = '#64748b'
+
+type Severity = 'healthy' | 'warning' | 'overrun'
+
+function severityFor(percentage: number): Severity {
+  if (percentage > 100) return 'overrun'
+  if (percentage >= 80) return 'warning'
+  return 'healthy'
 }
 
-function getBadgeStyle(percentage: number) {
-  if (percentage <= 60) return 'bg-green-500/10 text-green-600'
-  if (percentage <= 80) return 'bg-yellow-500/10 text-yellow-600'
-  return 'bg-red-500/10 text-red-600'
+function severityScore(s: Severity): number {
+  return s === 'overrun' ? 0 : s === 'warning' ? 1 : 2
+}
+
+function severityLabel(s: Severity): string {
+  return s === 'overrun' ? 'Estourado' : s === 'warning' ? 'Atenção' : 'Saudável'
+}
+
+function severityChipClass(s: Severity): string {
+  if (s === 'overrun') return 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+  if (s === 'warning') return 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+  return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+}
+
+function severityBarColor(s: Severity): string {
+  if (s === 'overrun') return '#e11d48'
+  if (s === 'warning') return '#f59e0b'
+  return '#10b981'
+}
+
+// Dias restantes até o fim do período (mensal/semanal/anual)
+function daysRemainingFor(period: string): number {
+  const now = new Date()
+  let end: Date
+  if (period === 'WEEKLY') {
+    const day = now.getDay()
+    end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (6 - day), 23, 59, 59)
+  } else if (period === 'YEARLY') {
+    end = new Date(now.getFullYear(), 11, 31, 23, 59, 59)
+  } else {
+    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+  }
+  const diff = (end.getTime() - now.getTime()) / 86_400_000
+  return Math.max(Math.ceil(diff), 0)
 }
 
 export default function BudgetsPage() {
@@ -124,10 +158,50 @@ export default function BudgetsPage() {
 
   const selectedCategoryName = categories.find((c) => c.id === categoryId)?.name
 
+  // ── KPIs e ordenação ──────────────────────────────────────────────────
+  // Estamos em um único período visualmente. Se houver mistura (mensal +
+  // semanal), o KPI strip continua somando (mostramos a granularidade no
+  // chip do card).
+  const { kpis, sortedBudgets } = useMemo(() => {
+    let totalLimit = 0
+    let totalSpent = 0
+    for (const b of budgets) {
+      totalLimit += Number(b.amount)
+      totalSpent += Number(b.spent || 0)
+    }
+    const available = totalLimit - totalSpent
+    const totalPct = totalLimit > 0 ? (totalSpent / totalLimit) * 100 : 0
+
+    const sortedBudgets = [...budgets].sort((a, b) => {
+      const aPct = Number(a.amount) > 0 ? (Number(a.spent || 0) / Number(a.amount)) * 100 : 0
+      const bPct = Number(b.amount) > 0 ? (Number(b.spent || 0) / Number(b.amount)) * 100 : 0
+      const aSev = severityFor(aPct)
+      const bSev = severityFor(bPct)
+      if (aSev !== bSev) return severityScore(aSev) - severityScore(bSev)
+      // dentro do mesmo bucket, maior % primeiro
+      return bPct - aPct
+    })
+
+    return {
+      kpis: { totalLimit, totalSpent, available, totalPct },
+      sortedBudgets,
+    }
+  }, [budgets])
+
+  const allMonthly = budgets.length > 0 && budgets.every((b: any) => b.period === 'MONTHLY')
+  const monthlyDaysRemaining = daysRemainingFor('MONTHLY')
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Orçamentos</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Orçamentos</h1>
+          {budgets.length > 0 && allMonthly && (
+            <p className="text-sm text-muted-foreground">
+              Mês atual · faltam {monthlyDaysRemaining} {monthlyDaysRemaining === 1 ? 'dia' : 'dias'}
+            </p>
+          )}
+        </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingId(null) }}>
           <DialogTrigger render={<Button className="gap-2 gradient-primary shadow-md shadow-primary/25 border-0" onClick={openNew} />}>
               <Plus className="h-4 w-4" />
@@ -179,9 +253,14 @@ export default function BudgetsPage() {
       </div>
 
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32" />)}
-        </div>
+        <>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20" />)}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32" />)}
+          </div>
+        </>
       ) : budgets.length === 0 ? (
         <div className="space-y-6">
           {/* Explicação didática */}
@@ -233,35 +312,104 @@ export default function BudgetsPage() {
           />
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {budgets.map((b: any) => {
-            const spent = Number(b.spent || 0)
-            const percentage = Number(b.amount) > 0 ? Math.round((spent / Number(b.amount)) * 100) : 0
-            const pct = Math.min(percentage, 100)
-            return (
-              <Card key={b.id} className="group">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{b.category?.name}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{BUDGET_PERIOD_LABELS[b.period]}</span>
-                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <>
+          {/* KPI strip */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <Card>
+              <CardContent className="p-3">
+                <p className="text-[11px] text-muted-foreground font-medium" title="Soma dos limites de todos os orçamentos">
+                  Orçado
+                </p>
+                <p className="text-base sm:text-lg font-semibold tabular-nums mt-1">
+                  {formatCurrency(kpis.totalLimit)}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3">
+                <p className="text-[11px] text-muted-foreground font-medium" title="Soma dos gastos no período de cada orçamento">
+                  Gasto
+                </p>
+                <p className={cn(
+                  'text-base sm:text-lg font-semibold tabular-nums mt-1',
+                  kpis.totalPct > 100 ? 'text-rose-600 dark:text-rose-400'
+                    : kpis.totalPct >= 80 ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-foreground',
+                )}>
+                  {formatCurrency(kpis.totalSpent)}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3">
+                <p className="text-[11px] text-muted-foreground font-medium" title="Orçado − Gasto. Se negativo, você estourou o total.">
+                  Disponível
+                </p>
+                <p className={cn(
+                  'text-base sm:text-lg font-semibold tabular-nums mt-1',
+                  kpis.available < 0 ? 'text-rose-600 dark:text-rose-400'
+                    : kpis.available > 0 ? 'text-income'
+                    : 'text-muted-foreground',
+                )}>
+                  {kpis.available < 0 ? '−' : ''}{formatCurrency(Math.abs(kpis.available))}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Lista de cards */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {sortedBudgets.map((b: any) => {
+              const limit = Number(b.amount)
+              const spent = Number(b.spent || 0)
+              const percentage = limit > 0 ? Math.round((spent / limit) * 100) : 0
+              const pct = Math.min(percentage, 100)
+              const sev = severityFor(percentage)
+
+              const remaining = limit - spent
+              const days = daysRemainingFor(b.period)
+              const dailyAllowance = remaining > 0 && days > 0 ? remaining / days : 0
+              const showDailyHint = (sev === 'warning' || sev === 'overrun') && days > 0
+
+              const cat = b.category
+              const Icon = getCategoryIcon(cat?.icon)
+              const color = cat?.color || FALLBACK_CATEGORY_COLOR
+
+              return (
+                <Card key={b.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0 ring-1 ring-inset ring-black/5 dark:ring-white/10"
+                          style={{ backgroundColor: `${color}1a` }}
+                        >
+                          <Icon className="h-[18px] w-[18px]" style={{ color }} strokeWidth={1.75} />
+                        </div>
+                        <div className="min-w-0">
+                          <CardTitle className="text-base truncate">{cat?.name || 'Categoria'}</CardTitle>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {BUDGET_PERIOD_LABELS[b.period]}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-0.5 shrink-0">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
                           onClick={() => openEdit(b)}
                           aria-label="Editar orçamento"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
                         <AlertDialog>
-                          <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" aria-label="Excluir orçamento" />}>
+                          <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Excluir orçamento" />}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir orçamento de &ldquo;{b.category?.name}&rdquo;?</AlertDialogTitle>
+                              <AlertDialogTitle>Excluir orçamento de &ldquo;{cat?.name}&rdquo;?</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Esta ação não pode ser desfeita. Suas transações continuam preservadas — só o limite de gastos será removido.
                               </AlertDialogDescription>
@@ -274,29 +422,43 @@ export default function BudgetsPage() {
                         </AlertDialog>
                       </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>{formatCurrency(spent)}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">{formatCurrency(Number(b.amount))}</span>
-                      <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full', getBadgeStyle(percentage))}>
-                        {percentage}%
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex items-baseline justify-between text-sm flex-wrap gap-2">
+                      <div className="flex items-baseline gap-1.5 tabular-nums">
+                        <span className="font-semibold">{formatCurrency(spent)}</span>
+                        <span className="text-muted-foreground text-xs">de {formatCurrency(limit)}</span>
+                      </div>
+                      <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-md', severityChipClass(sev))}>
+                        {severityLabel(sev)} · {percentage}%
                       </span>
                     </div>
-                  </div>
-                  <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
                     <div
-                      className={cn('h-full rounded-full transition-all duration-500', getProgressColor(percentage))}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
+                      className="h-2.5 w-full rounded-full bg-muted overflow-hidden"
+                      role="progressbar"
+                      aria-valuenow={percentage}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, backgroundColor: severityBarColor(sev) }}
+                      />
+                    </div>
+                    {showDailyHint && (
+                      <p className="text-[11px] text-muted-foreground tabular-nums">
+                        {sev === 'overrun'
+                          ? `Estourou em ${formatCurrency(spent - limit)} · faltam ${days} ${days === 1 ? 'dia' : 'dias'}`
+                          : `Sobram ${formatCurrency(remaining)} para ${days} ${days === 1 ? 'dia' : 'dias'} · ${formatCurrency(dailyAllowance)}/dia`
+                        }
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )
