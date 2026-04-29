@@ -1,7 +1,12 @@
 import { sendMessage as sendTelegram, sendPaymentAlert as sendTelegramAlert } from '@/lib/telegram'
-import { sendWhatsAppMessage, sendWhatsAppPaymentAlert } from '@/lib/whatsapp'
+import {
+  sendWhatsAppMessage,
+  sendWhatsAppPaymentAlert,
+  type PaymentAlertVariant,
+} from '@/lib/whatsapp'
 
 export type Platform = 'TELEGRAM' | 'WHATSAPP'
+export type { PaymentAlertVariant } from '@/lib/whatsapp'
 
 export async function sendBotMessage(platform: Platform, chatId: string, text: string) {
   if (platform === 'WHATSAPP') {
@@ -17,13 +22,34 @@ export async function sendBotMessage(platform: Platform, chatId: string, text: s
   return sendTelegram({ chatId, text })
 }
 
+// Mapeia variant novo (6 estados) pro variant binário do Telegram (normal/urgent),
+// já que Telegram tá em sunset e não vamos investir em UI nova lá.
+function variantToTelegram(v: PaymentAlertVariant): 'normal' | 'urgent' {
+  if (v === 'due-today-evening' || v === 'overdue' || v === 'overdue-pausable') return 'urgent'
+  return 'normal'
+}
+
 export async function sendBotPaymentAlert(
   platform: Platform,
   chatId: string,
-  opts: { description: string; amount: number; dueDate: string; recurringId: string; variant?: 'normal' | 'urgent' }
+  opts: {
+    description: string
+    amount: number
+    dueDate: string
+    recurringId: string
+    variant: PaymentAlertVariant
+    daysOverdue?: number
+  }
 ) {
   if (platform === 'WHATSAPP') {
     return sendWhatsAppPaymentAlert({ to: chatId, ...opts })
   }
-  return sendTelegramAlert({ chatId, ...opts })
+  return sendTelegramAlert({
+    chatId,
+    description: opts.description,
+    amount: opts.amount,
+    dueDate: opts.dueDate,
+    recurringId: opts.recurringId,
+    variant: variantToTelegram(opts.variant),
+  })
 }

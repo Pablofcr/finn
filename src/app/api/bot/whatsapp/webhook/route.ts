@@ -721,7 +721,14 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
     })
   }
 
-  if (action === 'snooze') {
+  // Family de actions de snooze:
+  //   snooze         → "Lembrar amanhã" (D-1 manhã, D noite, D+N noite)
+  //                    snoozedUntil = hoje 23:59 UTC
+  //   snooze_later   → "Lembrar depois" (D-3 manhã)
+  //                    snoozedUntil = D-2 23:59 UTC (= now + 1 day fim do dia)
+  //   snooze_evening → "Mais tarde" (D manhã)
+  //                    snoozedUntil = hoje 16:00 UTC (antes do evening cron)
+  if (action === 'snooze' || action === 'snooze_later' || action === 'snooze_evening') {
     const recurringId = targetId
     const recurring = await prisma.recurringTransaction.findFirst({
       where: { id: recurringId, userId: connection.userId },
@@ -731,19 +738,57 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
       return
     }
 
-    // Suppress alerts until end-of-today UTC. The daily cron runs early
-    // morning (09:00 UTC), so tomorrow's run will pass this filter.
-    const endOfToday = new Date()
-    endOfToday.setUTCHours(23, 59, 59, 999)
+    let snoozedUntil: Date
+    let confirmation: string
+
+    if (action === 'snooze_evening') {
+      const t = new Date()
+      t.setUTCHours(16, 0, 0, 0)
+      snoozedUntil = t
+      confirmation = `⏰ *Lembrete adiado*\n\n*${recurring.description}*\nTe aviso de novo no fim do dia.`
+    } else if (action === 'snooze_later') {
+      const t = new Date()
+      t.setUTCDate(t.getUTCDate() + 1)
+      t.setUTCHours(23, 59, 59, 999)
+      snoozedUntil = t
+      confirmation = `⏰ *Lembrete adiado*\n\n*${recurring.description}*\nTe aviso de novo na véspera do vencimento.`
+    } else {
+      // snooze (default = "lembrar amanhã")
+      const t = new Date()
+      t.setUTCHours(23, 59, 59, 999)
+      snoozedUntil = t
+      confirmation = `⏰ *Lembrete adiado*\n\n*${recurring.description}*\nVou te lembrar novamente amanhã.`
+    }
 
     await prisma.recurringTransaction.update({
       where: { id: recurring.id },
-      data: { snoozedUntil: endOfToday },
+      data: { snoozedUntil },
+    })
+
+    await sendWhatsAppMessage({ to: from, text: confirmation })
+  }
+
+  // Pausar recorrência — botão extra que aparece em D+5+ (vencida há tempo).
+  if (action === 'pause') {
+    const recurringId = targetId
+    const recurring = await prisma.recurringTransaction.findFirst({
+      where: { id: recurringId, userId: connection.userId },
+    })
+    if (!recurring) {
+      await sendWhatsAppMessage({ to: from, text: '⚠️ Recorrência não encontrada.' })
+      return
+    }
+
+    await prisma.recurringTransaction.update({
+      where: { id: recurring.id },
+      data: { status: 'PAUSED' },
     })
 
     await sendWhatsAppMessage({
       to: from,
-      text: `⏰ *Lembrete adiado*\n\n*${recurring.description}*\nVou te lembrar novamente amanhã.`,
+      text:
+        `⏸️ *Recorrência pausada*\n\n*${recurring.description}* não vai mais gerar lembretes.\n\n` +
+        `Quando quiser reativar, abre *Recorrências* no app e troca o status pra Ativa.`,
     })
   }
 }

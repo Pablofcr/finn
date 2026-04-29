@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { sendBotPaymentAlert, sendBotMessage } from '@/lib/messaging-adapter'
-import type { Platform } from '@/lib/messaging-adapter'
+import type { Platform, PaymentAlertVariant } from '@/lib/messaging-adapter'
 import { markRecurringAsPaid } from '@/lib/finance-actions'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
@@ -33,17 +33,19 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
   // Lower bound: start of today UTC, so we catch recurrences whose nextDueDate
   // is stored as 00:00 UTC of the current day. Using `gte: now` would filter
   // those out (since the cron typically runs hours after midnight UTC), and
-  // today's-due payments would silently never alert. Items truly overdue from
-  // before today (yesterday or earlier) are still excluded.
+  // today's-due payments would silently never alert.
+  // ── Evening cron passa a pegar TAMBÉM vencidas (D+1, D+2, ...): sem
+  //    lower bound, o filter aceita qualquer nextDueDate <= endOfToday. Morning
+  //    mantém startOfToday — só queremos avisar antecipadamente, não cobrar
+  //    de manhã coisas que já estão vencidas (cobrança de vencidas é evening).
   const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0))
 
   const upcomingPayments = await prisma.recurringTransaction.findMany({
     where: {
       status: 'ACTIVE',
-      nextDueDate: {
-        gte: startOfToday,
-        lte: maxDate,
-      },
+      nextDueDate: period === 'evening'
+        ? { lte: maxDate }
+        : { gte: startOfToday, lte: maxDate },
       OR: [
         { snoozedUntil: null },
         { snoozedUntil: { lte: now } },
@@ -165,9 +167,9 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
       }
     }
 
-    // Morning fires on 0, 1 and 3 days out. Evening only on due day.
+    // Morning fires on 0, 1, 3 days out. Evening fires on day 0 OU vencidas.
     const shouldAlert = period === 'evening'
-      ? daysUntilDue === 0
+      ? daysUntilDue <= 0
       : daysUntilDue === 0 || daysUntilDue === 1 || daysUntilDue === 3
 
     if (!shouldAlert) {
@@ -175,10 +177,27 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
       continue
     }
 
+    // Computa variant baseado em daysUntilDue + period. Cada variant tem
+    // mensagem e botões diferentes (ver lib/whatsapp.ts:sendWhatsAppPaymentAlert).
+    let variant: PaymentAlertVariant
+    let daysOverdue: number | undefined
+    if (period === 'morning') {
+      if (daysUntilDue === 3) variant = 'upcoming-3d'
+      else if (daysUntilDue === 1) variant = 'upcoming-1d'
+      else variant = 'due-today-morning'
+    } else {
+      if (daysUntilDue === 0) {
+        variant = 'due-today-evening'
+      } else {
+        daysOverdue = -daysUntilDue
+        variant = daysOverdue >= 5 ? 'overdue-pausable' : 'overdue'
+      }
+    }
+
     // Evening: skip if user already registered a transaction for this recurring today.
-    // The bot's "Paguei" button advances nextDueDate (so the row is already out of
-    // this query), but payments registered via the web app leave nextDueDate intact
-    // — this guards against sending a nudge in that case too.
+    // The bot's "Paguei" button advances nextDueDate (so a "due today" row goes out
+    // of the query), but vencidas might still appear if the user paid via app
+    // without using the recurring-paid flow — guarda contra duplicar nudge.
     if (period === 'evening') {
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
       const alreadyPaid = await prisma.transaction.findFirst({
@@ -200,15 +219,22 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
         amount: Number(payment.amount),
         dueDate: payment.nextDueDate.toISOString(),
         recurringId: payment.id,
-        variant: period === 'evening' ? 'urgent' : 'normal',
+        variant,
+        daysOverdue,
       })
+
+      const logPrefix = variant.startsWith('overdue')
+        ? `⚠️ Vencida ${daysOverdue}d`
+        : variant === 'due-today-evening'
+          ? '⏰ Nudge'
+          : 'Lembrete'
 
       await prisma.botMessage.create({
         data: {
           userId: payment.userId,
           connectionId: connection.id,
           direction: 'OUTBOUND',
-          rawContent: `${period === 'evening' ? '⏰ Nudge' : 'Lembrete'}: ${payment.description} - R$ ${Number(payment.amount).toFixed(2)}`,
+          rawContent: `${logPrefix}: ${payment.description} - R$ ${Number(payment.amount).toFixed(2)}`,
           status: 'CONFIRMED',
         },
       })

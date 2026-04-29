@@ -77,20 +77,30 @@ export async function sendWhatsAppInteractive({ to, body, buttons }: SendInterac
   })
 }
 
+export type PaymentAlertVariant =
+  | 'upcoming-3d'         // D-3: 3 dias antes (manhã)
+  | 'upcoming-1d'         // D-1: 1 dia antes (manhã)
+  | 'due-today-morning'   // D: manhã do dia do vencimento
+  | 'due-today-evening'   // D: noite do dia do vencimento (não pagou)
+  | 'overdue'             // D+1 a D+4: vencida (apenas noite)
+  | 'overdue-pausable'    // D+5+: vencida há tempo, oferece pausar
+
 export async function sendWhatsAppPaymentAlert({
   to,
   description,
   amount,
   dueDate,
   recurringId,
-  variant = 'normal',
+  variant,
+  daysOverdue,
 }: {
   to: string
   description: string
   amount: number
   dueDate: string
   recurringId: string
-  variant?: 'normal' | 'urgent'
+  variant: PaymentAlertVariant
+  daysOverdue?: number  // só usado em variants overdue/overdue-pausable
 }) {
   const formattedAmount = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -99,25 +109,82 @@ export async function sendWhatsAppPaymentAlert({
 
   const formattedDate = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(dueDate))
 
-  const body = variant === 'urgent'
-    ? `⏰ *Pagamento ainda não confirmado*\n\n` +
-      `*${description}*\n` +
-      `💰 ${formattedAmount} · vence *hoje (${formattedDate})*\n\n` +
-      `Se já pagou, toque em "Paguei" pra fechar.`
-    : `🔔 *Lembrete de pagamento*\n\n` +
-      `*${description}*\n` +
-      `💰 Valor: *${formattedAmount}*\n` +
-      `📅 Vencimento: *${formattedDate}*\n\n` +
-      `Já pagou? Toque no botão abaixo!`
+  // Botões — IDs incluem o tipo de snooze pro webhook saber o quanto silenciar
+  const paid = { id: `paid:${recurringId}`, title: '✅ Paguei' }
+  const snoozeTomorrow = { id: `snooze:${recurringId}`, title: '⏰ Lembrar amanhã' }
+  const snoozeLater = { id: `snooze_later:${recurringId}`, title: '⏰ Lembrar depois' }
+  const snoozeEvening = { id: `snooze_evening:${recurringId}`, title: '⏰ Mais tarde' }
+  const pause = { id: `pause:${recurringId}`, title: '⏸️ Pausar' }
 
-  return sendWhatsAppInteractive({
-    to,
-    body,
-    buttons: [
-      { id: `paid:${recurringId}`, title: '✅ Paguei' },
-      { id: `snooze:${recurringId}`, title: '⏰ Lembrar amanhã' },
-    ],
-  })
+  let body: string
+  let buttons: { id: string; title: string }[]
+
+  switch (variant) {
+    case 'upcoming-3d':
+      body =
+        `🔔 *Lembrete de pagamento*\n\n` +
+        `*${description}*\n` +
+        `💰 ${formattedAmount}\n` +
+        `📅 Vence em 3 dias (${formattedDate})\n\n` +
+        `Já pagou? Toque no botão abaixo.`
+      buttons = [paid, snoozeLater]
+      break
+
+    case 'upcoming-1d':
+      body =
+        `🔔 *Lembrete de pagamento*\n\n` +
+        `*${description}*\n` +
+        `💰 ${formattedAmount}\n` +
+        `📅 *Vence amanhã* (${formattedDate})\n\n` +
+        `Já pagou? Toque no botão abaixo.`
+      buttons = [paid, snoozeTomorrow]
+      break
+
+    case 'due-today-morning':
+      body =
+        `🔔 *Lembrete de pagamento*\n\n` +
+        `*${description}*\n` +
+        `💰 Valor: *${formattedAmount}*\n` +
+        `📅 *Vence hoje* (${formattedDate})\n\n` +
+        `Já pagou? Toque no botão abaixo.`
+      buttons = [paid, snoozeEvening]
+      break
+
+    case 'due-today-evening':
+      body =
+        `⏰ *Pagamento ainda não confirmado*\n\n` +
+        `*${description}*\n` +
+        `💰 ${formattedAmount} · vence *hoje (${formattedDate})*\n\n` +
+        `Se já pagou, toque em "Paguei" pra fechar.`
+      buttons = [paid, snoozeTomorrow]
+      break
+
+    case 'overdue': {
+      const n = daysOverdue ?? 1
+      body =
+        `⚠️ *Conta vencida*\n\n` +
+        `*${description}*\n` +
+        `💰 ${formattedAmount}\n` +
+        `📅 *Vencida há ${n} ${n === 1 ? 'dia' : 'dias'}* (${formattedDate})\n\n` +
+        `Se já pagou, toque em "Paguei" pra fechar.`
+      buttons = [paid, snoozeTomorrow]
+      break
+    }
+
+    case 'overdue-pausable': {
+      const n = daysOverdue ?? 5
+      body =
+        `⚠️ *Conta vencida*\n\n` +
+        `*${description}*\n` +
+        `💰 ${formattedAmount}\n` +
+        `📅 *Vencida há ${n} dias* (${formattedDate})\n\n` +
+        `Quer pausar essa recorrência ou marcar como paga?`
+      buttons = [paid, snoozeTomorrow, pause]
+      break
+    }
+  }
+
+  return sendWhatsAppInteractive({ to, body, buttons })
 }
 
 export async function sendWhatsAppList({ to, body, buttonLabel, sectionTitle, rows }: SendListOptions) {
