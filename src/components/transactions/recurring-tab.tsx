@@ -481,21 +481,36 @@ export function RecurringTab() {
                     </p>
                   </div>
 
-                  {/* Badges row: frequência + status + auto-confirm */}
+                  {/* Badges row: frequência + status (clicável) + lança sozinho */}
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-500/10 text-slate-600 dark:text-slate-400 ring-1 ring-inset ring-slate-500/15">
                       {RECURRENCE_LABELS[item.frequency] || item.frequency}
                     </span>
-                    <span className={cn('inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold', statusBadge.className)}>
-                      {statusBadge.label}
-                    </span>
+                    {/* Status — clicável quando ACTIVE/PAUSED pra alternar */}
+                    {(item.status === 'ACTIVE' || item.status === 'PAUSED') ? (
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePause(item)}
+                        className={cn(
+                          'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold transition-colors hover:opacity-80 cursor-pointer',
+                          statusBadge.className,
+                        )}
+                        title={item.status === 'ACTIVE' ? 'Toca pra pausar' : 'Toca pra reativar'}
+                      >
+                        {statusBadge.label}
+                      </button>
+                    ) : (
+                      <span className={cn('inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold', statusBadge.className)}>
+                        {statusBadge.label}
+                      </span>
+                    )}
                     {item.autoConfirm && (
                       <span
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 ring-1 ring-inset ring-violet-500/20"
-                        title="Lança sozinho — sem perguntar"
+                        title="Lança sozinho todo período sem te perguntar antes."
                       >
                         <Sparkles className="h-2.5 w-2.5" strokeWidth={2.5} />
-                        Auto
+                        Lança sozinho
                       </span>
                     )}
                   </div>
