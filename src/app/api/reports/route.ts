@@ -10,6 +10,11 @@ export async function GET(request: NextRequest) {
   const month = parseInt(searchParams.get('month') || String(new Date().getMonth() + 1))
   const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()))
 
+  // Filtro de conta: comma-separated. Se vazio/ausente, agrega tudo.
+  const accountIdsParam = searchParams.get('accountIds')
+  const accountIds = accountIdsParam ? accountIdsParam.split(',').filter(Boolean) : []
+  const accountFilter = accountIds.length > 0 ? { accountId: { in: accountIds } } : {}
+
   const startDate = new Date(year, month - 1, 1)
   const endDate = new Date(year, month, 0, 23, 59, 59)
 
@@ -22,6 +27,7 @@ export async function GET(request: NextRequest) {
     where: {
       userId: user.id,
       date: { gte: startDate, lte: endDate },
+      ...accountFilter,
     },
     include: {
       category: { select: { id: true, name: true, color: true, icon: true } },
@@ -46,6 +52,7 @@ export async function GET(request: NextRequest) {
     where: {
       userId: user.id,
       date: { gte: prevStartDate, lte: prevEndDate },
+      ...accountFilter,
     },
     select: { type: true, amount: true },
   })
@@ -69,6 +76,7 @@ export async function GET(request: NextRequest) {
       where: {
         userId: user.id,
         date: { gte: mDate, lte: mEnd },
+        ...accountFilter,
       },
       select: { type: true, amount: true },
     })
@@ -92,6 +100,7 @@ export async function GET(request: NextRequest) {
       type: 'EXPENSE',
       date: { gte: startDate, lte: endDate },
       categoryId: { not: null },
+      ...accountFilter,
     },
     _sum: { amount: true },
     _count: true,
@@ -166,6 +175,7 @@ export async function GET(request: NextRequest) {
       type: 'INCOME',
       date: { gte: startDate, lte: endDate },
       categoryId: { not: null },
+      ...accountFilter,
     },
     _sum: { amount: true },
     _count: true,

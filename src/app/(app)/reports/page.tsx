@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 import { PeriodSelector } from '@/components/dashboard/period-selector'
+import { AccountFilter } from '@/components/reports/account-filter'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import {
@@ -13,7 +15,7 @@ import {
 } from 'recharts'
 import {
   TrendingUp, TrendingDown, DollarSign, Trophy,
-  ArrowUpRight, ArrowDownRight, Minus,
+  ArrowUpRight, ArrowDownRight, Minus, Filter,
 } from 'lucide-react'
 import { getCategoryIcon } from '@/lib/category-icon'
 
@@ -76,11 +78,28 @@ export default function ReportsPage() {
   const [year, setYear] = useState(now.getFullYear())
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [accounts, setAccounts] = useState<{ id: string; name: string; color?: string; type?: string }[]>([])
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([])
+
+  // Carrega contas uma vez (lista pra popover de filtro)
+  useEffect(() => {
+    fetch('/api/accounts')
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((result) => setAccounts(result.data || []))
+      .catch(() => {/* silently — popover mostra empty */})
+  }, [])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
+    const params = new URLSearchParams({
+      month: String(month + 1),
+      year: String(year),
+    })
+    if (selectedAccountIds.length > 0) {
+      params.set('accountIds', selectedAccountIds.join(','))
+    }
     try {
-      const res = await fetch(`/api/reports?month=${month + 1}&year=${year}`)
+      const res = await fetch(`/api/reports?${params}`)
       if (res.ok) {
         const result = await res.json()
         setData(result.data)
@@ -89,7 +108,7 @@ export default function ReportsPage() {
       // silently fail
     }
     setLoading(false)
-  }, [month, year])
+  }, [month, year, selectedAccountIds])
 
   useEffect(() => {
     fetchData()
@@ -130,12 +149,46 @@ export default function ReportsPage() {
   const expenseSpark = last6.map((m) => ({ v: m.expense }))
   const balanceSpark = last6.map((m) => ({ v: m.balance }))
 
+  // Banner: filtro aplicado mas zero transações no período
+  const hasAccountFilter = selectedAccountIds.length > 0
+  const txCount = (summary as any).transactionCount ?? 0
+  const showFilteredEmpty = hasAccountFilter && txCount === 0
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-2xl font-bold">Relatórios</h1>
-        <PeriodSelector month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y) }} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <AccountFilter
+            accounts={accounts}
+            selectedIds={selectedAccountIds}
+            onChange={setSelectedAccountIds}
+          />
+          <PeriodSelector month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y) }} />
+        </div>
       </div>
+
+      {/* Banner: filtro de conta + zero transações no período */}
+      {showFilteredEmpty && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="py-3 px-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Filter className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-sm text-foreground">
+                Nenhuma transação nas contas selecionadas neste período.
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedAccountIds([])}
+              className="text-xs shrink-0"
+            >
+              Limpar filtro
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
