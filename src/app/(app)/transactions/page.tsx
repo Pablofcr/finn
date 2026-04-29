@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { formatCurrency, groupByDate, cn } from '@/lib/utils'
 import {
-  Plus, SearchX, Trash2, Pencil, ArrowLeftRight, Banknote, Receipt,
+  Plus, SearchX, ArrowLeftRight, Banknote, Receipt,
   Repeat, Layers,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -18,6 +18,7 @@ import {
   EMPTY_FILTERS,
   type TransactionFiltersValue,
 } from '@/components/transactions/transaction-filters'
+import { TransactionDetailSheet } from '@/components/transactions/transaction-detail-sheet'
 import { getCategoryIcon } from '@/lib/category-icon'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
@@ -55,7 +56,7 @@ const METHOD_BADGE_STYLE: Record<PaymentMethod, string> = {
   TRANSFER: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
 }
 
-function TransactionRow({ t, onDelete }: { t: Transaction; onDelete: () => void }) {
+function TransactionRow({ t, onOpen }: { t: Transaction; onOpen: () => void }) {
   const hasCategory = !!t.category?.name
   const isIncome = t.type === 'INCOME'
   const isExpense = t.type === 'EXPENSE'
@@ -81,7 +82,12 @@ function TransactionRow({ t, onDelete }: { t: Transaction; onDelete: () => void 
         : EXPENSE_FALLBACK_COLOR
 
   return (
-    <div className="group flex items-center justify-between gap-3 rounded-lg p-2 -mx-2 transition-colors hover:bg-muted/50">
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group w-full text-left flex items-center justify-between gap-3 rounded-lg p-2 -mx-2 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+      aria-label={`Ver detalhes de ${t.description}`}
+    >
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <div
           className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0 ring-1 ring-inset ring-black/5 dark:ring-white/10"
@@ -131,38 +137,14 @@ function TransactionRow({ t, onDelete }: { t: Transaction; onDelete: () => void 
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        <p className={cn(
-          'text-[14px] font-semibold tabular-nums',
-          isIncome ? 'text-income' : isExpense ? 'text-expense' : 'text-muted-foreground',
-        )}>
-          {isIncome ? '+' : isExpense ? '−' : ''}
-          {formatCurrency(Number(t.amount))}
-        </p>
-
-        <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
-          <Link href={`/transactions/new?edit=${t.id}`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              aria-label="Editar lançamento"
-            >
-              <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </Button>
-          </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onDelete}
-            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            aria-label="Excluir lançamento"
-          >
-            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-          </Button>
-        </div>
-      </div>
-    </div>
+      <p className={cn(
+        'text-[14px] font-semibold tabular-nums shrink-0',
+        isIncome ? 'text-income' : isExpense ? 'text-expense' : 'text-muted-foreground',
+      )}>
+        {isIncome ? '+' : isExpense ? '−' : ''}
+        {formatCurrency(Number(t.amount))}
+      </p>
+    </button>
   )
 }
 
@@ -221,6 +203,9 @@ export default function TransactionsPage() {
   // Se Undo for clicado, removemos do set; se 8s passarem, dispara DELETE de fato.
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set())
   const undoneRef = useRef<Set<string>>(new Set())
+
+  // Detail sheet — transação selecionada (PR2 do wave 2)
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null)
 
   // Sentinel pro IntersectionObserver carregar próxima página
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -522,7 +507,7 @@ export default function TransactionsPage() {
                           <TransactionRow
                             key={t.id}
                             t={t}
-                            onDelete={() => handleDelete(t.id)}
+                            onOpen={() => setSelectedTx(t)}
                           />
                         ))}
                       </CardContent>
@@ -573,6 +558,14 @@ export default function TransactionsPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Detail sheet — abre ao tocar numa transação. Inclui Editar, Excluir,
+          Ver fatura (se invoice-linked). PR2 do wave 2 transactions. */}
+      <TransactionDetailSheet
+        transaction={selectedTx}
+        onOpenChange={(open) => { if (!open) setSelectedTx(null) }}
+        onDelete={handleDelete}
+      />
     </div>
   )
 }
