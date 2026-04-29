@@ -14,22 +14,38 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1')
   const pageSize = parseInt(searchParams.get('pageSize') || '20')
   const type = searchParams.get('type')
-  const categoryId = searchParams.get('categoryId')
-  const accountId = searchParams.get('accountId')
+  // Accept comma-separated category IDs (multi-select) — fallback to single
+  const categoryIdsParam = searchParams.get('categoryIds') || searchParams.get('categoryId')
+  const accountIdsParam = searchParams.get('accountIds') || searchParams.get('accountId')
   const search = searchParams.get('search')
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
+  const valueMinStr = searchParams.get('valueMin')
+  const valueMaxStr = searchParams.get('valueMax')
 
   const where: any = { userId: user.id }
 
   if (type) where.type = type
-  if (categoryId) where.categoryId = categoryId
-  if (accountId) where.accountId = accountId
+  if (categoryIdsParam) {
+    const ids = categoryIdsParam.split(',').filter(Boolean)
+    if (ids.length === 1) where.categoryId = ids[0]
+    else if (ids.length > 1) where.categoryId = { in: ids }
+  }
+  if (accountIdsParam) {
+    const ids = accountIdsParam.split(',').filter(Boolean)
+    if (ids.length === 1) where.accountId = ids[0]
+    else if (ids.length > 1) where.accountId = { in: ids }
+  }
   if (search) where.description = { contains: search, mode: 'insensitive' }
   if (startDate || endDate) {
     where.date = {}
     if (startDate) where.date.gte = new Date(startDate)
     if (endDate) where.date.lte = new Date(endDate)
+  }
+  if (valueMinStr || valueMaxStr) {
+    where.amount = {}
+    if (valueMinStr) where.amount.gte = parseFloat(valueMinStr)
+    if (valueMaxStr) where.amount.lte = parseFloat(valueMaxStr)
   }
 
   const [transactions, total, sums] = await Promise.all([

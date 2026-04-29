@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { formatCurrency, groupByDate, cn } from '@/lib/utils'
-import { Plus, Search, Trash2, Pencil, ArrowLeftRight, Banknote, Receipt } from 'lucide-react'
+import { Plus, SearchX, Trash2, Pencil, ArrowLeftRight, Banknote, Receipt } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -17,6 +15,11 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { RecurringTab } from '@/components/transactions/recurring-tab'
+import {
+  TransactionFilters,
+  EMPTY_FILTERS,
+  type TransactionFiltersValue,
+} from '@/components/transactions/transaction-filters'
 import { getCategoryIcon } from '@/lib/category-icon'
 
 const INCOME_FALLBACK_COLOR = '#22c55e'
@@ -171,16 +174,21 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [totals, setTotals] = useState<Totals>({ income: 0, expense: 0, net: 0 })
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [filters, setFilters] = useState<TransactionFiltersValue>(EMPTY_FILTERS)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page), pageSize: '20' })
-    if (search) params.set('search', search)
-    if (typeFilter !== 'all') params.set('type', typeFilter)
+    if (filters.search) params.set('search', filters.search)
+    if (filters.type !== 'all') params.set('type', filters.type)
+    if (filters.startDate) params.set('startDate', filters.startDate)
+    if (filters.endDate) params.set('endDate', filters.endDate)
+    if (filters.accountIds.length > 0) params.set('accountIds', filters.accountIds.join(','))
+    if (filters.categoryIds.length > 0) params.set('categoryIds', filters.categoryIds.join(','))
+    if (filters.valueMin) params.set('valueMin', filters.valueMin)
+    if (filters.valueMax) params.set('valueMax', filters.valueMax)
 
     try {
       const res = await fetch(`/api/transactions?${params}`)
@@ -194,11 +202,22 @@ export default function TransactionsPage() {
       toast.error('Não conseguimos carregar suas transações. Verifique sua conexão e tente novamente.')
     }
     setLoading(false)
-  }, [page, search, typeFilter])
+  }, [page, filters])
 
   useEffect(() => {
     fetchTransactions()
   }, [fetchTransactions])
+
+  // Reset pra página 1 sempre que mudam os filtros
+  function handleFiltersChange(v: TransactionFiltersValue) {
+    setFilters(v)
+    setPage(1)
+  }
+
+  function clearAllFilters() {
+    setFilters(EMPTY_FILTERS)
+    setPage(1)
+  }
 
   async function handleDelete(id: string) {
     try {
@@ -230,7 +249,14 @@ export default function TransactionsPage() {
     })
   }, [transactions])
 
-  const hasFilters = !!search || typeFilter !== 'all'
+  const hasFilters =
+    !!filters.search ||
+    filters.type !== 'all' ||
+    filters.period !== 'all' ||
+    filters.accountIds.length > 0 ||
+    filters.categoryIds.length > 0 ||
+    !!filters.valueMin ||
+    !!filters.valueMax
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -253,33 +279,10 @@ export default function TransactionsPage() {
         <TabsContent value="transactions">
           <div className="space-y-5 pt-4">
             {/* Totalizer — receitas + despesas + saldo do filtro atual */}
-            {!loading && transactions.length > 0 && <TotalizerStrip totals={totals} />}
+            {!loading && (transactions.length > 0 || hasFilters) && <TotalizerStrip totals={totals} />}
 
-            {/* Filtros */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por descrição, valor ou categoria"
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                  className="pl-9 h-10 rounded-xl bg-muted/40 border-transparent focus-visible:bg-background focus-visible:border-border placeholder:text-muted-foreground/70"
-                />
-              </div>
-              <Select value={typeFilter} onValueChange={(v) => { if (v) { setTypeFilter(v); setPage(1) } }}>
-                <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl bg-muted/40 border-transparent">
-                  <SelectValue placeholder="Tipo">
-                    {{ all: 'Todos', INCOME: 'Receitas', EXPENSE: 'Despesas', TRANSFER: 'Transferências' }[typeFilter] || 'Tipo'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="INCOME">Receitas</SelectItem>
-                  <SelectItem value="EXPENSE">Despesas</SelectItem>
-                  <SelectItem value="TRANSFER">Transferências</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Filtros (busca + tipo + filtros avançados em sheet + chips ativos) */}
+            <TransactionFilters value={filters} onChange={handleFiltersChange} />
 
             {loading ? (
               <div className="space-y-3">
@@ -293,7 +296,7 @@ export default function TransactionsPage() {
                 <Card>
                   <CardContent className="flex flex-col items-center text-center py-10 px-6">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted mb-3">
-                      <Search className="h-6 w-6 text-muted-foreground" strokeWidth={1.75} />
+                      <SearchX className="h-6 w-6 text-muted-foreground" strokeWidth={1.75} />
                     </div>
                     <p className="text-sm font-medium">Nada por aqui com esses filtros</p>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -302,7 +305,7 @@ export default function TransactionsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => { setSearch(''); setTypeFilter('all'); setPage(1) }}
+                      onClick={clearAllFilters}
                       className="mt-3 text-xs"
                     >
                       Limpar filtros
