@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -206,22 +206,27 @@ function TotalizerStrip({ totals }: { totals: Totals }) {
   )
 }
 
+const PAGE_SIZE = 20
+
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [totals, setTotals] = useState<Totals>({ income: 0, expense: 0, net: 0 })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true) // primeira carga ou troca de filtro
+  const [loadingMore, setLoadingMore] = useState(false) // páginas seguintes (infinite scroll)
   const [filters, setFilters] = useState<TransactionFiltersValue>(EMPTY_FILTERS)
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
 
-  // Optimistic delete — IDs sumindo da UI durante a janela de Undo (5s).
-  // Se Undo for clicado, removemos do set; se 5s passarem, dispara DELETE de fato.
+  // Optimistic delete — IDs sumindo da UI durante a janela de Undo (8s).
+  // Se Undo for clicado, removemos do set; se 8s passarem, dispara DELETE de fato.
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set())
   const undoneRef = useRef<Set<string>>(new Set())
 
-  const fetchTransactions = useCallback(async () => {
-    setLoading(true)
-    const params = new URLSearchParams({ page: String(page), pageSize: '20' })
+  // Sentinel pro IntersectionObserver carregar próxima página
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  function buildSearchParams(pageNum: number): URLSearchParams {
+    const params = new URLSearchParams({ page: String(pageNum), pageSize: String(PAGE_SIZE) })
     if (filters.search) params.set('search', filters.search)
     if (filters.type !== 'all') params.set('type', filters.type)
     if (filters.startDate) params.set('startDate', filters.startDate)
@@ -230,40 +235,85 @@ export default function TransactionsPage() {
     if (filters.categoryIds.length > 0) params.set('categoryIds', filters.categoryIds.join(','))
     if (filters.valueMin) params.set('valueMin', filters.valueMin)
     if (filters.valueMax) params.set('valueMax', filters.valueMax)
+    return params
+  }
 
-    try {
-      const res = await fetch(`/api/transactions?${params}`)
-      if (res.ok) {
-        const result = await res.json()
-        setTransactions(result.data)
-        setTotalPages(result.totalPages)
-        setTotals(result.totals || { income: 0, expense: 0, net: 0 })
-      }
-    } catch {
-      toast.error('Não conseguimos carregar suas transações. Verifique sua conexão e tente novamente.')
-    }
-    setLoading(false)
-  }, [page, filters])
-
+  // Reset + carrega página 1 quando filtro muda. Roda também na carga inicial.
   useEffect(() => {
-    fetchTransactions()
-  }, [fetchTransactions])
+    let cancelled = false
+    setPage(1)
+    setLoading(true)
+    const params = buildSearchParams(1)
+    fetch(`/api/transactions?${params}`)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(result => {
+        if (cancelled) return
+        setTransactions(result.data)
+        setTotals(result.totals || { income: 0, expense: 0, net: 0 })
+        setHasMore(result.page < result.totalPages)
+      })
+      .catch(() => {
+        if (!cancelled) toast.error('Não conseguimos carregar suas transações. Verifique sua conexão e tente novamente.')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters])
+
+  // Carrega páginas seguintes (append). Disparado pelo IntersectionObserver.
+  useEffect(() => {
+    if (page === 1) return // página 1 é responsabilidade do effect acima
+    let cancelled = false
+    setLoadingMore(true)
+    const params = buildSearchParams(page)
+    fetch(`/api/transactions?${params}`)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(result => {
+        if (cancelled) return
+        setTransactions(prev => [...prev, ...result.data])
+        setHasMore(result.page < result.totalPages)
+      })
+      .catch(() => {
+        if (!cancelled) toast.error('Não rolou carregar mais. Tenta de novo.')
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMore(false)
+      })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page])
+
+  // IntersectionObserver no sentinel — carrega próxima página quando ele
+  // chega 400px antes do viewport. Reseta a cada mudança nas deps.
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel || !hasMore || loading || loadingMore) return
+
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setPage(p => p + 1)
+    }, { rootMargin: '400px' })
+
+    obs.observe(sentinel)
+    return () => obs.disconnect()
+  }, [hasMore, loading, loadingMore])
 
   function handleFiltersChange(v: TransactionFiltersValue) {
     setFilters(v)
-    setPage(1)
   }
 
   function clearAllFilters() {
     setFilters(EMPTY_FILTERS)
-    setPage(1)
   }
 
   /**
    * Delete optimista com Undo (Aza Raskin pattern).
    * Esconde a transação imediatamente, mostra toast "Lançamento removido"
-   * com botão "Desfazer" por 5s. Se clicar Desfazer, restaura. Se 5s
-   * passarem sem ação, manda DELETE de verdade.
+   * com botão "DESFAZER" (CAPS) por 8s. Se clicar Desfazer, restaura. Se
+   * 8s passarem sem ação, manda DELETE de verdade.
+   * — janela de 8s + CAPS é recomendação do design-squad/ux-designer pra
+   * mass-market non-tech parsear o undo sem ansiedade.
    */
   function handleDelete(id: string) {
     // Marca como pendente — some da UI imediatamente
@@ -272,7 +322,7 @@ export default function TransactionsPage() {
 
     toast('Lançamento removido', {
       action: {
-        label: 'Desfazer',
+        label: 'DESFAZER',
         onClick: () => {
           undoneRef.current.add(id)
           setPendingDeleteIds((prev) => {
@@ -282,10 +332,10 @@ export default function TransactionsPage() {
           })
         },
       },
-      duration: 5000,
+      duration: 8000,
     })
 
-    // Após 5s, commita o delete se não foi desfeito
+    // Após 8s, commita o delete se não foi desfeito
     setTimeout(async () => {
       if (undoneRef.current.has(id)) {
         undoneRef.current.delete(id)
@@ -294,8 +344,27 @@ export default function TransactionsPage() {
       try {
         const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
         if (res.ok) {
-          // Refetch atualiza totais
-          fetchTransactions()
+          // Remove de fato do array + ajusta totais localmente, sem perder
+          // scroll position. A próxima troca de filtro re-busca tudo.
+          const deleted = transactions.find((t) => t.id === id)
+          setTransactions((prev) => prev.filter((t) => t.id !== id))
+          setPendingDeleteIds((prev) => {
+            const next = new Set(prev)
+            next.delete(id)
+            return next
+          })
+          if (deleted) {
+            const amt = Number(deleted.amount)
+            setTotals((prev) => {
+              if (deleted.type === 'INCOME') {
+                return { income: prev.income - amt, expense: prev.expense, net: prev.net - amt }
+              }
+              if (deleted.type === 'EXPENSE') {
+                return { income: prev.income, expense: prev.expense - amt, net: prev.net + amt }
+              }
+              return prev
+            })
+          }
         } else {
           // Restaura visualmente em caso de falha
           setPendingDeleteIds((prev) => {
@@ -313,7 +382,7 @@ export default function TransactionsPage() {
         })
         toast.error('Não rolou. Voltei o lançamento.')
       }
-    }, 5000)
+    }, 8000)
   }
 
   // Lista visível: oculta os IDs em pendingDelete (durante a janela de Undo)
@@ -461,28 +530,37 @@ export default function TransactionsPage() {
                   </div>
                 ))}
 
-                {totalPages > 1 && (
-                  <div className="flex justify-center gap-2 pt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page <= 1}
-                      onClick={() => setPage(page - 1)}
-                    >
-                      Anterior
-                    </Button>
-                    <span className="flex items-center text-sm text-muted-foreground">
-                      {page} / {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage(page + 1)}
-                    >
-                      Próxima
-                    </Button>
-                  </div>
+                {/* Skeleton rows enquanto carrega próxima página — mesma altura
+                    das reais (h-16) pra não causar reflow */}
+                {loadingMore && (
+                  <Card>
+                    <CardContent className="p-2 divide-y divide-border/40">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="flex items-center gap-3 py-2.5 px-2">
+                          <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
+                          <div className="flex-1 space-y-1.5">
+                            <Skeleton className="h-3.5 w-2/3" />
+                            <Skeleton className="h-3 w-1/3" />
+                          </div>
+                          <Skeleton className="h-4 w-20 shrink-0" />
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Sentinel: IntersectionObserver ativa próxima página
+                    quando ele entra a 400px do viewport */}
+                {hasMore && !loadingMore && (
+                  <div ref={sentinelRef} className="h-1" aria-hidden="true" />
+                )}
+
+                {/* Fim da lista — só mostra se já carregou pelo menos 1 página
+                    e não há mais. Sutil, sem call-to-action. */}
+                {!hasMore && transactions.length >= PAGE_SIZE && (
+                  <p className="text-center text-[11px] text-muted-foreground/70 py-4">
+                    Você chegou no fim
+                  </p>
                 )}
               </div>
             )}
