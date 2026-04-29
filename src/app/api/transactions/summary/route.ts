@@ -310,6 +310,105 @@ export async function GET(request: NextRequest) {
       }
     : null
 
+  // ── Forecast probabilístico de saldo (Wave 2) ──────────────────────────
+  // Pergunta: "onde meu saldo termina o mês?" Math é determinístico
+  // (recorrentes + faturas) + estocástico (média móvel de 30 dias × dias
+  // restantes). Só rodamos pro mês CORRENTE. Se for mês passado/futuro,
+  // forecast vem null (UI esconde o card).
+  const isCurrentMonth = year === now.getFullYear() && month - 1 === now.getMonth()
+  let forecast: any = null
+
+  if (isCurrentMonth) {
+    const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+    const eomMid = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+    const daysRemaining = Math.max(
+      Math.ceil((eomMid.getTime() - todayMid.getTime()) / (1000 * 60 * 60 * 24)),
+      0,
+    )
+
+    // ── Determinístico: recorrentes vencendo de hoje até fim do mês ──
+    // Pulamos recorrentes vinculadas a CARTÃO DE CRÉDITO (vão pra fatura,
+    // não saem da conta agora — a fatura é tratada separadamente abaixo).
+    const remainingRecurrings = await prisma.recurringTransaction.findMany({
+      where: {
+        userId: user.id,
+        status: 'ACTIVE',
+        nextDueDate: { gte: todayMid, lte: eomMid },
+      },
+      select: {
+        type: true,
+        amount: true,
+        account: { select: { type: true } },
+      },
+    })
+    let remainingIncome = 0
+    let remainingExpense = 0
+    for (const r of remainingRecurrings) {
+      if (r.account?.type === 'CREDIT_CARD') continue // vai pra fatura, não impacta saldo
+      const v = Number(r.amount)
+      if (r.type === 'INCOME') remainingIncome += v
+      else if (r.type === 'EXPENSE') remainingExpense += v
+    }
+
+    // ── Determinístico: faturas vencendo de hoje até fim do mês ──
+    const remainingInvoices = await prisma.invoice.findMany({
+      where: {
+        userId: user.id,
+        status: { in: ['OPEN', 'CLOSED', 'OVERDUE'] },
+        dueDate: { gte: todayMid, lte: eomMid },
+      },
+      select: { total: true },
+    })
+    const remainingInvoiceTotal = remainingInvoices.reduce((s, i) => s + Number(i.total), 0)
+
+    // ── Estocástico: média diária de gastos NÃO-recorrentes em CASH ──
+    // (não-recorrentes = sem recurringTransactionId; cash = sem invoiceId,
+    // pois faturas já são contadas como pagamentos determinísticos)
+    const thirtyDaysAgo = new Date(todayMid)
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const past30CashExpenses = await prisma.transaction.findMany({
+      where: {
+        userId: user.id,
+        type: 'EXPENSE',
+        date: { gte: thirtyDaysAgo, lte: now },
+        recurringTransactionId: null,
+        invoiceId: null,
+      },
+      select: { amount: true },
+    })
+    const past30Total = past30CashExpenses.reduce((s, t) => s + Number(t.amount), 0)
+    const dailyMean = past30Total / 30
+    const expectedSpend = dailyMean * daysRemaining
+
+    // Esperado (central): saldo + receitas determinísticas − despesas
+    // determinísticas − faturas vencendo − gasto não-recorrente projetado
+    const expected = totalBalance + remainingIncome - remainingExpense - remainingInvoiceTotal - expectedSpend
+
+    // Pessimista (interno, pro chip): assume +30% acima da média de gasto.
+    // Não exibimos esse número. Só usamos pra decidir severity:
+    //   rose: esperado < 0       → "fecha o mês no vermelho"
+    //   amber: pessimista < 0    → "vai ficar apertado"
+    //   emerald: pessimista ≥ 0  → "termina o mês no azul"
+    const pessimistic = expected - dailyMean * 0.3 * daysRemaining
+
+    let severity: 'positive' | 'tight' | 'negative'
+    if (expected < 0) severity = 'negative'
+    else if (pessimistic < 0) severity = 'tight'
+    else severity = 'positive'
+
+    // Esconde quando: amostra muito rasa OU mês quase acabou
+    const shouldShow = past30CashExpenses.length >= 10 && daysRemaining > 3
+
+    forecast = shouldShow ? {
+      expected,
+      severity,
+      daysRemaining,
+      // Pra frase acionável: total de contas/faturas pra pagar restantes
+      remainingBills: remainingExpense + remainingInvoiceTotal,
+      eomDate: eomMid.toISOString(),
+    } : null
+  }
+
   // Calculate deltas vs previous month
   const prevMonth = monthlyData.length >= 2 ? monthlyData[monthlyData.length - 2] : null
   const currentMonth = monthlyData[monthlyData.length - 1]
@@ -345,6 +444,7 @@ export async function GET(request: NextRequest) {
       // novos campos pra os 3 cards do dashboard
       accounts,
       upcomingBills,
+      forecast,
       latestInsight,
       // contexto pra empty state evolutivo do insight
       insightContext: {

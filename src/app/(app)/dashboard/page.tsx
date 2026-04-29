@@ -11,6 +11,7 @@ import { PeriodSelector } from '@/components/dashboard/period-selector'
 import { WeeklyInsightCard } from '@/components/dashboard/weekly-insight-card'
 import { UpcomingBillsCard } from '@/components/dashboard/upcoming-bills-card'
 import { AccountsBalanceCard } from '@/components/dashboard/accounts-balance-card'
+import { ForecastCard } from '@/components/dashboard/forecast-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { RefreshCw } from 'lucide-react'
@@ -126,6 +127,10 @@ export default function DashboardPage() {
         incomeSpark={data?.incomeSpark ?? []}
         expenseSpark={data?.expenseSpark ?? []}
       />
+
+      {/* Forecast — onde o saldo termina o mês. Hidden quando amostra rasa
+          ou faltam ≤3 dias. Só aparece pro mês corrente. */}
+      <ForecastCard forecast={data?.forecast ?? null} />
 
       {/* Próximas contas + Saldo por conta — par acionável */}
       <div className="grid gap-6 lg:grid-cols-2">
