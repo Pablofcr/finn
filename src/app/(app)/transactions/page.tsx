@@ -1,19 +1,17 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { formatCurrency, groupByDate, cn } from '@/lib/utils'
-import { Plus, SearchX, Trash2, Pencil, ArrowLeftRight, Banknote, Receipt } from 'lucide-react'
+import {
+  Plus, SearchX, Trash2, Pencil, ArrowLeftRight, Banknote, Receipt,
+  Repeat, Layers,
+} from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { RecurringTab } from '@/components/transactions/recurring-tab'
 import {
   TransactionFilters,
@@ -21,10 +19,13 @@ import {
   type TransactionFiltersValue,
 } from '@/components/transactions/transaction-filters'
 import { getCategoryIcon } from '@/lib/category-icon'
+import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
 const INCOME_FALLBACK_COLOR = '#22c55e'
 const EXPENSE_FALLBACK_COLOR = '#64748b'
 const TRANSFER_FALLBACK_COLOR = '#3b82f6'
+
+type PaymentMethod = 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER'
 
 interface Transaction {
   id: string
@@ -32,8 +33,26 @@ interface Transaction {
   amount: number | string
   type: 'INCOME' | 'EXPENSE' | 'TRANSFER'
   date: string
+  paymentMethod?: PaymentMethod
+  invoiceId?: string | null
+  recurringTransactionId?: string | null
+  installment?: {
+    installmentNumber: number
+    totalInstallments: number
+    groupId: string
+  } | null
   category?: { id: string; name: string; icon?: string; color?: string }
   account?: { id: string; name: string; type?: string; color?: string }
+}
+
+// Cor de cada método — neutro pra não competir com sinal+cor do valor
+const METHOD_BADGE_STYLE: Record<PaymentMethod, string> = {
+  PIX: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
+  DEBIT: 'bg-slate-500/10 text-slate-600 dark:text-slate-400',
+  CREDIT: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  CASH: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  BOLETO: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  TRANSFER: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
 }
 
 function TransactionRow({ t, onDelete }: { t: Transaction; onDelete: () => void }) {
@@ -41,8 +60,10 @@ function TransactionRow({ t, onDelete }: { t: Transaction; onDelete: () => void 
   const isIncome = t.type === 'INCOME'
   const isExpense = t.type === 'EXPENSE'
   const isTransfer = t.type === 'TRANSFER'
+  const isRecurring = !!t.recurringTransactionId
+  const installment = t.installment
 
-  // Pick icon: category icon if present, else type-based fallback (mesma lógica do RecentTransactions do dashboard)
+  // Pick icon: category icon if present, else type-based fallback
   const Icon = hasCategory
     ? getCategoryIcon(t.category!.icon)
     : isIncome
@@ -69,12 +90,44 @@ function TransactionRow({ t, onDelete }: { t: Transaction; onDelete: () => void 
           <Icon className="h-[18px] w-[18px]" style={{ color }} strokeWidth={1.75} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-medium truncate">{t.description}</p>
-          <p className="text-xs text-muted-foreground truncate mt-0.5">
-            <span>{t.category?.name || 'Sem categoria'}</span>
-            <span className="mx-1.5 text-muted-foreground/50">·</span>
-            <span>{t.account?.name}</span>
-          </p>
+          {/* Linha 1: descrição + indicators essenciais inline */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <p className="text-[14px] font-medium truncate">{t.description}</p>
+            {isRecurring && (
+              <span
+                className="inline-flex items-center justify-center h-4 w-4 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400 shrink-0"
+                title="Lançamento recorrente"
+                aria-label="Lançamento recorrente"
+              >
+                <Repeat className="h-2.5 w-2.5" strokeWidth={2.5} />
+              </span>
+            )}
+          </div>
+          {/* Linha 2: categoria · conta · método · parcela */}
+          <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground flex-wrap">
+            <span className="truncate">{t.category?.name || 'Sem categoria'}</span>
+            <span className="text-muted-foreground/50">·</span>
+            <span className="truncate">{t.account?.name}</span>
+            {t.paymentMethod && t.paymentMethod !== 'DEBIT' && (
+              <span
+                className={cn(
+                  'inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold',
+                  METHOD_BADGE_STYLE[t.paymentMethod] || METHOD_BADGE_STYLE.DEBIT,
+                )}
+              >
+                {PAYMENT_METHOD_LABELS[t.paymentMethod]}
+              </span>
+            )}
+            {installment && installment.totalInstallments > 1 && (
+              <span
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 tabular-nums"
+                title={`Parcela ${installment.installmentNumber} de ${installment.totalInstallments}`}
+              >
+                <Layers className="h-2.5 w-2.5" strokeWidth={2.5} />
+                {installment.installmentNumber}/{installment.totalInstallments}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -98,32 +151,15 @@ function TransactionRow({ t, onDelete }: { t: Transaction; onDelete: () => void 
               <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
             </Button>
           </Link>
-          <AlertDialog>
-            <AlertDialogTrigger render={
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                aria-label="Excluir lançamento"
-              />
-            }>
-              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Excluir esse lançamento?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Some daqui e dos relatórios. Não dá pra desfazer.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Manter</AlertDialogCancel>
-                <AlertDialogAction onClick={onDelete}>
-                  Excluir
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onDelete}
+            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            aria-label="Excluir lançamento"
+          >
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+          </Button>
         </div>
       </div>
     </div>
@@ -178,6 +214,11 @@ export default function TransactionsPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
 
+  // Optimistic delete — IDs sumindo da UI durante a janela de Undo (5s).
+  // Se Undo for clicado, removemos do set; se 5s passarem, dispara DELETE de fato.
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set())
+  const undoneRef = useRef<Set<string>>(new Set())
+
   const fetchTransactions = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page), pageSize: '20' })
@@ -208,7 +249,6 @@ export default function TransactionsPage() {
     fetchTransactions()
   }, [fetchTransactions])
 
-  // Reset pra página 1 sempre que mudam os filtros
   function handleFiltersChange(v: TransactionFiltersValue) {
     setFilters(v)
     setPage(1)
@@ -219,23 +259,72 @@ export default function TransactionsPage() {
     setPage(1)
   }
 
-  async function handleDelete(id: string) {
-    try {
-      const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
-      if (res.ok) {
-        toast.success('Pronto, lançamento removido.')
-        fetchTransactions()
-      } else {
-        toast.error('Não rolou agora. Tenta de novo em instantes.')
+  /**
+   * Delete optimista com Undo (Aza Raskin pattern).
+   * Esconde a transação imediatamente, mostra toast "Lançamento removido"
+   * com botão "Desfazer" por 5s. Se clicar Desfazer, restaura. Se 5s
+   * passarem sem ação, manda DELETE de verdade.
+   */
+  function handleDelete(id: string) {
+    // Marca como pendente — some da UI imediatamente
+    setPendingDeleteIds((prev) => new Set(prev).add(id))
+    undoneRef.current.delete(id)
+
+    toast('Lançamento removido', {
+      action: {
+        label: 'Desfazer',
+        onClick: () => {
+          undoneRef.current.add(id)
+          setPendingDeleteIds((prev) => {
+            const next = new Set(prev)
+            next.delete(id)
+            return next
+          })
+        },
+      },
+      duration: 5000,
+    })
+
+    // Após 5s, commita o delete se não foi desfeito
+    setTimeout(async () => {
+      if (undoneRef.current.has(id)) {
+        undoneRef.current.delete(id)
+        return
       }
-    } catch {
-      toast.error('Não rolou agora. Tenta de novo em instantes.')
-    }
+      try {
+        const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
+        if (res.ok) {
+          // Refetch atualiza totais
+          fetchTransactions()
+        } else {
+          // Restaura visualmente em caso de falha
+          setPendingDeleteIds((prev) => {
+            const next = new Set(prev)
+            next.delete(id)
+            return next
+          })
+          toast.error('Não rolou. Voltei o lançamento.')
+        }
+      } catch {
+        setPendingDeleteIds((prev) => {
+          const next = new Set(prev)
+          next.delete(id)
+          return next
+        })
+        toast.error('Não rolou. Voltei o lançamento.')
+      }
+    }, 5000)
   }
 
-  // Agrupa por dia e calcula subtotal de cada grupo
+  // Lista visível: oculta os IDs em pendingDelete (durante a janela de Undo)
+  const visibleTransactions = useMemo(
+    () => transactions.filter((t) => !pendingDeleteIds.has(t.id)),
+    [transactions, pendingDeleteIds],
+  )
+
+  // Agrupa visível por dia e calcula subtotal de cada grupo
   const groupedWithSubtotals = useMemo(() => {
-    const groups = groupByDate(transactions as any)
+    const groups = groupByDate(visibleTransactions as any)
     return groups.map((g) => {
       const groupItems = g.items as unknown as Transaction[]
       const dayIncome = groupItems
@@ -247,7 +336,7 @@ export default function TransactionsPage() {
       const net = dayIncome - dayExpense
       return { label: g.label, items: groupItems, count: groupItems.length, net }
     })
-  }, [transactions])
+  }, [visibleTransactions])
 
   const hasFilters =
     !!filters.search ||
@@ -279,7 +368,7 @@ export default function TransactionsPage() {
         <TabsContent value="transactions">
           <div className="space-y-5 pt-4">
             {/* Totalizer — receitas + despesas + saldo do filtro atual */}
-            {!loading && (transactions.length > 0 || hasFilters) && <TotalizerStrip totals={totals} />}
+            {!loading && (visibleTransactions.length > 0 || hasFilters) && <TotalizerStrip totals={totals} />}
 
             {/* Filtros (busca + tipo + filtros avançados em sheet + chips ativos) */}
             <TransactionFilters value={filters} onChange={handleFiltersChange} />
@@ -290,7 +379,7 @@ export default function TransactionsPage() {
                   <Skeleton key={i} className="h-16 rounded-xl" />
                 ))}
               </div>
-            ) : transactions.length === 0 ? (
+            ) : visibleTransactions.length === 0 ? (
               hasFilters ? (
                 /* Empty state — filtro vazio (compacto, recovery) */
                 <Card>
