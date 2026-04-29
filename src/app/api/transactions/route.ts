@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     if (endDate) where.date.lte = new Date(endDate)
   }
 
-  const [transactions, total] = await Promise.all([
+  const [transactions, total, sums] = await Promise.all([
     prisma.transaction.findMany({
       where,
       include: {
@@ -45,11 +45,26 @@ export async function GET(request: NextRequest) {
       take: pageSize,
     }),
     prisma.transaction.count({ where }),
+    // Totais do filtro atual — independente da paginação. Alimenta o totalizer.
+    prisma.transaction.groupBy({
+      where,
+      by: ['type'],
+      _sum: { amount: true },
+    }),
   ])
+
+  const incomeSum = Number(sums.find((s) => s.type === 'INCOME')?._sum.amount ?? 0)
+  const expenseSum = Number(sums.find((s) => s.type === 'EXPENSE')?._sum.amount ?? 0)
+  const totals = {
+    income: incomeSum,
+    expense: expenseSum,
+    net: incomeSum - expenseSum,
+  }
 
   return Response.json({
     data: transactions,
     total,
+    totals,
     page,
     pageSize,
     totalPages: Math.ceil(total / pageSize),
