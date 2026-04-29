@@ -14,6 +14,12 @@ export type TransactionSummary = {
   paymentMethod: PaymentMethod
   categoryName: string | null
   accountName: string
+  /** Quando essa transação veio de uma baixa de recorrência (mark_recurring_as_paid),
+   * traz o ID da recorrência. Permite ao agente reconhecer "já dei baixa nessa". */
+  recurringTransactionId: string | null
+  /** Timestamp de quando a transação foi registrada (não data do evento).
+   * Permite ao agente diferenciar "lançado há minutos" de "lançado dia X". ISO. */
+  createdAt: string
 }
 
 export type PendingBill = {
@@ -211,6 +217,8 @@ export async function getTransactionsByPeriod(
     paymentMethod: t.paymentMethod,
     categoryName: t.category?.name ?? null,
     accountName: t.account?.name ?? '',
+    recurringTransactionId: t.recurringTransactionId ?? null,
+    createdAt: t.createdAt.toISOString(),
   }))
 }
 
@@ -345,6 +353,8 @@ export async function getTopExpenses(
     paymentMethod: t.paymentMethod,
     categoryName: t.category?.name ?? null,
     accountName: t.account?.name ?? '',
+    recurringTransactionId: t.recurringTransactionId ?? null,
+    createdAt: t.createdAt.toISOString(),
   }))
 }
 
@@ -532,5 +542,7 @@ export async function searchTransactions(
     paymentMethod: t.paymentMethod,
     categoryName: t.category?.name ?? null,
     accountName: t.account?.name ?? '',
+    recurringTransactionId: t.recurringTransactionId ?? null,
+    createdAt: t.createdAt.toISOString(),
   }))
 }
