@@ -195,9 +195,12 @@ export default function TransactionsPage() {
   const [totals, setTotals] = useState<Totals>({ income: 0, expense: 0, net: 0 })
   const [loading, setLoading] = useState(true) // primeira carga ou troca de filtro
   const [loadingMore, setLoadingMore] = useState(false) // páginas seguintes (infinite scroll)
+  const [error, setError] = useState(false) // primeira carga falhou — distingue de "lista vazia"
   const [filters, setFilters] = useState<TransactionFiltersValue>(EMPTY_FILTERS)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  // Bumpa esse contador pra forçar re-fetch (botão "Tentar novamente")
+  const [retryTick, setRetryTick] = useState(0)
 
   // Optimistic delete — IDs sumindo da UI durante a janela de Undo (8s).
   // Se Undo for clicado, removemos do set; se 8s passarem, dispara DELETE de fato.
@@ -228,6 +231,7 @@ export default function TransactionsPage() {
     let cancelled = false
     setPage(1)
     setLoading(true)
+    setError(false)
     const params = buildSearchParams(1)
     fetch(`/api/transactions?${params}`)
       .then(r => r.ok ? r.json() : Promise.reject())
@@ -238,14 +242,16 @@ export default function TransactionsPage() {
         setHasMore(result.page < result.totalPages)
       })
       .catch(() => {
-        if (!cancelled) toast.error('Não conseguimos carregar suas transações. Verifique sua conexão e tente novamente.')
+        if (cancelled) return
+        setError(true)
+        toast.error('Não conseguimos carregar suas transações. Verifique sua conexão e tente novamente.')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters])
+  }, [filters, retryTick])
 
   // Carrega páginas seguintes (append). Disparado pelo IntersectionObserver.
   useEffect(() => {
@@ -433,6 +439,27 @@ export default function TransactionsPage() {
                   <Skeleton key={i} className="h-16 rounded-xl" />
                 ))}
               </div>
+            ) : error ? (
+              /* Error state — fetch falhou. Distingue de "lista vazia". */
+              <Card>
+                <CardContent className="flex flex-col items-center text-center py-10 px-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500/10 mb-3">
+                    <SearchX className="h-6 w-6 text-rose-500" strokeWidth={1.75} />
+                  </div>
+                  <p className="text-sm font-medium">Não rolou carregar suas transações</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                    Pode ser conexão ou a gente tá fora do ar. Tenta de novo.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRetryTick((n) => n + 1)}
+                    className="mt-4 gap-1.5 text-xs"
+                  >
+                    Tentar novamente
+                  </Button>
+                </CardContent>
+              </Card>
             ) : visibleTransactions.length === 0 ? (
               hasFilters ? (
                 /* Empty state — filtro vazio (compacto, recovery) */
