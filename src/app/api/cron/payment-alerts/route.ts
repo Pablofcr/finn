@@ -30,11 +30,18 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
     ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
     : threeDaysFromNow
 
+  // Lower bound: start of today UTC, so we catch recurrences whose nextDueDate
+  // is stored as 00:00 UTC of the current day. Using `gte: now` would filter
+  // those out (since the cron typically runs hours after midnight UTC), and
+  // today's-due payments would silently never alert. Items truly overdue from
+  // before today (yesterday or earlier) are still excluded.
+  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0))
+
   const upcomingPayments = await prisma.recurringTransaction.findMany({
     where: {
       status: 'ACTIVE',
       nextDueDate: {
-        gte: now,
+        gte: startOfToday,
         lte: maxDate,
       },
       OR: [
@@ -224,7 +231,7 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
   const unpaidInvoices = await prisma.invoice.findMany({
     where: {
       status: { in: ['OPEN', 'CLOSED', 'OVERDUE'] },
-      dueDate: { gte: now, lte: invoiceEnd },
+      dueDate: { gte: startOfToday, lte: invoiceEnd },
       total: { gt: 0 },
     },
     include: {
