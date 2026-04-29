@@ -387,11 +387,14 @@ export function RecurringTab() {
               )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="block">Confirmar automaticamente</Label>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Lança sozinho sem perguntar.
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <Label className="block">Lançar sozinho na data</Label>
+                <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                  No dia do vencimento, eu crio a transação automaticamente
+                  e te aviso pelo WhatsApp depois — sem perguntar antes.
+                  Ideal pra <strong>assinaturas no cartão</strong> (Netflix,
+                  Spotify) e <strong>contas fixas</strong> (aluguel, plano de saúde).
                 </p>
               </div>
               <Switch checked={autoConfirm} onCheckedChange={setAutoConfirm} />

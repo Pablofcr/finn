@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { sendBotPaymentAlert, sendBotMessage } from '@/lib/messaging-adapter'
 import type { Platform } from '@/lib/messaging-adapter'
+import { markRecurringAsPaid } from '@/lib/finance-actions'
+import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
 export async function GET(request: NextRequest) {
   // Verify cron secret to prevent unauthorized calls
@@ -56,6 +58,7 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
 
   let alertsSent = 0
   let alertsSkipped = 0
+  let autoLaunched = 0  // recorrências com autoConfirm=true lançadas automaticamente
   const failures: { id: string; reason: string }[] = []
 
   for (const payment of upcomingPayments) {
@@ -84,6 +87,76 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
     const daysUntilDue = Math.ceil(
       (payment.nextDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     )
+
+    // ─── Auto-launch: recorrências marcadas como "Lança sozinho" ───────────
+    // Quando autoConfirm=true E vence hoje, cria a transação automaticamente
+    // sem perguntar. Usuário recebe WhatsApp pós-fato explicando o que foi
+    // lançado e onde (cartão Nubank fatura 10/05, conta Itaú débito, etc).
+    // Só dispara no morning run pra evitar duplicação se o evening rodar.
+    if (payment.autoConfirm && daysUntilDue === 0 && period === 'morning') {
+      // Idempotência: se já existe transação dessa recorrência hoje, skip
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+      const alreadyToday = await prisma.transaction.findFirst({
+        where: {
+          recurringTransactionId: payment.id,
+          date: { gte: startOfDay, lte: endOfDay },
+        },
+        select: { id: true },
+      })
+
+      if (alreadyToday) {
+        alertsSkipped++
+        continue
+      }
+
+      try {
+        const result = await markRecurringAsPaid(payment.userId, payment.id)
+        if (result.ok) {
+          // Mensagem pós-fato: explica o que foi lançado e onde foi parar.
+          const formattedAmount = new Intl.NumberFormat('pt-BR', {
+            style: 'currency', currency: 'BRL',
+          }).format(Number(payment.amount))
+          const accountLine = result.accountName
+            ? ` na conta *${result.accountName}*`
+            : ''
+          const methodLabel = result.paymentMethod
+            ? ` · _${PAYMENT_METHOD_LABELS[result.paymentMethod] || result.paymentMethod}_`
+            : ''
+
+          const text =
+            `🤖 *Lancei sozinho:*\n\n` +
+            `📌 *${payment.description}* — *${formattedAmount}*${accountLine}${methodLabel}\n\n` +
+            `Saldo já atualizado. Se foi engano, abre *Transações* no app e exclui.`
+
+          await sendBotMessage(connection.platform as Platform, connection.platformUserId, text)
+
+          await prisma.botMessage.create({
+            data: {
+              userId: payment.userId,
+              connectionId: connection.id,
+              direction: 'OUTBOUND',
+              rawContent: `🤖 Auto-lançado: ${payment.description} - ${formattedAmount}`,
+              status: 'CONFIRMED',
+            },
+          })
+
+          autoLaunched++
+          continue  // skip alerta normal — já foi lançado
+        } else {
+          // Auto-launch falhou (sem conta, etc.) — fallback pro alerta normal
+          console.warn(
+            `[payment-alerts:${period}] Auto-launch failed for recurring ${payment.id}: ${result.error}. Falling back to normal alert.`,
+          )
+        }
+      } catch (err) {
+        console.error(
+          `[payment-alerts:${period}] Auto-launch error for recurring ${payment.id}:`,
+          err,
+        )
+        // Fallback pro alerta normal — não impede o fluxo
+      }
+    }
 
     // Morning fires on 0, 1 and 3 days out. Evening only on due day.
     const shouldAlert = period === 'evening'
@@ -224,6 +297,7 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
   const finishedAt = new Date()
   console.log(`[payment-alerts:${period}] Done:`, {
     sent: alertsSent,
+    autoLaunched,
     skipped: alertsSkipped,
     failed: failures.length,
     invoiceSent,
@@ -255,7 +329,7 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
   return Response.json({
     data: {
       period,
-      payments: { checked: upcomingPayments.length, sent: alertsSent, skipped: alertsSkipped, failures },
+      payments: { checked: upcomingPayments.length, sent: alertsSent, autoLaunched, skipped: alertsSkipped, failures },
       invoices: { checked: unpaidInvoices.length, sent: invoiceSent, skipped: invoiceSkipped, failures: invoiceFailures },
       timestamp: now.toISOString(),
     },

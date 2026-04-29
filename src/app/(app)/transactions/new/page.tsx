@@ -504,8 +504,15 @@ export default function NewTransactionPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <Label>Confirmar automaticamente</Label>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <Label className="block">Lançar sozinho na data</Label>
+                        <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                          No dia do vencimento, eu crio a transação automaticamente
+                          e te aviso depois pelo WhatsApp. Ideal pra assinaturas
+                          no cartão e contas fixas.
+                        </p>
+                      </div>
                       <Switch checked={autoConfirm} onCheckedChange={setAutoConfirm} />
                     </div>
                   </div>
