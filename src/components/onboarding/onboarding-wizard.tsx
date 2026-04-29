@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ACCOUNT_TYPE_LABELS, TRANSACTION_TYPE_LABELS, RECURRENCE_LABELS, COLORS } from '@/lib/constants'
-import { cn } from '@/lib/utils'
+import { cn, formatLocalDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
   Wallet,
@@ -92,7 +92,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
   const [txAmount, setTxAmount] = useState('')
   const [txDescription, setTxDescription] = useState('')
   const [txCategoryId, setTxCategoryId] = useState('')
-  const [txDate, setTxDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [txDate, setTxDate] = useState(() => formatLocalDate())
   const [txRecurring, setTxRecurring] = useState(false)
   const [txFrequency, setTxFrequency] = useState('MONTHLY')
   const [categories, setCategories] = useState<Category[]>([])

@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { cn, formatLocalDate } from '@/lib/utils'
 import { RECURRENCE_LABELS, PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
 function formatCurrencyInput(cents: number): string {
@@ -58,7 +58,7 @@ export default function NewTransactionPage() {
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       type: 'EXPENSE',
-      date: new Date().toISOString().split('T')[0],
+      date: formatLocalDate(),  // data local — não UTC (evita "amanhã" à noite)
       amount: 0,
       paymentMethod: 'DEBIT',
     },
@@ -148,7 +148,7 @@ export default function NewTransactionPage() {
               type: t.type,
               amount: amt,
               description: t.description,
-              date: new Date(t.date).toISOString().split('T')[0],
+              date: formatLocalDate(new Date(t.date)),
               accountId: t.accountId,
               categoryId: t.categoryId || undefined,
               paymentMethod: t.paymentMethod || 'DEBIT',

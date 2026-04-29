@@ -17,6 +17,19 @@ export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(dateObj)
 }
 
+/**
+ * Retorna a data no formato YYYY-MM-DD usando o **fuso local** do usuário
+ * — não UTC. Importante pra inputs `<input type="date">` em formulários:
+ * usar `toISOString().split('T')[0]` causa bug à noite (UTC já virou pro
+ * dia seguinte enquanto local ainda é hoje).
+ */
+export function formatLocalDate(date: Date = new Date()): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export function formatDateTime(date: string | Date): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date
   return new Intl.DateTimeFormat('pt-BR', {
