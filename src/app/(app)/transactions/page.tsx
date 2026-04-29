@@ -8,8 +8,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { formatCurrency, groupByDate, cn } from '@/lib/utils'
 import {
   Plus, SearchX, ArrowLeftRight, Banknote, Receipt,
-  Repeat, Layers,
+  Repeat, Layers, Download,
 } from 'lucide-react'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { RecurringTab } from '@/components/transactions/recurring-tab'
@@ -193,6 +198,7 @@ const PAGE_SIZE = 20
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [totals, setTotals] = useState<Totals>({ income: 0, expense: 0, net: 0 })
+  const [totalCount, setTotalCount] = useState(0) // total no filtro atual (pra export label + confirm)
   const [loading, setLoading] = useState(true) // primeira carga ou troca de filtro
   const [loadingMore, setLoadingMore] = useState(false) // páginas seguintes (infinite scroll)
   const [error, setError] = useState(false) // primeira carga falhou — distingue de "lista vazia"
@@ -201,6 +207,8 @@ export default function TransactionsPage() {
   const [hasMore, setHasMore] = useState(false)
   // Bumpa esse contador pra forçar re-fetch (botão "Tentar novamente")
   const [retryTick, setRetryTick] = useState(0)
+  // Confirma export quando >1000 linhas (UX: evita clique acidental num CSV gigante)
+  const [exportConfirmOpen, setExportConfirmOpen] = useState(false)
 
   // Optimistic delete — IDs sumindo da UI durante a janela de Undo (8s).
   // Se Undo for clicado, removemos do set; se 8s passarem, dispara DELETE de fato.
@@ -240,6 +248,7 @@ export default function TransactionsPage() {
         setTransactions(result.data)
         setTotals(result.totals || { income: 0, expense: 0, net: 0 })
         setHasMore(result.page < result.totalPages)
+        setTotalCount(result.total ?? 0)
       })
       .catch(() => {
         if (cancelled) return
@@ -296,6 +305,26 @@ export default function TransactionsPage() {
 
   function clearAllFilters() {
     setFilters(EMPTY_FILTERS)
+  }
+
+  // Export CSV: dispara download direto. Se >1000 linhas, pede confirm primeiro.
+  function triggerExport() {
+    const params = buildSearchParams(1)
+    params.delete('page')
+    params.delete('pageSize')
+    // Trigger download via navegação direta — o endpoint manda Content-Disposition
+    window.location.href = `/api/transactions/export?${params}`
+  }
+  function handleExportClick() {
+    if (totalCount === 0) {
+      toast.error('Nenhuma transação pra exportar com esses filtros.')
+      return
+    }
+    if (totalCount > 1000) {
+      setExportConfirmOpen(true)
+      return
+    }
+    triggerExport()
   }
 
   /**
@@ -409,14 +438,26 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">Transações</h1>
-        <Link href="/transactions/new">
-          <Button className="gap-2 gradient-primary shadow-md shadow-primary/25 border-0">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nova Transação</span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExportClick}
+            disabled={loading || totalCount === 0}
+            className="gap-2"
+            title={totalCount === 0 ? 'Nada pra exportar' : `Exportar ${totalCount} ${totalCount === 1 ? 'transação' : 'transações'}`}
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Exportar</span>
           </Button>
-        </Link>
+          <Link href="/transactions/new">
+            <Button className="gap-2 gradient-primary shadow-md shadow-primary/25 border-0">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Nova Transação</span>
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Tabs defaultValue="transactions">
@@ -593,6 +634,33 @@ export default function TransactionsPage() {
         onOpenChange={(open) => { if (!open) setSelectedTx(null) }}
         onDelete={handleDelete}
       />
+
+      {/* Confirm de export pra > 1000 linhas — guardrail anti-clique-acidental */}
+      <AlertDialog open={exportConfirmOpen} onOpenChange={setExportConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Exportar {totalCount.toLocaleString('pt-BR')} transações como CSV?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Vai gerar um arquivo grande. Confirma se é isso mesmo? Você pode
+              estreitar com filtros (período, conta, categoria) e baixar bem
+              menos linhas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setExportConfirmOpen(false)
+                triggerExport()
+              }}
+            >
+              Exportar tudo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
