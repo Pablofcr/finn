@@ -79,32 +79,44 @@ export async function sendWhatsAppInteractive({ to, body, buttons }: SendInterac
 
 /**
  * Mensagens de boas-vindas após o usuário conectar o WhatsApp.
- * Copy escrita pelo copy-squad/andre-chaperon — soap-opera storytelling
- * focado em fazer o user sentir o "trunfo" de mandar áudio + foto.
+ * Copy v2 do copy-squad/andre-chaperon após feedback do Pablo (v1 estava
+ * "sem vida"). Mais energia, emojis com função, e diálogo simulado pra
+ * o user VER o loop antes de tentar.
  *
- * Usada pelo webhook (handleVerification) e por /api/admin/send-welcome-test
- * (pra Pablo poder re-disparar pra ele mesmo sem precisar reconectar).
+ * Usada pelo webhook (handleVerification) e por /api/admin/send-welcome-test.
  */
 export async function sendWhatsAppWelcomeMessages(to: string, firstName: string) {
   await sendWhatsAppMessage({
     to,
     text:
-      `Beleza, ${firstName}, tô aqui. 👋\n\n` +
-      `Antes de qualquer coisa: a forma mais rápida de me usar é por áudio. Você grava igual mandaria pra um amigo, eu entendo e já registro.\n\n` +
-      `Tenta agora. Aperta o microfone aí embaixo e fala assim:\n\n` +
-      `_"Almocei 32 reais hoje no PIX."_\n\n` +
-      `Pode ser do seu jeito também — _"paguei 89 no mercado no débito"_, _"Uber de 15 reais agora"_, _"recebi 1.200 de freela no PIX"_. Não precisa pensar no formato. Fala como você fala.\n\n` +
-      `Eu cuido do resto: categoria, conta, data. Se eu errar alguma coisa, você me corrige numa frase e a gente segue.\n\n` +
-      `Manda esse primeiro áudio e me deixa te mostrar.`,
+      `Oi ${firstName}! 👋 Que bom te ver por aqui.\n\n` +
+      `Olha, o jeito mais rápido de usar o Finn é *mandando áudio*. 🎙 Tipo conversar comigo no zap mesmo — sem planilha, sem categoria, sem nada.\n\n` +
+      `Solta um exemplo de como vai ser:\n\n` +
+      `Você 🎙 _"acabei de almoçar, 32 reais no pix"_\n` +
+      `Finn ✅ Almoço · R$ 32,00 · PIX · hoje\n` +
+      `       _Saldo atualizado._\n\n` +
+      `Você 🎙 _"caiu meu salário, 4.500"_\n` +
+      `Finn ✅ Salário · +R$ 4.500,00 · hoje\n` +
+      `       _Tá no caixa._\n\n` +
+      `É isso. Você fala do seu jeito, eu organizo. Pode ser no meio do trânsito, saindo do mercado, antes de dormir.\n\n` +
+      `Manda um áudio agora me contando *qualquer movimentação de hoje* — uma compra, um pix que você fez, um valor que recebeu. Eu te mostro como fica. 👇`,
   })
 
   await sendWhatsAppMessage({
     to,
     text:
-      `Ah, e se você tiver num lugar que não dá pra falar — reunião, ônibus cheio, bebê dormindo — só digita.\n\n` +
-      `Tipo: _"café 8 reais"_. Tá registrado.\n\n` +
-      `E quando você guardar o cupom da padaria, da farmácia, de qualquer lugar — só fotografa e me manda. Eu leio o valor, a data, a categoria. Você nem precisa digitar.\n\n` +
-      `Áudio, texto, foto — o que for mais fácil no momento. Manda a primeira pra gente começar.`,
+      `E se não rolar áudio, ${firstName}, sem problema. 🙌\n\n` +
+      `*Texto também funciona:*\n\n` +
+      `Você: _"uber 18,90 crédito"_\n` +
+      `Finn ✅ Transporte · R$ 18,90 · Crédito · hoje\n\n` +
+      `*Foto de comprovante / nota também:* 📸\n\n` +
+      `Você: _[manda print do PIX ou cupom fiscal]_\n` +
+      `Finn ✅ Lê o valor, lê o estabelecimento, categoriza sozinho.\n\n` +
+      `Resumindo o cardápio:\n` +
+      `🎙 Áudio (mais rápido)\n` +
+      `✍️ Texto (mais discreto)\n` +
+      `📸 Foto (zero esforço)\n\n` +
+      `Escolhe o que combinar com o teu momento e *manda a primeira agora*. Pode ser bobeira — um café, um pix de R$ 5, qualquer coisa. Só pra você ver acontecer.`,
   })
 }
 
