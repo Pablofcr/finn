@@ -24,6 +24,10 @@ import {
   Sparkles,
   CircleDollarSign,
   Repeat,
+  MessageCircle,
+  Mic,
+  Camera,
+  Type,
 } from 'lucide-react'
 
 const STEPS = [
@@ -544,23 +548,48 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
               </div>
             )}
 
-            {/* Step 4 - All Done */}
+            {/* Step 4 — Tudo pronto + incentivo a conectar WhatsApp.
+                (UX review: absorber o WhatsApp aqui em vez de criar 6º step
+                — momentum tá no pico depois que o user criou a 1ª transação.) */}
             {step === 4 && (
-              <div className="flex flex-col items-center text-center space-y-6 py-4">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
-                  <Check className="h-10 w-10 text-success" />
+              <div className="flex flex-col items-center text-center space-y-5 py-2">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10">
+                  <Check className="h-7 w-7 text-success" />
                 </div>
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-bold">Tudo pronto!</h2>
-                  <p className="text-muted-foreground">
-                    A partir de agora, cada real que entra e sai está no seu radar.
+                <div className="space-y-1">
+                  <h2 className="text-xl font-bold">Tudo pronto!</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Falta só uma coisa que muda o jogo: registrar pelo WhatsApp em 5 segundos — sem precisar abrir o app.
                   </p>
                 </div>
-                <div className="w-full space-y-3">
-                  <Button onClick={handleFinish} className="w-full">
-                    Explorar meu Finn
-                    <ChevronRight className="h-4 w-4" />
+
+                {/* 3 chips inline mostrando os modos de registro */}
+                <div className="flex items-center gap-2 flex-wrap justify-center pt-1">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+                    <Mic className="h-3.5 w-3.5" /> áudio
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+                    <Camera className="h-3.5 w-3.5" /> foto do cupom
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+                    <Type className="h-3.5 w-3.5" /> texto
+                  </span>
+                </div>
+
+                <div className="w-full space-y-2 pt-2">
+                  <Button
+                    onClick={() => { handleFinish(); router.push('/bot') }}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white border-0 gap-2"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Conectar WhatsApp
                   </Button>
+                  <button
+                    onClick={handleFinish}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground py-2 transition-colors"
+                  >
+                    Agora não, depois eu conecto
+                  </button>
                 </div>
               </div>
             )}

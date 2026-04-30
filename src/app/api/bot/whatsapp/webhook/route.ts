@@ -124,17 +124,28 @@ async function handleVerification(from: string, code: string) {
   const user = await prisma.user.findUnique({ where: { id: connection.userId } })
   const name = user?.name?.split(' ')[0] || 'usuário'
 
+  // ── Welcome — duas mensagens em sequência (rationale do copy-squad
+  //    @ andre-chaperon): MSG1 hero do áudio com exemplo concreto, MSG2
+  //    fecha o loop "e se eu não puder falar?" com texto como fallback.
+  //    Cada mensagem é um send separado pra criar a respiração natural.
   await sendWhatsAppMessage({
     to: from,
     text:
-      `✅ *Conectado com sucesso!*\n\n` +
-      `Olá, ${name}! Agora você pode:\n\n` +
-      `💬 Registrar transações por texto\n` +
-      `🎙 Registrar por áudio\n` +
-      `📸 Enviar foto de cupom fiscal\n` +
-      `🔔 Receber alertas de vencimento\n` +
-      `📊 Receber insights semanais da IA\n\n` +
-      `Manda sua primeira transação!`,
+      `Beleza, ${name}, tô aqui. 👋\n\n` +
+      `Antes de qualquer coisa: a forma mais rápida de me usar é por áudio. Você grava igual mandaria pra um amigo, eu entendo e já registro.\n\n` +
+      `Tenta agora. Aperta o microfone aí embaixo e fala assim:\n\n` +
+      `_"Almocei 32 reais hoje no PIX."_\n\n` +
+      `Pode ser do seu jeito também — _"paguei 89 no mercado no débito"_, _"Uber de 15 reais agora"_, _"recebi 1.200 de freela no PIX"_. Não precisa pensar no formato. Fala como você fala.\n\n` +
+      `Eu cuido do resto: categoria, conta, data. Se eu errar alguma coisa, você me corrige numa frase e a gente segue.\n\n` +
+      `Manda esse primeiro áudio e me deixa te mostrar.`,
+  })
+
+  await sendWhatsAppMessage({
+    to: from,
+    text:
+      `Ah, e se você tiver num lugar que não dá pra falar — reunião, ônibus cheio, bebê dormindo — só digita.\n\n` +
+      `Tipo: _"café 8 reais"_. Tá registrado.\n\n` +
+      `Áudio, texto, foto de cupom — o que for mais fácil no momento. Manda a primeira pra gente começar.`,
   })
 }
 

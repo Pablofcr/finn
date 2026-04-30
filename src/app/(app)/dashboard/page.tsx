@@ -12,6 +12,7 @@ import { WeeklyInsightCard } from '@/components/dashboard/weekly-insight-card'
 import { UpcomingBillsCard } from '@/components/dashboard/upcoming-bills-card'
 import { AccountsBalanceCard } from '@/components/dashboard/accounts-balance-card'
 import { ForecastCard } from '@/components/dashboard/forecast-card'
+import { WhatsAppNudgeBanner } from '@/components/dashboard/whatsapp-nudge-banner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { RefreshCw } from 'lucide-react'
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [userInfo, setUserInfo] = useState<{ whatsappConnected: boolean; whatsappNudgeDismissedCount: number } | null>(null)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -52,6 +54,24 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // Fetch user info (whatsappConnected + nudgeDismissedCount) — alimenta o banner
+  const fetchUserInfo = useCallback(async () => {
+    try {
+      const res = await fetch('/api/user')
+      if (res.ok) {
+        const result = await res.json()
+        setUserInfo({
+          whatsappConnected: !!result.data?.whatsappConnected,
+          whatsappNudgeDismissedCount: result.data?.whatsappNudgeDismissedCount ?? 0,
+        })
+      }
+    } catch { /* silent */ }
+  }, [])
+
+  useEffect(() => {
+    fetchUserInfo()
+  }, [fetchUserInfo])
 
   if (loading) {
     return (
@@ -109,6 +129,17 @@ export default function DashboardPage() {
         </div>
         <PeriodSelector month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y) }} />
       </div>
+
+      {/* Banner de incentivo a conectar WhatsApp — só aparece se ainda não
+          conectou e dispensou < 2 vezes. Acima do WeeklyInsightCard pra não
+          poluir o hero da IA. */}
+      {userInfo && (
+        <WhatsAppNudgeBanner
+          connected={userInfo.whatsappConnected}
+          dismissedCount={userInfo.whatsappNudgeDismissedCount}
+          onDismissed={fetchUserInfo}
+        />
+      )}
 
       {/* Insight da semana — hero da IA, no topo absoluto. Empty state evolui
           com base em tx desta semana + data do próximo cron domingo. */}

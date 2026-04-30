@@ -5,7 +5,20 @@ import { getAuthUser } from '@/lib/auth'
 export async function GET() {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
-  return Response.json({ data: user })
+
+  // Embute status da conexão WhatsApp pra alimentar o banner no dashboard
+  // e o step do onboarding sem request adicional.
+  const whatsappConnection = await prisma.botConnection.findFirst({
+    where: { userId: user.id, platform: 'WHATSAPP', isVerified: true },
+    select: { id: true },
+  })
+
+  return Response.json({
+    data: {
+      ...user,
+      whatsappConnected: !!whatsappConnection,
+    },
+  })
 }
 
 export async function PUT(request: NextRequest) {
