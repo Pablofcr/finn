@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
-import { sendWhatsAppMessage, sendWhatsAppInteractive, sendWhatsAppList, downloadWhatsAppMedia, markAsRead } from '@/lib/whatsapp'
+import { sendWhatsAppMessage, sendWhatsAppInteractive, sendWhatsAppList, downloadWhatsAppMedia, markAsRead, sendWhatsAppWelcomeMessages } from '@/lib/whatsapp'
 import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
 import { transcribeAudio } from '@/lib/transcribe-audio'
 import { canUseFeature, getFeatureUsage } from '@/lib/plan-limits'
@@ -124,30 +124,7 @@ async function handleVerification(from: string, code: string) {
   const user = await prisma.user.findUnique({ where: { id: connection.userId } })
   const name = user?.name?.split(' ')[0] || 'usuário'
 
-  // ── Welcome — duas mensagens em sequência (rationale do copy-squad
-  //    @ andre-chaperon): MSG1 hero do áudio com exemplo concreto, MSG2
-  //    fecha o loop "e se eu não puder falar?" com texto como fallback.
-  //    Cada mensagem é um send separado pra criar a respiração natural.
-  await sendWhatsAppMessage({
-    to: from,
-    text:
-      `Beleza, ${name}, tô aqui. 👋\n\n` +
-      `Antes de qualquer coisa: a forma mais rápida de me usar é por áudio. Você grava igual mandaria pra um amigo, eu entendo e já registro.\n\n` +
-      `Tenta agora. Aperta o microfone aí embaixo e fala assim:\n\n` +
-      `_"Almocei 32 reais hoje no PIX."_\n\n` +
-      `Pode ser do seu jeito também — _"paguei 89 no mercado no débito"_, _"Uber de 15 reais agora"_, _"recebi 1.200 de freela no PIX"_. Não precisa pensar no formato. Fala como você fala.\n\n` +
-      `Eu cuido do resto: categoria, conta, data. Se eu errar alguma coisa, você me corrige numa frase e a gente segue.\n\n` +
-      `Manda esse primeiro áudio e me deixa te mostrar.`,
-  })
-
-  await sendWhatsAppMessage({
-    to: from,
-    text:
-      `Ah, e se você tiver num lugar que não dá pra falar — reunião, ônibus cheio, bebê dormindo — só digita.\n\n` +
-      `Tipo: _"café 8 reais"_. Tá registrado.\n\n` +
-      `E quando você guardar o cupom da padaria, da farmácia, de qualquer lugar — só fotografa e me manda. Eu leio o valor, a data, a categoria. Você nem precisa digitar.\n\n` +
-      `Áudio, texto, foto — o que for mais fácil no momento. Manda a primeira pra gente começar.`,
-  })
+  await sendWhatsAppWelcomeMessages(from, name)
 }
 
 async function handleTextMessage(from: string, text: string, connection: { userId: string; id: string }) {
