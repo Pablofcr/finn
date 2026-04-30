@@ -142,6 +142,17 @@ export default function InvoicesPage() {
   const activeGrouped = groupByCard(activeInvoices)
   const paidGrouped = groupByCard(paidInvoices)
 
+  // Ordenação dentro de cada grupo:
+  // - Ativas: dueDate ascendente (mais próxima de vencer primeiro — quem
+  //   vence amanhã fica mais visível que quem vence em janeiro do ano que vem)
+  // - Pagas: dueDate descendente (histórico mais recente em cima)
+  Object.values(activeGrouped).forEach((list) => {
+    list.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+  })
+  Object.values(paidGrouped).forEach((list) => {
+    list.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime())
+  })
+
   return (
     <div className="space-y-5 animate-fade-in max-w-4xl mx-auto">
       <div>
