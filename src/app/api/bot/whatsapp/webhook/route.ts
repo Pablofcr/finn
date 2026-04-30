@@ -98,6 +98,24 @@ export async function POST(request: NextRequest) {
         await handleButtonReply(from, replyId, connection)
       }
     }
+
+    // ── Welcome MSG2 flush ──────────────────────────────────────────────
+    // Após processar a primeira mensagem do user (qualquer tipo: áudio,
+    // foto, texto-transação, query), dispara a MSG2 didática pra continuar
+    // o tutorial. Saudação já dispara MSG2 inline e marca done — nesse
+    // caso o re-fetch retorna 'done' e este block é no-op.
+    if (connection) {
+      const fresh = await prisma.botConnection.findUnique({
+        where: { id: connection.id },
+        select: { welcomeStage: true },
+      })
+      if (fresh?.welcomeStage === 'awaiting_first_message') {
+        const user = await prisma.user.findUnique({ where: { id: connection.userId } })
+        const name = user?.name?.split(' ')[0] || 'usuário'
+        await sendWhatsAppWelcomeMsg2(from, name)
+        await markWelcomeDone(connection.id)
+      }
+    }
   } catch (err) {
     console.error('WhatsApp webhook error:', err)
   }
@@ -168,20 +186,16 @@ async function handleTextMessage(
   text: string,
   connection: { userId: string; id: string; welcomeStage?: string | null },
 ) {
-  // ── Welcome flow hold ────────────────────────────────────────────────
-  // Se o user tá no estágio "esperando primeira resposta" e mandou só uma
-  // saudação ("oi", "olá"...), disparamos a MSG2 e marcamos done. Caso
-  // contrário (texto-transação ou outra coisa), marcamos done e seguimos
-  // o fluxo normal — a MSG2 é "pulada" porque o user já tá engajado.
-  if (connection.welcomeStage === 'awaiting_first_message') {
-    if (looksLikeGreeting(text)) {
-      const user = await prisma.user.findUnique({ where: { id: connection.userId } })
-      const name = user?.name?.split(' ')[0] || 'usuário'
-      await sendWhatsAppWelcomeMsg2(from, name)
-      await markWelcomeDone(connection.id)
-      return
-    }
+  // ── Welcome flow: saudação curta dispara MSG2 imediato e ENCERRA ─────
+  // Se for transação/query/outra coisa, NÃO marcamos done aqui — o flush
+  // final no POST handler dispara a MSG2 *depois* do user ver a primeira
+  // resposta do bot (registro concluído, preview, etc). Garante didática.
+  if (connection.welcomeStage === 'awaiting_first_message' && looksLikeGreeting(text)) {
+    const user = await prisma.user.findUnique({ where: { id: connection.userId } })
+    const name = user?.name?.split(' ')[0] || 'usuário'
+    await sendWhatsAppWelcomeMsg2(from, name)
     await markWelcomeDone(connection.id)
+    return
   }
 
   // Try conversational agent first (for QUERY-type intents)
@@ -348,10 +362,8 @@ async function sendTransactionPreviewWhatsApp(
 }
 
 async function handleAudioMessage(from: string, message: any, connection: { userId: string; id: string; welcomeStage?: string | null }) {
-  // Áudio fecha welcome flow — user já tá engajado, não precisa de MSG2 didática
-  if (connection.welcomeStage === 'awaiting_first_message') {
-    await markWelcomeDone(connection.id)
-  }
+  // Não marca done aqui — o flush no POST handler dispara MSG2 depois
+  // da confirmação da transação, mantendo a didática do tutorial inicial.
   const canVoice = await canUseFeature(connection.userId, 'botVoice')
   if (!canVoice) {
     const usage = await getFeatureUsage(connection.userId, 'botVoice')
@@ -389,10 +401,7 @@ async function handleAudioMessage(from: string, message: any, connection: { user
 }
 
 async function handleImageMessage(from: string, message: any, connection: { userId: string; id: string; welcomeStage?: string | null }) {
-  // Foto também fecha o welcome flow
-  if (connection.welcomeStage === 'awaiting_first_message') {
-    await markWelcomeDone(connection.id)
-  }
+  // Não marca done aqui — flush no POST handler dispara MSG2 após processo.
   const canPhoto = await canUseFeature(connection.userId, 'botPhoto')
   if (!canPhoto) {
     const usage = await getFeatureUsage(connection.userId, 'botPhoto')
