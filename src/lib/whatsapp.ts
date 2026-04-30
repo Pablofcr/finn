@@ -78,46 +78,81 @@ export async function sendWhatsAppInteractive({ to, body, buttons }: SendInterac
 }
 
 /**
- * Mensagens de boas-vindas após o usuário conectar o WhatsApp.
- * Copy v2 do copy-squad/andre-chaperon após feedback do Pablo (v1 estava
- * "sem vida"). Mais energia, emojis com função, e diálogo simulado pra
- * o user VER o loop antes de tentar.
+ * MSG1 — apresentação + hero do áudio com diálogo simulado.
+ * Disparada logo após o user conectar o WhatsApp. Em seguida, o webhook
+ * espera uma resposta antes de mandar MSG2:
+ *   - Se for áudio/foto/transação parseável → registra normal + done
+ *   - Se for saudação ("oi", "olá", etc.) → dispara MSG2 e segue
  *
- * Usada pelo webhook (handleVerification) e por /api/admin/send-welcome-test.
+ * Copy v3 do copy-squad/andre-chaperon. Pablo iterou (v1 sem vida, v2
+ * sem apresentação, layout do diálogo apertado, sem hold pra resposta).
+ */
+export async function sendWhatsAppWelcomeMsg1(to: string, firstName: string) {
+  await sendWhatsAppMessage({
+    to,
+    text:
+      `Olá, ${firstName}! 👋\n\n` +
+      `Eu sou o *Finn*, o seu assistente financeiro pessoal. Tô aqui pra te ajudar a organizar suas contas, gastos e receitas — sem planilha, sem complicação, conversando com você no zap mesmo.\n\n` +
+      `O jeito mais rápido de me usar é *mandando áudio*. 🎙\n\n` +
+      `─────────\n` +
+      `*Olha como vai ser:*\n\n` +
+      `Você 🎙\n` +
+      `_"acabei de almoçar, 32 reais no pix"_\n\n` +
+      `Finn ✅\n` +
+      `Almoço · R$ 32,00 · PIX · hoje\n` +
+      `_Saldo atualizado._\n` +
+      `─────────\n` +
+      `Você 🎙\n` +
+      `_"caiu meu salário, 4.500"_\n\n` +
+      `Finn ✅\n` +
+      `Salário · +R$ 4.500,00 · hoje\n` +
+      `_Tá no caixa._\n` +
+      `─────────\n\n` +
+      `É isso. Você fala do seu jeito, eu organizo. Pode ser no trânsito, saindo do mercado, antes de dormir.\n\n` +
+      `Manda um áudio agora me contando *qualquer movimentação de hoje* — uma compra, um pix, um valor que recebeu. Eu te mostro como fica. 👇`,
+  })
+}
+
+/**
+ * MSG2 — fallback de texto + foto. Disparada quando o user responde a
+ * MSG1 com saudação (não com transação). Se ele já manda áudio/foto/tx,
+ * pulamos a MSG2 — ele já viu o sistema funcionar.
+ */
+export async function sendWhatsAppWelcomeMsg2(to: string, firstName: string) {
+  await sendWhatsAppMessage({
+    to,
+    text:
+      `Boa, ${firstName}! 🙌\n\n` +
+      `Se em algum momento você não puder falar — reunião, ônibus cheio, bebê dormindo — *texto também funciona*:\n\n` +
+      `─────────\n` +
+      `Você ✍️\n` +
+      `_"uber 18,90 crédito"_\n\n` +
+      `Finn ✅\n` +
+      `Transporte · R$ 18,90 · Crédito · hoje\n` +
+      `─────────\n\n` +
+      `E quando você guardar um cupom fiscal — da padaria, da farmácia, de qualquer lugar — *só fotografa e me manda*: 📸\n\n` +
+      `─────────\n` +
+      `Você 📸\n` +
+      `_[manda foto do cupom]_\n\n` +
+      `Finn ✅\n` +
+      `Leio o valor, o estabelecimento, categorizo sozinho.\n` +
+      `─────────\n\n` +
+      `Resumindo o cardápio:\n` +
+      `🎙 Áudio — mais rápido\n` +
+      `✍️ Texto — mais discreto\n` +
+      `📸 Foto — zero esforço\n\n` +
+      `Manda a primeira *agora* pra gente começar. Pode ser bobeira — um café, um pix de R$ 5. Só pra você ver acontecer.`,
+  })
+}
+
+/**
+ * @deprecated Use sendWhatsAppWelcomeMsg1 e sendWhatsAppWelcomeMsg2
+ * separadamente — agora a MSG2 é disparada só após o user responder
+ * com uma saudação (hold no fluxo de welcome).
  */
 export async function sendWhatsAppWelcomeMessages(to: string, firstName: string) {
-  await sendWhatsAppMessage({
-    to,
-    text:
-      `Oi ${firstName}! 👋 Que bom te ver por aqui.\n\n` +
-      `Olha, o jeito mais rápido de usar o Finn é *mandando áudio*. 🎙 Tipo conversar comigo no zap mesmo — sem planilha, sem categoria, sem nada.\n\n` +
-      `Solta um exemplo de como vai ser:\n\n` +
-      `Você 🎙 _"acabei de almoçar, 32 reais no pix"_\n` +
-      `Finn ✅ Almoço · R$ 32,00 · PIX · hoje\n` +
-      `       _Saldo atualizado._\n\n` +
-      `Você 🎙 _"caiu meu salário, 4.500"_\n` +
-      `Finn ✅ Salário · +R$ 4.500,00 · hoje\n` +
-      `       _Tá no caixa._\n\n` +
-      `É isso. Você fala do seu jeito, eu organizo. Pode ser no meio do trânsito, saindo do mercado, antes de dormir.\n\n` +
-      `Manda um áudio agora me contando *qualquer movimentação de hoje* — uma compra, um pix que você fez, um valor que recebeu. Eu te mostro como fica. 👇`,
-  })
-
-  await sendWhatsAppMessage({
-    to,
-    text:
-      `E se não rolar áudio, ${firstName}, sem problema. 🙌\n\n` +
-      `*Texto também funciona:*\n\n` +
-      `Você: _"uber 18,90 crédito"_\n` +
-      `Finn ✅ Transporte · R$ 18,90 · Crédito · hoje\n\n` +
-      `*Foto de comprovante / nota também:* 📸\n\n` +
-      `Você: _[manda print do PIX ou cupom fiscal]_\n` +
-      `Finn ✅ Lê o valor, lê o estabelecimento, categoriza sozinho.\n\n` +
-      `Resumindo o cardápio:\n` +
-      `🎙 Áudio (mais rápido)\n` +
-      `✍️ Texto (mais discreto)\n` +
-      `📸 Foto (zero esforço)\n\n` +
-      `Escolhe o que combinar com o teu momento e *manda a primeira agora*. Pode ser bobeira — um café, um pix de R$ 5, qualquer coisa. Só pra você ver acontecer.`,
-  })
+  await sendWhatsAppWelcomeMsg1(to, firstName)
+  await sendWhatsAppWelcomeMsg2(to, firstName)
 }
 
 export type PaymentAlertVariant =

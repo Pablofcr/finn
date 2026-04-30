@@ -1,6 +1,6 @@
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
-import { sendWhatsAppWelcomeMessages } from '@/lib/whatsapp'
+import { sendWhatsAppWelcomeMsg1 } from '@/lib/whatsapp'
 
 /**
  * Endpoint de teste pro Pablo re-disparar as mensagens de boas-vindas no
@@ -25,7 +25,7 @@ export async function GET() {
   // Busca o número de WhatsApp conectado e verificado do usuário logado
   const connection = await prisma.botConnection.findFirst({
     where: { userId: user.id, platform: 'WHATSAPP', isVerified: true },
-    select: { platformUserId: true },
+    select: { id: true, platformUserId: true },
   })
 
   if (!connection?.platformUserId) {
@@ -38,7 +38,13 @@ export async function GET() {
   const firstName = user.name?.split(' ')[0] || 'usuário'
 
   try {
-    await sendWhatsAppWelcomeMessages(connection.platformUserId, firstName)
+    // Reseta welcomeStage pro Pablo poder testar o fluxo completo: MSG1 →
+    // ele responde "oi" → MSG2 chega.
+    await prisma.botConnection.update({
+      where: { id: connection.id },
+      data: { welcomeStage: 'awaiting_first_message' },
+    })
+    await sendWhatsAppWelcomeMsg1(connection.platformUserId, firstName)
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err)
     return Response.json({ error: `Falha ao enviar: ${reason}` }, { status: 500 })
@@ -48,5 +54,6 @@ export async function GET() {
     ok: true,
     sentTo: connection.platformUserId,
     firstName,
+    note: 'MSG1 enviada + welcomeStage resetado. Responde com "oi" pra ver MSG2 chegar.',
   })
 }

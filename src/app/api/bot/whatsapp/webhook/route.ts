@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
-import { sendWhatsAppMessage, sendWhatsAppInteractive, sendWhatsAppList, downloadWhatsAppMedia, markAsRead, sendWhatsAppWelcomeMessages } from '@/lib/whatsapp'
+import { sendWhatsAppMessage, sendWhatsAppInteractive, sendWhatsAppList, downloadWhatsAppMedia, markAsRead, sendWhatsAppWelcomeMsg1, sendWhatsAppWelcomeMsg2 } from '@/lib/whatsapp'
 import { parseTransactionMessage, parseReceiptImage } from '@/lib/parse-transaction'
 import { transcribeAudio } from '@/lib/transcribe-audio'
 import { canUseFeature, getFeatureUsage } from '@/lib/plan-limits'
@@ -116,18 +116,74 @@ async function handleVerification(from: string, code: string) {
     return
   }
 
+  // Marca como verificada + entra no estado "esperando primeira resposta
+  // após welcome". MSG2 fica em hold até o user responder.
   await prisma.botConnection.update({
     where: { id: connection.id },
-    data: { platformUserId: from, isVerified: true, verificationCode: null },
+    data: {
+      platformUserId: from,
+      isVerified: true,
+      verificationCode: null,
+      welcomeStage: 'awaiting_first_message',
+    },
   })
 
   const user = await prisma.user.findUnique({ where: { id: connection.userId } })
   const name = user?.name?.split(' ')[0] || 'usuário'
 
-  await sendWhatsAppWelcomeMessages(from, name)
+  await sendWhatsAppWelcomeMsg1(from, name)
 }
 
-async function handleTextMessage(from: string, text: string, connection: { userId: string; id: string }) {
+/**
+ * Detecta saudações curtas tipo "oi", "olá", "bom dia" etc. Usado no
+ * fluxo de welcome: quando o user responde a MSG1 com saudação (em vez
+ * de áudio/foto/transação), disparamos a MSG2 e seguimos.
+ * Conservador — só lista explícita pra evitar false positives.
+ */
+function looksLikeGreeting(text: string): boolean {
+  const cleaned = text.trim().toLowerCase().replace(/[!.?,;:]/g, '').replace(/\s+/g, ' ')
+  const greetings = new Set([
+    'oi', 'olá', 'ola', 'oie', 'oii', 'oiii',
+    'eai', 'e aí', 'e ai', 'fala', 'salve', 'opa', 'opaa',
+    'bom dia', 'boa tarde', 'boa noite', 'bnoite', 'bdia', 'btarde',
+    'ok', 'okay', 'tá', 'ta', 'tah', 'beleza', 'blz', 'show',
+    'tudo bem', 'tudo bom', 'td bom', 'tudo certo', 'td certo',
+    'oi finn', 'olá finn', 'ola finn', 'oi, finn', 'olá, finn', 'fala finn',
+    'oi tudo bem', 'oi td bem', 'tudo certo finn',
+    'hello', 'hi',
+  ])
+  return greetings.has(cleaned)
+}
+
+/** Marca o welcome flow como concluído (idempotente). */
+async function markWelcomeDone(connectionId: string) {
+  await prisma.botConnection.update({
+    where: { id: connectionId },
+    data: { welcomeStage: 'done' },
+  }).catch(() => {/* idempotente */})
+}
+
+async function handleTextMessage(
+  from: string,
+  text: string,
+  connection: { userId: string; id: string; welcomeStage?: string | null },
+) {
+  // ── Welcome flow hold ────────────────────────────────────────────────
+  // Se o user tá no estágio "esperando primeira resposta" e mandou só uma
+  // saudação ("oi", "olá"...), disparamos a MSG2 e marcamos done. Caso
+  // contrário (texto-transação ou outra coisa), marcamos done e seguimos
+  // o fluxo normal — a MSG2 é "pulada" porque o user já tá engajado.
+  if (connection.welcomeStage === 'awaiting_first_message') {
+    if (looksLikeGreeting(text)) {
+      const user = await prisma.user.findUnique({ where: { id: connection.userId } })
+      const name = user?.name?.split(' ')[0] || 'usuário'
+      await sendWhatsAppWelcomeMsg2(from, name)
+      await markWelcomeDone(connection.id)
+      return
+    }
+    await markWelcomeDone(connection.id)
+  }
+
   // Try conversational agent first (for QUERY-type intents)
   const agentReply = await maybeRunAgent(connection.userId, text, connection.id)
   if (agentReply) {
@@ -291,7 +347,11 @@ async function sendTransactionPreviewWhatsApp(
   })
 }
 
-async function handleAudioMessage(from: string, message: any, connection: { userId: string; id: string }) {
+async function handleAudioMessage(from: string, message: any, connection: { userId: string; id: string; welcomeStage?: string | null }) {
+  // Áudio fecha welcome flow — user já tá engajado, não precisa de MSG2 didática
+  if (connection.welcomeStage === 'awaiting_first_message') {
+    await markWelcomeDone(connection.id)
+  }
   const canVoice = await canUseFeature(connection.userId, 'botVoice')
   if (!canVoice) {
     const usage = await getFeatureUsage(connection.userId, 'botVoice')
@@ -328,7 +388,11 @@ async function handleAudioMessage(from: string, message: any, connection: { user
   await handleTextMessage(from, transcription, connection)
 }
 
-async function handleImageMessage(from: string, message: any, connection: { userId: string; id: string }) {
+async function handleImageMessage(from: string, message: any, connection: { userId: string; id: string; welcomeStage?: string | null }) {
+  // Foto também fecha o welcome flow
+  if (connection.welcomeStage === 'awaiting_first_message') {
+    await markWelcomeDone(connection.id)
+  }
   const canPhoto = await canUseFeature(connection.userId, 'botPhoto')
   if (!canPhoto) {
     const usage = await getFeatureUsage(connection.userId, 'botPhoto')

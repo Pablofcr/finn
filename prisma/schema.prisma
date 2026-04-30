@@ -338,6 +338,11 @@ model BotConnection {
   isVerified       Boolean     @default(false)
   verificationCode String?
   defaultAccountId String?
+  /// Estágio do fluxo de welcome. "awaiting_first_message" = MSG1 enviada,
+  /// esperando primeira resposta (saudação → MSG2; transação → fluxo normal).
+  /// "done" (default) = welcome concluído OU usuário antigo. Migrations
+  /// devem default users existentes pra "done" pra não re-disparar MSG2.
+  welcomeStage     String      @default("done")
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
