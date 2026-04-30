@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { cn, formatLocalDate } from '@/lib/utils'
@@ -53,6 +53,11 @@ export default function NewTransactionPage() {
   const [hasEndDate, setHasEndDate] = useState(false)
   const [endDate, setEndDate] = useState('')
   const [autoConfirm, setAutoConfirm] = useState(false)
+
+  // Progressive disclosure pra Local + Observações (UX review: mass-market
+  // BR foge de form longo, esconder por trás de "Mais detalhes" reduz
+  // cognitive load no caminho default).
+  const [showMoreDetails, setShowMoreDetails] = useState(false)
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, reset } = useForm<TransactionInput>({
     resolver: zodResolver(transactionSchema),
@@ -155,6 +160,9 @@ export default function NewTransactionPage() {
               location: t.location || undefined,
               notes: t.notes || undefined,
             })
+            // Em modo edição, se tem Local ou Observações, abre o
+            // "Mais detalhes" pra usuário ver/editar.
+            if (t.location || t.notes) setShowMoreDetails(true)
           }
         })
     }
@@ -273,24 +281,32 @@ export default function NewTransactionPage() {
                   inputMode="numeric"
                   value={amountDisplay}
                   onChange={handleAmountChange}
+                  aria-invalid={!!errors.amount}
+                  aria-describedby={errors.amount ? 'amount-error' : undefined}
                   className="text-right text-3xl font-bold border-0 bg-muted/30 h-16 focus-visible:ring-1 focus-visible:ring-primary rounded-xl pl-14 pr-4"
                 />
               </div>
-              {errors.amount && <p className="text-xs text-destructive text-center">{errors.amount.message}</p>}
+              {errors.amount && (
+                <p id="amount-error" className="text-xs text-destructive text-center">{errors.amount.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description">Descrição</Label>
               <Input
                 id="description"
-                placeholder="Ex: Almoço no restaurante"
+                placeholder={type === 'INCOME' ? 'Ex: Salário, Freelance, Aluguel recebido' : type === 'TRANSFER' ? 'Ex: Transferência pra reserva' : 'Ex: Almoço no restaurante'}
                 className="h-11 rounded-xl"
+                aria-invalid={!!errors.description}
+                aria-describedby={errors.description ? 'description-error' : undefined}
                 {...register('description', {
                   onChange: handleDescriptionChange,
                   onBlur: handleDescriptionBlur,
                 })}
               />
-              {errors.description && <p className="text-xs text-destructive">{errors.description.message}</p>}
+              {errors.description && (
+                <p id="description-error" className="text-xs text-destructive">{errors.description.message}</p>
+              )}
               {suggestionMsg && (
                 <p className="text-xs text-muted-foreground animate-fade-in">{suggestionMsg}</p>
               )}
@@ -307,64 +323,39 @@ export default function NewTransactionPage() {
               {errors.date && <p className="text-xs text-destructive">{errors.date.message}</p>}
             </div>
 
-            {type !== 'TRANSFER' && (
-              <div className="space-y-2">
-                <Label>Forma de pagamento</Label>
-                <Select
-                  onValueChange={(v) => {
-                    if (!v) return
-                    setValue('paymentMethod', v as any, { shouldValidate: true })
-                    // When switching to/from CREDIT, reset the selected account since
-                    // CREDIT requires a credit-card-type account and others don't.
-                    const current = accounts.find(a => a.id === accountId)
-                    if (v === 'CREDIT' && current?.type !== 'CREDIT_CARD') {
-                      const firstCard = accounts.find(a => a.type === 'CREDIT_CARD')
-                      setValue('accountId', firstCard?.id || '', { shouldValidate: true })
-                    } else if (v !== 'CREDIT' && current?.type === 'CREDIT_CARD') {
-                      const defaultAcc = accounts.find(a => a.isDefault && a.type !== 'CREDIT_CARD')
-                        || accounts.find(a => a.type !== 'CREDIT_CARD')
-                      setValue('accountId', defaultAcc?.id || '', { shouldValidate: true })
-                    }
-                  }}
-                  value={paymentMethod}
-                >
-                  <SelectTrigger className="h-11 rounded-xl">
-                    <span className="flex flex-1 text-left truncate">
-                      {PAYMENT_METHOD_LABELS[paymentMethod || 'DEBIT']}
-                    </span>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(PAYMENT_METHOD_LABELS)
-                      .filter(([key]) => key !== 'TRANSFER')
-                      .map(([key, label]) => (
-                        <SelectItem key={key} value={key}>{label}</SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                {paymentMethod === 'CREDIT' && (
-                  <p className="text-xs text-muted-foreground">
-                    Valor vai pra fatura do cartão — saldo da conta bancária só muda quando você pagar.
-                  </p>
-                )}
-              </div>
-            )}
-
+            {/* Conta (de origem). Filtros por tipo:
+                - TRANSFER: todas as contas (origem)
+                - INCOME: exclui cartão de crédito (não recebe receita em cartão)
+                - EXPENSE com paymentMethod=CRÉDITO: só cartões
+                - EXPENSE com outros métodos: exclui cartões */}
             <div className="space-y-2">
-              <Label>{paymentMethod === 'CREDIT' ? 'Cartão' : 'Conta'}</Label>
-              <Select onValueChange={(v) => v && setValue('accountId', v, { shouldValidate: true })} value={accountId}>
-                <SelectTrigger className="h-11 rounded-xl">
+              <Label htmlFor="account-select">
+                {type === 'EXPENSE' && paymentMethod === 'CREDIT' ? 'Cartão' : 'Conta'}
+              </Label>
+              <Select
+                onValueChange={(v) => v && setValue('accountId', v, { shouldValidate: true })}
+                value={accountId}
+              >
+                <SelectTrigger
+                  id="account-select"
+                  className="h-11 rounded-xl"
+                  aria-invalid={!!errors.accountId}
+                  aria-describedby={errors.accountId ? 'account-error' : undefined}
+                >
                   <span className="flex flex-1 text-left truncate">
                     {selectedAccountName || <span className="text-muted-foreground">
-                      {paymentMethod === 'CREDIT' ? 'Selecione o cartão' : 'Selecione a conta'}
+                      {type === 'EXPENSE' && paymentMethod === 'CREDIT' ? 'Selecione o cartão' : 'Selecione a conta'}
                     </span>}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
                   {(type === 'TRANSFER'
                     ? accounts
-                    : paymentMethod === 'CREDIT'
-                      ? accounts.filter((a: any) => a.type === 'CREDIT_CARD')
-                      : accounts.filter((a: any) => a.type !== 'CREDIT_CARD')
+                    : type === 'INCOME'
+                      ? accounts.filter((a: any) => a.type !== 'CREDIT_CARD')
+                      : paymentMethod === 'CREDIT'
+                        ? accounts.filter((a: any) => a.type === 'CREDIT_CARD')
+                        : accounts.filter((a: any) => a.type !== 'CREDIT_CARD')
                   ).map((a: any) => (
                     <SelectItem key={a.id} value={a.id}>
                       {a.name}{a.isDefault ? ' ★' : ''}
@@ -372,19 +363,22 @@ export default function NewTransactionPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.accountId && <p className="text-xs text-destructive">{errors.accountId.message}</p>}
-              {paymentMethod === 'CREDIT' && accounts.filter((a: any) => a.type === 'CREDIT_CARD').length === 0 && (
+              {errors.accountId && (
+                <p id="account-error" className="text-xs text-destructive">{errors.accountId.message}</p>
+              )}
+              {type === 'EXPENSE' && paymentMethod === 'CREDIT' && accounts.filter((a: any) => a.type === 'CREDIT_CARD').length === 0 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400">
                   Você ainda não cadastrou cartão de crédito. Adicione um em Contas para usar essa opção.
                 </p>
               )}
             </div>
 
+            {/* Conta destino — só em transferência */}
             {type === 'TRANSFER' && (
               <div className="space-y-2">
-                <Label>Conta destino</Label>
+                <Label htmlFor="dest-account-select">Conta destino</Label>
                 <Select onValueChange={(v) => v && setValue('toAccountId', v, { shouldValidate: true })} value={watch('toAccountId')}>
-                  <SelectTrigger className="h-11 rounded-xl">
+                  <SelectTrigger id="dest-account-select" className="h-11 rounded-xl">
                     <span className="flex flex-1 text-left truncate">
                       {accounts.find(a => a.id === watch('toAccountId'))?.name || <span className="text-muted-foreground">Selecione a conta destino</span>}
                     </span>
@@ -398,11 +392,62 @@ export default function NewTransactionPage() {
               </div>
             )}
 
+            {/* Forma de pagamento — só em despesa. Em receita não faz sentido
+                (receita cai numa conta — info importante é a conta), em
+                transferência também não (já é entre contas). */}
+            {type === 'EXPENSE' && (
+              <div className="space-y-2">
+                <Label htmlFor="pm-select">Forma de pagamento</Label>
+                <Select
+                  onValueChange={(v) => {
+                    if (!v) return
+                    setValue('paymentMethod', v as any, { shouldValidate: true })
+                    // Switch CRÉDITO ↔ outros: troca a conta automaticamente
+                    const current = accounts.find(a => a.id === accountId)
+                    if (v === 'CREDIT' && current?.type !== 'CREDIT_CARD') {
+                      const firstCard = accounts.find(a => a.type === 'CREDIT_CARD')
+                      setValue('accountId', firstCard?.id || '', { shouldValidate: true })
+                    } else if (v !== 'CREDIT' && current?.type === 'CREDIT_CARD') {
+                      const defaultAcc = accounts.find(a => a.isDefault && a.type !== 'CREDIT_CARD')
+                        || accounts.find(a => a.type !== 'CREDIT_CARD')
+                      setValue('accountId', defaultAcc?.id || '', { shouldValidate: true })
+                    }
+                  }}
+                  value={paymentMethod}
+                >
+                  <SelectTrigger id="pm-select" className="h-11 rounded-xl">
+                    <span className="flex flex-1 text-left truncate">
+                      {PAYMENT_METHOD_LABELS[paymentMethod || 'DEBIT']}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PAYMENT_METHOD_LABELS)
+                      .filter(([key]) => key !== 'TRANSFER')
+                      .map(([key, label]) => {
+                        const noCreditCardAccounts = accounts.filter((a: any) => a.type === 'CREDIT_CARD').length === 0
+                        const disabled = key === 'CREDIT' && noCreditCardAccounts
+                        return (
+                          <SelectItem key={key} value={key} disabled={disabled}>
+                            {label}{disabled ? ' (sem cartão cadastrado)' : ''}
+                          </SelectItem>
+                        )
+                      })}
+                  </SelectContent>
+                </Select>
+                {paymentMethod === 'CREDIT' && (
+                  <p className="text-xs text-muted-foreground">
+                    Valor vai pra fatura do cartão — saldo da conta bancária só muda quando você pagar.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Categoria — só em despesa e receita (transferência não tem) */}
             {type !== 'TRANSFER' && (
               <div className="space-y-2">
-                <Label>Categoria</Label>
+                <Label htmlFor="cat-select">Categoria</Label>
                 <Select onValueChange={(v) => v && setValue('categoryId', v, { shouldValidate: true })} value={categoryId}>
-                  <SelectTrigger className="h-11 rounded-xl">
+                  <SelectTrigger id="cat-select" className="h-11 rounded-xl">
                     <span className="flex flex-1 text-left truncate">
                       {selectedCategoryName ? (
                         <span className="flex items-center gap-2">
@@ -427,26 +472,6 @@ export default function NewTransactionPage() {
                 </Select>
               </div>
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="location">Local (opcional)</Label>
-              <Input
-                id="location"
-                placeholder="Ex: Shopping Center"
-                className="h-11 rounded-xl"
-                {...register('location')}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Observações (opcional)</Label>
-              <Input
-                id="notes"
-                placeholder="Notas adicionais"
-                className="h-11 rounded-xl"
-                {...register('notes')}
-              />
-            </div>
 
             {/* Recurring toggle - only for new non-transfer transactions */}
             {!editId && type !== 'TRANSFER' && (
@@ -508,9 +533,7 @@ export default function NewTransactionPage() {
                       <div className="flex-1">
                         <Label className="block">Lançar sozinho na data</Label>
                         <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
-                          No dia do vencimento, eu crio a transação automaticamente
-                          e te aviso depois pelo WhatsApp. Ideal pra assinaturas
-                          no cartão e contas fixas.
+                          Lançar automático no vencimento — eu te aviso pelo WhatsApp.
                         </p>
                       </div>
                       <Switch checked={autoConfirm} onCheckedChange={setAutoConfirm} />
@@ -534,6 +557,53 @@ export default function NewTransactionPage() {
                 />
               </div>
             )}
+
+            {/* Progressive disclosure: Local (só EXPENSE) + Observações (todos
+                os tipos). UX review: mass-market BR foge de form longo. Em
+                edição abre por padrão se já tem valor preenchido. */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowMoreDetails((s) => !s)}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                aria-expanded={showMoreDetails}
+                aria-controls="more-details"
+              >
+                <ChevronDown
+                  className={cn(
+                    'h-4 w-4 transition-transform',
+                    showMoreDetails ? 'rotate-0' : '-rotate-90',
+                  )}
+                />
+                Mais detalhes (opcional)
+              </button>
+
+              {showMoreDetails && (
+                <div id="more-details" className="space-y-4 pt-3">
+                  {type === 'EXPENSE' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Local</Label>
+                      <Input
+                        id="location"
+                        placeholder="Ex: Shopping Center"
+                        className="h-11 rounded-xl"
+                        {...register('location')}
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Observações</Label>
+                    <Input
+                      id="notes"
+                      placeholder="Notas adicionais"
+                      className="h-11 rounded-xl"
+                      {...register('notes')}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="flex gap-3 pt-4">
               <Button type="submit" className="flex-1 gradient-primary shadow-md shadow-primary/25 border-0" disabled={saving}>
