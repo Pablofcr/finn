@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
   const endDate = searchParams.get('endDate')
   const valueMinStr = searchParams.get('valueMin')
   const valueMaxStr = searchParams.get('valueMax')
+  const includeFuture = searchParams.get('includeFuture') === 'true'
 
   const where: any = { userId: user.id }
   if (type) where.type = type
@@ -40,6 +41,14 @@ export async function GET(request: NextRequest) {
     where.date = {}
     if (startDate) where.date.gte = new Date(startDate)
     if (endDate) where.date.lte = new Date(endDate)
+  }
+  if (!includeFuture) {
+    const endOfToday = new Date()
+    endOfToday.setUTCHours(23, 59, 59, 999)
+    if (!where.date) where.date = {}
+    if (!where.date.lte || new Date(where.date.lte) > endOfToday) {
+      where.date.lte = endOfToday
+    }
   }
   if (valueMinStr || valueMaxStr) {
     where.amount = {}

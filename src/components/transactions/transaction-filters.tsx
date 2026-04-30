@@ -25,6 +25,9 @@ export interface TransactionFiltersValue {
   categoryIds: string[]
   valueMin: string
   valueMax: string
+  /** Compras parceladas geram tx com `date` no futuro. Por default mostramos
+   * só passado+hoje. Toggle pra incluir parcelas futuras. */
+  includeFuture: boolean
 }
 
 export const EMPTY_FILTERS: TransactionFiltersValue = {
@@ -37,6 +40,7 @@ export const EMPTY_FILTERS: TransactionFiltersValue = {
   categoryIds: [],
   valueMin: '',
   valueMax: '',
+  includeFuture: false,
 }
 
 interface AccountOption { id: string; name: string; color?: string }
@@ -144,6 +148,7 @@ export function TransactionFilters({ value, onChange }: TransactionFiltersProps)
     value.accountIds.length,
     value.categoryIds.length,
     value.valueMin || value.valueMax ? 1 : 0,
+    value.includeFuture ? 1 : 0,
   ].reduce((a, b) => a + b, 0)
 
   const hasAnyFilter =
@@ -153,7 +158,8 @@ export function TransactionFilters({ value, onChange }: TransactionFiltersProps)
     value.accountIds.length > 0 ||
     value.categoryIds.length > 0 ||
     !!value.valueMin ||
-    !!value.valueMax
+    !!value.valueMax ||
+    value.includeFuture
 
   return (
     <div className="space-y-3">
@@ -384,6 +390,24 @@ export function TransactionFilters({ value, onChange }: TransactionFiltersProps)
                     </div>
                   </div>
                 </section>
+
+                <section>
+                  <p className="text-sm font-semibold mb-2">Parcelas futuras</p>
+                  <label className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-muted/40 transition-colors">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 rounded border-border"
+                      checked={value.includeFuture}
+                      onChange={(e) => update({ includeFuture: e.target.checked })}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">Incluir parcelas futuras</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Por padrão, a lista mostra só transações que já aconteceram. Marca aqui pra ver também as parcelas de compras parceladas que ainda vão cair.
+                      </p>
+                    </div>
+                  </label>
+                </section>
               </div>
 
               {/* Footer ações */}
@@ -450,6 +474,13 @@ export function TransactionFilters({ value, onChange }: TransactionFiltersProps)
               label="Valor"
               valueText={`${value.valueMin ? formatCurrency(parseFloat(value.valueMin)) : '0'} – ${value.valueMax ? formatCurrency(parseFloat(value.valueMax)) : '∞'}`}
               onRemove={() => update({ valueMin: '', valueMax: '' })}
+            />
+          )}
+          {value.includeFuture && (
+            <FilterChip
+              label="Mostrando"
+              valueText="parcelas futuras"
+              onRemove={() => update({ includeFuture: false })}
             />
           )}
           <Button

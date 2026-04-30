@@ -22,6 +22,10 @@ export async function GET(request: NextRequest) {
   const endDate = searchParams.get('endDate')
   const valueMinStr = searchParams.get('valueMin')
   const valueMaxStr = searchParams.get('valueMax')
+  // Compras parceladas geram transações com `date` no futuro (parcela 2, 3...).
+  // Por default a lista mostra só passado+hoje pra refletir "o que já aconteceu".
+  // Toggle no UI passa includeFuture=true pra desabilitar o filtro.
+  const includeFuture = searchParams.get('includeFuture') === 'true'
 
   const where: any = { userId: user.id }
 
@@ -41,6 +45,15 @@ export async function GET(request: NextRequest) {
     where.date = {}
     if (startDate) where.date.gte = new Date(startDate)
     if (endDate) where.date.lte = new Date(endDate)
+  }
+  if (!includeFuture) {
+    // Limita date <= fim de hoje (UTC). Se já tem endDate, mantém o menor dos dois.
+    const endOfToday = new Date()
+    endOfToday.setUTCHours(23, 59, 59, 999)
+    if (!where.date) where.date = {}
+    if (!where.date.lte || new Date(where.date.lte) > endOfToday) {
+      where.date.lte = endOfToday
+    }
   }
   if (valueMinStr || valueMaxStr) {
     where.amount = {}

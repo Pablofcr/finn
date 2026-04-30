@@ -231,6 +231,7 @@ export default function TransactionsPage() {
     if (filters.categoryIds.length > 0) params.set('categoryIds', filters.categoryIds.join(','))
     if (filters.valueMin) params.set('valueMin', filters.valueMin)
     if (filters.valueMax) params.set('valueMax', filters.valueMax)
+    if (filters.includeFuture) params.set('includeFuture', 'true')
     return params
   }
 
