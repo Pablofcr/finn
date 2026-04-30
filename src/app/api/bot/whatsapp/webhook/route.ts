@@ -145,7 +145,8 @@ async function handleVerification(from: string, code: string) {
     text:
       `Ah, e se você tiver num lugar que não dá pra falar — reunião, ônibus cheio, bebê dormindo — só digita.\n\n` +
       `Tipo: _"café 8 reais"_. Tá registrado.\n\n` +
-      `Áudio, texto, foto de cupom — o que for mais fácil no momento. Manda a primeira pra gente começar.`,
+      `E quando você guardar o cupom da padaria, da farmácia, de qualquer lugar — só fotografa e me manda. Eu leio o valor, a data, a categoria. Você nem precisa digitar.\n\n` +
+      `Áudio, texto, foto — o que for mais fácil no momento. Manda a primeira pra gente começar.`,
   })
 }
 
