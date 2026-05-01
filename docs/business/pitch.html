@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finn — Seu CFO no WhatsApp · Pitch 2026</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  .gradient-text {
+    background: linear-gradient(135deg, #a78bfa 0%, #818cf8 50%, #6366f1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .glow-violet {
+    box-shadow: 0 0 80px rgba(139, 92, 246, 0.15);
+  }
+  .grid-bg {
+    background-image:
+      radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 50px 50px, 50px 50px;
+  }
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .number-huge {
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+  /* Tabela comparativa */
+  .feature-cell {
+    text-align: center;
+    font-size: 1rem;
+  }
+  .check-yes { color: #10b981; }
+  .check-no { color: #f43f5e; }
+  .check-partial { color: #f59e0b; }
+  /* Print */
+  @media print {
+    body { background: white !important; color: black !important; }
+    .glass, .glass-strong { background: white !important; border: 1px solid #ddd !important; }
+    .gradient-text { -webkit-text-fill-color: #6366f1 !important; }
+  }
+</style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased">
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════════════════════════════ -->
+<section class="grid-bg min-h-screen flex items-center relative overflow-hidden">
+  <div class="max-w-6xl mx-auto px-6 py-24 relative z-10">
+    <div class="flex items-center gap-3 mb-12">
+      <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-2xl font-black shadow-2xl glow-violet">F</div>
+      <div>
+        <p class="text-2xl font-bold">Finn</p>
+        <p class="text-xs text-slate-400">Suas finanças, sem fricção</p>
+      </div>
+    </div>
+
+    <h1 class="text-5xl md:text-7xl font-black tracking-tight leading-[1.05] mb-6">
+      Seu <span class="gradient-text">CFO</span><br>
+      no WhatsApp.
+    </h1>
+
+    <p class="text-xl md:text-2xl text-slate-300 max-w-3xl leading-relaxed mb-12">
+      Brasileiros registram gastos pelo WhatsApp — por <strong class="text-white">áudio</strong>, <strong class="text-white">foto do cupom</strong> ou <strong class="text-white">texto</strong>. A IA do Finn entende, categoriza e devolve insights conversacionais sobre o dinheiro deles.
+    </p>
+
+    <div class="flex flex-wrap gap-3 mb-16">
+      <span class="glass px-4 py-2 rounded-full text-sm font-medium">🇧🇷 Brasil</span>
+      <span class="glass px-4 py-2 rounded-full text-sm font-medium">📱 WhatsApp + Web App</span>
+      <span class="glass px-4 py-2 rounded-full text-sm font-medium">🤖 Powered by Claude Sonnet 4.6</span>
+      <span class="glass px-4 py-2 rounded-full text-sm font-medium">✅ MVP em produção</span>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4 max-w-3xl">
+      <div class="glass-strong rounded-2xl p-6">
+        <p class="text-4xl font-black gradient-text mb-2">3</p>
+        <p class="text-sm text-slate-300">canais de entrada<br>(áudio, foto, texto)</p>
+      </div>
+      <div class="glass-strong rounded-2xl p-6">
+        <p class="text-4xl font-black gradient-text mb-2">10</p>
+        <p class="text-sm text-slate-300">tools financeiras<br>na IA conversacional</p>
+      </div>
+      <div class="glass-strong rounded-2xl p-6">
+        <p class="text-4xl font-black gradient-text mb-2">99%</p>
+        <p class="text-sm text-slate-300">dos smartphones BR<br>já têm WhatsApp</p>
+      </div>
+    </div>
+
+    <div class="mt-16 text-sm text-slate-500">
+      <p>Pitch atualizado em <span class="text-slate-300">maio/2026</span> · Founder: Pablo Rôla · pablofcr@gmail.com</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     PROBLEMA
+═══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 border-t border-white/5">
+  <div class="max-w-6xl mx-auto px-6 fade-in">
+    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">O problema</p>
+    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-6 max-w-3xl">
+      Aplicativo de finanças pessoais é abandonado em 2 semanas.
+    </h2>
+    <p class="text-lg text-slate-400 max-w-3xl mb-16">
+      Os apps tradicionais exigem digitação manual cansativa. A pessoa começa motivada, esquece um dia, dois, e nunca mais volta. O ciclo se repete com cada novo app.
+    </p>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="glass rounded-2xl p-8">
+        <div class="text-rose-400 text-3xl font-black mb-3">~80%</div>
+        <p class="text-base font-semibold mb-2">dos brasileiros</p>
+        <p class="text-sm text-slate-400">não conseguem manter controle consistente dos gastos pessoais</p>
+      </div>
+      <div class="glass rounded-2xl p-8">
+        <div class="text-rose-400 text-3xl font-black mb-3">14 dias</div>
+        <p class="text-base font-semibold mb-2">é o tempo médio</p>
+        <p class="text-sm text-slate-400">até o usuário desinstalar o app de finanças que baixou</p>
+      </div>
+      <div class="glass rounded-2xl p-8">
+        <div class="text-rose-400 text-3xl font-black mb-3">Manual</div>
+        <p class="text-base font-semibold mb-2">é o gargalo</p>
+        <p class="text-sm text-slate-400">a fricção de abrir o app, escolher categoria e digitar mata o hábito</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SOLUÇÃO
+═══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 border-t border-white/5 bg-gradient-to-b from-slate-950 to-violet-950/20">
+  <div class="max-w-6xl mx-auto px-6 fade-in">
+    <p class="text-emerald-400 font-semibold uppercase tracking-wider text-sm mb-4">A solução</p>
+    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-6 max-w-3xl">
+      O Finn vive onde o brasileiro já vive: <span class="gradient-text">no WhatsApp</span>.
+    </h2>
+    <p class="text-lg text-slate-400 max-w-3xl mb-16">
+      Sem app pra abrir. Sem categoria pra escolher. Sem planilha. O usuário fala, fotografa ou escreve — a IA entende e organiza.
+    </p>
+
+    <!-- 3 canais -->
+    <div class="grid md:grid-cols-3 gap-6 mb-16">
+      <div class="glass-strong rounded-2xl p-8">
+        <div class="text-5xl mb-4">🎙</div>
+        <h3 class="text-xl font-bold mb-3">Áudio</h3>
+        <p class="text-slate-400 text-sm leading-relaxed mb-4">
+          Manda igual mandaria pra um amigo. <em class="text-slate-300">"Almocei 32 reais hoje no PIX."</em> Em 3 segundos tá registrado.
+        </p>
+        <div class="text-xs text-violet-300 font-mono bg-violet-500/10 px-3 py-2 rounded-lg border border-violet-500/20">
+          Whisper → parsing → categorização IA
+        </div>
+      </div>
+      <div class="glass-strong rounded-2xl p-8">
+        <div class="text-5xl mb-4">📸</div>
+        <h3 class="text-xl font-bold mb-3">Foto do cupom</h3>
+        <p class="text-slate-400 text-sm leading-relaxed mb-4">
+          Tira foto do cupom da padaria, da farmácia, do supermercado — a IA lê valor, estabelecimento e categoriza sozinho.
+        </p>
+        <div class="text-xs text-violet-300 font-mono bg-violet-500/10 px-3 py-2 rounded-lg border border-violet-500/20">
+          GPT-4o Vision → OCR estruturado
+        </div>
+      </div>
+      <div class="glass-strong rounded-2xl p-8">
+        <div class="text-5xl mb-4">✍️</div>
+        <h3 class="text-xl font-bold mb-3">Texto</h3>
+        <p class="text-slate-400 text-sm leading-relaxed mb-4">
+          Em reunião? Bebê dormindo? Escreve curto: <em class="text-slate-300">"café 8 reais"</em>. Tá registrado.
+        </p>
+        <div class="text-xs text-violet-300 font-mono bg-violet-500/10 px-3 py-2 rounded-lg border border-violet-500/20">
+          Parser pt-BR custom + Haiku 4.5 router
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo conversational -->
+    <div class="glass-strong rounded-3xl p-8 md:p-12">
+      <p class="text-violet-400 font-semibold uppercase tracking-wider text-xs mb-4">A camada que ninguém mais tem</p>
+      <h3 class="text-3xl md:text-4xl font-black mb-6">IA conversacional sobre os <em class="gradient-text">seus</em> dados.</h3>
+      <div class="grid md:grid-cols-2 gap-8 items-center">
+        <div>
+          <p class="text-slate-300 leading-relaxed mb-6">
+            O Finn não é só um registrador. Você pode <strong class="text-white">conversar</strong> sobre seu dinheiro:
+          </p>
+          <ul class="space-y-3 text-sm text-slate-300">
+            <li class="flex gap-3"><span class="text-violet-400">✓</span> "Quanto gastei com mercado em março?"</li>
+            <li class="flex gap-3"><span class="text-violet-400">✓</span> "Compara meu mês atual com o anterior"</li>
+            <li class="flex gap-3"><span class="text-violet-400">✓</span> "Onde tô gastando demais essa semana?"</li>
+            <li class="flex gap-3"><span class="text-violet-400">✓</span> "Paguei o aluguel?" → marca a recorrência</li>
+            <li class="flex gap-3"><span class="text-violet-400">✓</span> "Corrige o último Uber pra crédito"</li>
+          </ul>
+        </div>
+        <div class="space-y-3">
+          <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 ml-12 text-sm">
+            <p class="text-xs text-emerald-300 font-semibold mb-1">Você 🎙</p>
+            <p class="italic text-slate-300">"quanto gastei com restaurante esse mês?"</p>
+          </div>
+          <div class="bg-violet-500/10 border border-violet-500/20 rounded-xl p-4 mr-12 text-sm">
+            <p class="text-xs text-violet-300 font-semibold mb-1">Finn ✨</p>
+            <p class="text-slate-200">Você gastou <strong>R$ 642,30</strong> em restaurante até agora em maio (12 transações). Tá <strong>18% acima</strong> da média dos últimos 3 meses. Quer ver o top 5 onde mais gastou?</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     MERCADO
+═══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 border-t border-white/5">
+  <div class="max-w-6xl mx-auto px-6 fade-in">
+    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">O mercado</p>
+    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-6 max-w-3xl">
+      Brasil é o <span class="gradient-text">mercado mais ávido</span> do mundo por finanças via WhatsApp.
+    </h2>
+
+    <div class="grid md:grid-cols-4 gap-4 mt-16">
+      <div class="glass rounded-2xl p-8">
+        <p class="number-huge gradient-text">215M</p>
+        <p class="text-sm text-slate-400 mt-3">brasileiros</p>
+      </div>
+      <div class="glass rounded-2xl p-8">
+        <p class="number-huge gradient-text">99%</p>
+        <p class="text-sm text-slate-400 mt-3">com WhatsApp instalado</p>
+      </div>
+      <div class="glass rounded-2xl p-8">
+        <p class="number-huge gradient-text">15%</p>
+        <p class="text-sm text-slate-400 mt-3">crescimento anual<br>do setor PFM no BR</p>
+      </div>
+      <div class="glass rounded-2xl p-8">
+        <p class="number-huge gradient-text">10M</p>
+        <p class="text-sm text-slate-400 mt-3">downloads cumulativos<br>do líder atual (Mobills)</p>
+      </div>
+    </div>
+
+    <p class="text-base text-slate-400 max-w-3xl mt-12 leading-relaxed">
+      Mobills tem 10M downloads históricos. Mas o WhatsApp tem <strong class="text-white">230M de instalações ativas</strong> no país. Captar 1% desse mercado WhatsApp-first significa <strong class="text-white">2.3M de usuários potenciais</strong> — e o produto entrega exatamente no canal onde o brasileiro já vive.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     COMPETITIVE MOAT — TABLE
+═══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 border-t border-white/5 bg-gradient-to-b from-slate-950 to-indigo-950/30">
+  <div class="max-w-6xl mx-auto px-6 fade-in">
+    <p class="text-emerald-400 font-semibold uppercase tracking-wider text-sm mb-4">Competitive moat</p>
+    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-6 max-w-3xl">
+      Finn vence onde o mercado <span class="gradient-text">tradicional não consegue</span>.
+    </h2>
+    <p class="text-lg text-slate-400 max-w-3xl mb-12">
+      Os 8 principais concorrentes do Brasil em 2026 — e como o Finn se posiciona.
+    </p>
+
+    <div class="glass-strong rounded-2xl p-2 overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-white/10">
+            <th class="text-left p-4 font-bold text-base">Feature</th>
+            <th class="p-4 font-semibold text-violet-300">Finn</th>
+            <th class="p-4 font-semibold text-slate-400">Mobills</th>
+            <th class="p-4 font-semibold text-slate-400">Organizze</th>
+            <th class="p-4 font-semibold text-slate-400">Porquim</th>
+            <th class="p-4 font-semibold text-slate-400">Financinha</th>
+            <th class="p-4 font-semibold text-slate-400">ZapGastos</th>
+            <th class="p-4 font-semibold text-slate-400">Jota</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          <tr>
+            <td class="p-4 font-medium">WhatsApp bot conversacional</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium">Áudio pra registrar</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium">Foto cupom OCR</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+          </tr>
+          <tr class="bg-violet-500/5">
+            <td class="p-4 font-bold">IA conversacional profunda (Q&A sobre dados)</td>
+            <td class="feature-cell check-yes text-lg">✓ <span class="text-xs">10 tools</span></td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-partial">parcial</td>
+            <td class="feature-cell check-partial">parcial</td>
+            <td class="feature-cell check-partial">parcial</td>
+            <td class="feature-cell check-partial">parcial</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium">Web dashboard completo</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-no">✗</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium">Recorrências + alertas inteligentes</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-partial">parcial</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-partial">parcial</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium">Fatura cartão automática</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-partial">parcial</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium">Open Finance (auto-import)</td>
+            <td class="feature-cell check-partial text-xs">roadmap Q3</td>
+            <td class="feature-cell check-yes">✓</td>
+            <td class="feature-cell check-partial">premium</td>
+            <td class="feature-cell check-no">✗</td>
+            <td class="feature-cell check-partial">soon</td>
+            <td class="feature-cell check-partial">premium</td>
+            <td class="feature-cell check-yes">✓</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mt-12">
+      <div class="glass rounded-2xl p-8 border-l-4 border-emerald-400">
+        <p class="text-emerald-400 font-bold uppercase tracking-wide text-xs mb-3">Onde Finn vence</p>
+        <h3 class="text-xl font-bold mb-4">IA conversacional profunda</h3>
+        <p class="text-slate-300 text-sm leading-relaxed">
+          Único produto do mercado com IA que <strong>responde perguntas complexas</strong> sobre os dados financeiros do user. <em>"Qual meu gasto médio com restaurante nos últimos 6 meses, comparado ao trimestre anterior, descontando viagens?"</em> — só Finn responde. 10 tools financeiras orquestradas pelo Claude Sonnet 4.6.
+        </p>
+      </div>
+      <div class="glass rounded-2xl p-8 border-l-4 border-violet-400">
+        <p class="text-violet-400 font-bold uppercase tracking-wide text-xs mb-3">Posicionamento</p>
+        <h3 class="text-xl font-bold mb-4">Mobills + WhatsApp</h3>
+        <p class="text-slate-300 text-sm leading-relaxed">
+          Mobills tem 10M downloads e <strong>nenhum WhatsApp bot</strong>. Organizze é premium-tradicional, sem AI. Bots existentes (Porquim, Financinha) são WhatsApp-only ou caros. Finn é o único que combina: <strong>app robusto + bot completo + AI conversacional</strong>.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     STACK & TECH MOAT
+═══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 border-t border-white/5">
+  <div class="max-w-6xl mx-auto px-6 fade-in">
+    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">Stack & arquitetura</p>
+    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-12 max-w-3xl">
+      Construído com a IA mais avançada do mundo.
+    </h2>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="glass rounded-2xl p-6">
+        <div class="text-2xl mb-3">🧠</div>
+        <h3 class="font-bold mb-2">Claude Sonnet 4.6</h3>
+        <p class="text-xs text-slate-400">Agent conversacional com 10 tools financeiras orquestradas</p>
+      </div>
+      <div class="glass rounded-2xl p-6">
+        <div class="text-2xl mb-3">⚡</div>
+        <h3 class="font-bold mb-2">Claude Haiku 4.5</h3>
+        <p class="text-xs text-slate-400">Router rápido + parser pt-BR custom (latência sub-segundo)</p>
+      </div>
+      <div class="glass rounded-2xl p-6">
+        <div class="text-2xl mb-3">🎙</div>
+        <h3 class="font-bold mb-2">Whisper</h3>
+        <p class="text-xs text-slate-400">Transcrição de áudio pt-BR de alta acurácia</p>
+      </div>
+      <div class="glass rounded-2xl p-6">
+        <div class="text-2xl mb-3">👁</div>
+        <h3 class="font-bold mb-2">GPT-4o Vision</h3>
+        <p class="text-xs text-slate-400">OCR estruturado pra cupons fiscais brasileiros</p>
+      </div>
+      <div class="glass rounded-2xl p-6">
+        <div class="text-2xl mb-3">📱</div>
+        <h3 class="font-bold mb-2">WhatsApp Cloud API</h3>
+        <p class="text-xs text-slate-400">Canal direto Meta · sem intermediário</p>
+      </div>
+      <div class="glass rounded-2xl p-6">
+        <div class="text-2xl mb-3">▲</div>
+        <h3 class="font-bold mb-2">Next.js 15 + Vercel</h3>
+        <p class="text-xs text-slate-400">App full-stack edge-deployed</p>
+      </div>
+      <div class="glass rounded-2xl p-6">
+        <div class="text-2xl mb-3">🗄️</div>
+        <h3 class="font-bold mb-2">Supabase + Postgres</h3>
+        <p class="text-xs text-slate-400">DB com row-level security · LGPD-ready</p>
+      </div>
+      <div class="glass rounded-2xl p-6">
+        <div class="text-2xl mb-3">🔐</div>
+        <h3 class="font-bold mb-2">Privacy-first</h3>
+        <p class="text-xs text-slate-400">Dados isolados por user · zero compartilhamento</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     BUSINESS MODEL
+═══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 border-t border-white/5 bg-gradient-to-b from-slate-950 to-violet-950/20">
+  <div class="max-w-6xl mx-auto px-6 fade-in">
+    <p class="text-emerald-400 font-semibold uppercase tracking-wider text-sm mb-4">Modelo de receita</p>
+    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-12 max-w-3xl">
+      Freemium SaaS com unit economics validados.
+    </h2>
+
+    <!-- Pricing cards -->
+    <div class="grid md:grid-cols-3 gap-6 mb-16">
+      <div class="glass rounded-2xl p-8">
+        <p class="text-xs uppercase tracking-wider text-slate-400 mb-3">Free</p>
+        <p class="text-3xl font-black mb-2">R$ 0</p>
+        <p class="text-sm text-slate-400 mb-6">/mês · onboarding aberto</p>
+        <ul class="text-sm space-y-2 text-slate-300">
+          <li>✓ Bot WhatsApp completo</li>
+          <li>✓ Limite de transações/mês</li>
+          <li>✓ App + dashboard</li>
+        </ul>
+      </div>
+      <div class="glass-strong rounded-2xl p-8 ring-2 ring-violet-500 relative">
+        <div class="absolute -top-3 left-6 bg-violet-500 text-xs font-bold px-3 py-1 rounded-full">RECOMENDADO</div>
+        <p class="text-xs uppercase tracking-wider text-violet-300 mb-3">Pro</p>
+        <p class="text-3xl font-black gradient-text mb-2">R$ 14,90</p>
+        <p class="text-sm text-slate-400 mb-6">/mês · ou R$ 119/ano</p>
+        <ul class="text-sm space-y-2 text-slate-200">
+          <li class="text-violet-300">✓ Tudo do Free</li>
+          <li>✓ Transações ilimitadas</li>
+          <li>✓ AI conversacional sem limite</li>
+          <li>✓ Insights semanais</li>
+          <li>✓ Recorrências + auto-launch</li>
+        </ul>
+      </div>
+      <div class="glass rounded-2xl p-8 border border-amber-500/30">
+        <p class="text-xs uppercase tracking-wider text-amber-300 mb-3">Founders Lifetime</p>
+        <p class="text-3xl font-black mb-2">R$ 397</p>
+        <p class="text-sm text-slate-400 mb-6">único · 100 vagas</p>
+        <ul class="text-sm space-y-2 text-slate-300">
+          <li>✓ PRO pra sempre</li>
+          <li>✓ Badge Founders</li>
+          <li>✓ Acesso antecipado a features</li>
+          <li>✓ Voz no roadmap</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Unit economics -->
+    <div class="glass-strong rounded-3xl p-10">
+      <h3 class="text-2xl font-bold mb-8">Unit economics</h3>
+      <div class="grid md:grid-cols-4 gap-6">
+        <div>
+          <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">LTV bruto</p>
+          <p class="text-3xl font-black gradient-text">R$ 186</p>
+          <p class="text-xs text-slate-500 mt-1">12.5 meses × R$ 14,90</p>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">COGS / mês</p>
+          <p class="text-3xl font-black">R$ 5,65</p>
+          <p class="text-xs text-slate-500 mt-1">AI + WhatsApp + infra</p>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Margem bruta</p>
+          <p class="text-3xl font-black text-emerald-400">62%</p>
+          <p class="text-xs text-slate-500 mt-1">Contribution R$ 9,25</p>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">CAC ceiling</p>
+          <p class="text-3xl font-black">R$ 38</p>
+          <p class="text-xs text-slate-500 mt-1">LTV:CAC saudável 3:1</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     PROJEÇÃO Y1
+═══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 border-t border-white/5">
+  <div class="max-w-6xl mx-auto px-6 fade-in">
+    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">Projeção Year 1</p>
+    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-12 max-w-3xl">
+      Crescimento orgânico realista — 800+ usuários e <span class="gradient-text">~R$ 22k ARR</span> no mês 12.
+    </h2>
+
+    <div class="overflow-x-auto glass-strong rounded-2xl p-2 mb-12">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-white/10">
+            <th class="text-left p-3 font-bold">Mês</th>
+            <th class="text-right p-3 font-semibold">Total signups</th>
+            <th class="text-right p-3 font-semibold">PRO ativos</th>
+            <th class="text-right p-3 font-semibold">MRR</th>
+            <th class="text-right p-3 font-semibold">ARR run-rate</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          <tr><td class="p-3 font-medium">Mês 3</td><td class="p-3 text-right">110</td><td class="p-3 text-right">12</td><td class="p-3 text-right">R$ 179</td><td class="p-3 text-right">R$ 2.148</td></tr>
+          <tr><td class="p-3 font-medium">Mês 6</td><td class="p-3 text-right">290</td><td class="p-3 text-right">38</td><td class="p-3 text-right">R$ 566</td><td class="p-3 text-right">R$ 6.792</td></tr>
+          <tr><td class="p-3 font-medium">Mês 9</td><td class="p-3 text-right">515</td><td class="p-3 text-right">75</td><td class="p-3 text-right">R$ 1.118</td><td class="p-3 text-right">R$ 13.416</td></tr>
+          <tr class="bg-violet-500/10">
+            <td class="p-3 font-bold">Mês 12</td>
+            <td class="p-3 text-right font-bold">810</td>
+            <td class="p-3 text-right font-bold gradient-text text-lg">124</td>
+            <td class="p-3 text-right font-bold gradient-text text-lg">R$ 1.848</td>
+            <td class="p-3 text-right font-bold">R$ 22.176</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="glass rounded-2xl p-6">
+        <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Cenário conservador</p>
+        <p class="text-2xl font-black mb-1">~60 PRO</p>
+        <p class="text-sm text-slate-400">MRR R$ 894</p>
+      </div>
+      <div class="glass-strong rounded-2xl p-6 ring-1 ring-violet-500/40">
+        <p class="text-xs uppercase tracking-wider text-violet-300 mb-2">Realista (base case)</p>
+        <p class="text-2xl font-black mb-1 gradient-text">~124 PRO</p>
+        <p class="text-sm text-slate-300">MRR R$ 1.848</p>
+      </div>
+      <div class="glass rounded-2xl p-6">
+        <p class="text-xs uppercase tracking-wider text-emerald-400 mb-2">Achievable upside</p>
+        <p class="text-2xl font-black mb-1">~195 PRO</p>
+        <p class="text-sm text-slate-400">MRR R$ 2.906 · ARR R$ 35k</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ROADMAP
+═══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 border-t border-white/5 bg-gradient-to-b from-slate-950 to-indigo-950/30">
+  <div class="max-w-6xl mx-auto px-6 fade-in">
+    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">Roadmap 2026</p>
+    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-12 max-w-3xl">
+      O caminho até dominar o segmento WhatsApp-first.
+    </h2>
+
+    <div class="space-y-6">
+      <div class="glass-strong rounded-2xl p-8 flex gap-6 items-start">
+        <div class="text-3xl font-black gradient-text">Q1</div>
+        <div>
+          <h3 class="text-xl font-bold mb-2">Fundação comercial</h3>
+          <p class="text-slate-300 text-sm leading-relaxed">Lançar Founders Lifetime (100 vagas, R$ 397) · Conteúdo orgânico TikTok/Reels · Parcerias com micro-influencers de finanças BR · Confirmar fator R com contador (Anexo III, 6%)</p>
+        </div>
+      </div>
+      <div class="glass-strong rounded-2xl p-8 flex gap-6 items-start">
+        <div class="text-3xl font-black gradient-text">Q2</div>
+        <div>
+          <h3 class="text-xl font-bold mb-2">Aceleração orgânica</h3>
+          <p class="text-slate-300 text-sm leading-relaxed">Trial 14 dias sem cartão · A/B test de pricing · 1-2 parcerias estratégicas · SEO blog começa a indexar</p>
+        </div>
+      </div>
+      <div class="glass-strong rounded-2xl p-8 flex gap-6 items-start border-l-4 border-emerald-400">
+        <div class="text-3xl font-black gradient-text">Q3</div>
+        <div>
+          <h3 class="text-xl font-bold mb-2">Open Finance · maior unlock competitivo</h3>
+          <p class="text-slate-300 text-sm leading-relaxed">Integração Pluggy/Belvo pra auto-import de extratos bancários e cartões. Fecha gap crítico vs Mobills/Organizze. Pode justificar tier PRO+ a R$ 24,90.</p>
+        </div>
+      </div>
+      <div class="glass-strong rounded-2xl p-8 flex gap-6 items-start">
+        <div class="text-3xl font-black gradient-text">Q4</div>
+        <div>
+          <h3 class="text-xl font-bold mb-2">Multi-user · família compartilhada</h3>
+          <p class="text-slate-300 text-sm leading-relaxed">Casais e famílias compartilhando finanças no mesmo WhatsApp. Segmento high-LTV. Tier "Família" a R$ 29,90/mês.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     TEAM
+═══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 border-t border-white/5">
+  <div class="max-w-6xl mx-auto px-6 fade-in">
+    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">Quem está construindo</p>
+    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-12">Solo founder · ship-velocity alto.</h2>
+
+    <div class="glass-strong rounded-3xl p-10 max-w-3xl">
+      <div class="flex items-start gap-6">
+        <div class="h-20 w-20 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-3xl font-black shrink-0 glow-violet">P</div>
+        <div>
+          <h3 class="text-2xl font-bold mb-2">Pablo Rôla</h3>
+          <p class="text-violet-300 mb-4 font-medium">Founder · Engineering · Product</p>
+          <p class="text-slate-300 text-sm leading-relaxed mb-6">
+            Background em construção civil (VERT C. Incorporadora). Migrando pra tech como solo founder do Finn. Stack moderna, foco em qualidade de produto e experiência conversacional. Aberto a co-founders técnicos e M&A conversations.
+          </p>
+          <div class="flex gap-2 flex-wrap text-xs">
+            <span class="bg-white/5 border border-white/10 rounded-full px-3 py-1">Brasil · Fortaleza/CE</span>
+            <span class="bg-white/5 border border-white/10 rounded-full px-3 py-1">pablofcr@gmail.com</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CALL TO ACTION
+═══════════════════════════════════════════════════════════════════ -->
+<section class="py-32 border-t border-white/5 bg-gradient-to-br from-violet-900/30 via-indigo-900/30 to-slate-950 relative overflow-hidden">
+  <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+    <h2 class="text-5xl md:text-6xl font-black tracking-tight mb-6">
+      Vamos conversar?
+    </h2>
+    <p class="text-xl text-slate-300 mb-12 max-w-2xl mx-auto">
+      Investimento, parceria estratégica ou aquisição — qualquer formato sério, eu respondo em 24h.
+    </p>
+    <div class="flex flex-col md:flex-row gap-4 justify-center items-center mb-12">
+      <a href="mailto:pablofcr@gmail.com?subject=Finn%20-%20Investidor"
+         class="bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold px-8 py-4 rounded-xl hover:opacity-90 transition glow-violet">
+        Conversar com o founder →
+      </a>
+      <a href="https://finn-steel.vercel.app" target="_blank"
+         class="glass-strong text-white font-semibold px-8 py-4 rounded-xl hover:bg-white/10 transition">
+        Ver o produto ao vivo
+      </a>
+    </div>
+    <p class="text-xs text-slate-500">
+      Pitch atualizado em maio/2026 · Data abertura empresa: aguardando · Pablo Rôla · pablofcr@gmail.com
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════════════════════ -->
+<footer class="py-12 border-t border-white/5 text-center">
+  <p class="text-xs text-slate-600">
+    © 2026 Finn · Todas projeções são estimativas baseadas em premissas conservadoras.<br>
+    Mais detalhes técnicos disponíveis sob NDA.
+  </p>
+</footer>
+
+<script>
+  // Fade-in on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible')
+    })
+  }, { threshold: 0.1 })
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el))
+</script>
+
+</body>
+</html>
