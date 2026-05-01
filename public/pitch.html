@@ -5,227 +5,584 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>Finn — Seu CFO no WhatsApp · Pitch 2026</title>
-<script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  body { font-family: 'Inter', system-ui, sans-serif; }
-  .gradient-text {
-    background: linear-gradient(135deg, #a78bfa 0%, #818cf8 50%, #6366f1 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+/* ─── Reset + base ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #020617;
+  color: #f1f5f9;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+
+/* ─── Layout ─────────────────────────────────────────────────── */
+.container { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem; }
+.section { padding: 6rem 0; border-top: 1px solid rgba(255,255,255,0.05); }
+
+/* ─── Tipografia ────────────────────────────────────────────── */
+h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.025em; line-height: 1.1; }
+.h-hero { font-size: clamp(2.5rem, 7vw, 4.5rem); font-weight: 900; }
+.h-section { font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; margin-bottom: 1.5rem; }
+.h-card { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; }
+.eyebrow {
+  color: #a78bfa;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  margin-bottom: 1rem;
+}
+.eyebrow.green { color: #34d399; }
+.eyebrow.amber { color: #fbbf24; }
+.lead { font-size: 1.125rem; color: #94a3b8; line-height: 1.6; }
+.muted { color: #94a3b8; }
+.muted-small { color: #64748b; font-size: 0.75rem; }
+
+/* ─── Gradient text ──────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #a78bfa 0%, #818cf8 50%, #6366f1 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #6366f1; /* fallback */
+}
+
+/* ─── Backgrounds especiais ─────────────────────────────────── */
+.hero-bg {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at top, rgba(139, 92, 246, 0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+    #020617;
+  background-size: 100% 100%, 100% 100%, 50px 50px, 50px 50px, 100% 100%;
+}
+.violet-tint { background: linear-gradient(180deg, #020617 0%, rgba(67, 28, 130, 0.2) 100%); }
+.indigo-tint { background: linear-gradient(180deg, #020617 0%, rgba(49, 46, 129, 0.3) 100%); }
+.cta-bg {
+  background: linear-gradient(135deg, rgba(91, 33, 182, 0.3), rgba(67, 56, 202, 0.3), #020617);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ─── Cards ──────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  padding: 2rem;
+}
+.glass-strong {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  padding: 2rem;
+}
+.glass-pad-sm { padding: 1.5rem; }
+.glass-pad-lg { padding: 2.5rem; }
+.glow-violet { box-shadow: 0 0 80px rgba(139, 92, 246, 0.2); }
+.border-l-emerald { border-left: 4px solid #34d399; padding-left: 1.5rem; }
+.border-l-violet  { border-left: 4px solid #a78bfa; padding-left: 1.5rem; }
+.border-l-amber   { border-left: 4px solid #fbbf24; padding-left: 1.5rem; }
+.border-l-slate   { border-left: 4px solid #94a3b8; padding-left: 1.5rem; }
+.ring-violet {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 0;
+  position: relative;
+}
+.ring-amber {
+  outline: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+/* ─── Logo ───────────────────────────────────────────────────── */
+.logo-mark {
+  width: 3rem; height: 3rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 900; color: white;
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4);
+}
+.logo-mark-lg { width: 5rem; height: 5rem; font-size: 2.25rem; flex-shrink: 0; }
+
+/* ─── Pills/badges ──────────────────────────────────────────── */
+.pill {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.pill-violet {
+  background: rgba(139,92,246,0.15);
+  color: #ddd6fe;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+  white-space: nowrap;
+}
+.pill-amber {
+  background: rgba(251,191,36,0.15);
+  color: #fde68a;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+  white-space: nowrap;
+}
+.pill-slate {
+  background: rgba(148,163,184,0.15);
+  color: #cbd5e1;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+  white-space: nowrap;
+}
+.recommend-tag {
+  position: absolute;
+  top: -0.75rem;
+  left: 1.5rem;
+  background: #8b5cf6;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+
+/* ─── Number bigs ──────────────────────────────────────────── */
+.num-big {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.num-mid {
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+.num-card {
+  font-size: 1.875rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+.num-small {
+  font-size: 1.875rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+}
+
+/* ─── Grids ────────────────────────────────────────────────── */
+.grid { display: grid; gap: 1.5rem; }
+.grid-tight { gap: 1rem; }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
+@media (max-width: 1100px) and (min-width: 900px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ─── Flex helpers ─────────────────────────────────────────── */
+.flex { display: flex; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.gap-6 { gap: 1.5rem; }
+
+/* ─── Spacing utilities ────────────────────────────────────── */
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 0.75rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-6 { margin-top: 1.5rem; }
+.mt-8 { margin-top: 2rem; }
+.mt-12 { margin-top: 3rem; }
+.mt-16 { margin-top: 4rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 0.75rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+.mb-12 { margin-bottom: 3rem; }
+.mb-16 { margin-bottom: 4rem; }
+.max-w-3xl { max-width: 48rem; }
+.max-w-2xl { max-width: 36rem; }
+.max-w-4xl { max-width: 56rem; }
+
+/* ─── Text utilities ───────────────────────────────────────── */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-sm { font-size: 0.875rem; }
+.text-xs { font-size: 0.75rem; }
+.text-base { font-size: 1rem; }
+.text-lg { font-size: 1.125rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+.font-bold { font-weight: 700; }
+.font-black { font-weight: 900; }
+.font-semibold { font-weight: 600; }
+.font-medium { font-weight: 500; }
+.italic { font-style: italic; }
+.violet { color: #c4b5fd; }
+.green-text { color: #34d399; }
+.amber-text { color: #fbbf24; }
+.rose-text { color: #fb7185; }
+
+/* ─── Buttons ──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-weight: 600; padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: white;
+  box-shadow: 0 0 80px rgba(139, 92, 246, 0.2);
+}
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-secondary {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+/* ─── Tabela comparativa ───────────────────────────────────── */
+.table-wrap {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  padding: 0.5rem;
+  overflow-x: auto;
+}
+table.compare {
+  width: 100%;
+  font-size: 0.875rem;
+  border-collapse: collapse;
+}
+table.compare thead th {
+  text-align: center;
+  padding: 1rem 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+table.compare thead th:first-child { text-align: left; font-weight: 700; color: #f1f5f9; font-size: 1rem; }
+table.compare thead th.col-finn { color: #c4b5fd; }
+table.compare tbody td {
+  text-align: center;
+  padding: 0.875rem 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+table.compare tbody td:first-child { text-align: left; font-weight: 500; padding-left: 1rem; }
+table.compare tbody tr.highlight { background: rgba(139,92,246,0.05); }
+table.compare tbody tr.highlight td:first-child { font-weight: 700; }
+.cell-yes { color: #10b981; font-weight: 700; }
+.cell-no  { color: #f43f5e; font-weight: 700; }
+.cell-partial { color: #f59e0b; font-size: 0.75rem; font-weight: 600; }
+.price-finn { color: #c4b5fd; font-weight: 700; }
+.price-cheap { color: #10b981; font-weight: 600; }
+.price-expensive { color: #fb7185; }
+
+/* ─── Stack icons grid ─────────────────────────────────────── */
+.stack-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+.stack-icon { font-size: 1.5rem; margin-bottom: 0.75rem; display: block; }
+
+/* ─── Demo conversation bubbles ────────────────────────────── */
+.bubble-user {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-left: 3rem;
+  font-size: 0.875rem;
+}
+.bubble-bot {
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-right: 3rem;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+}
+.bubble-user p:first-child { color: #86efac; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem; }
+.bubble-bot p:first-child  { color: #c4b5fd; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem; }
+
+.code-mini {
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 0.75rem;
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.2);
+  color: #ddd6fe;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  display: inline-block;
+}
+
+/* ─── Roadmap items ────────────────────────────────────────── */
+.roadmap-item {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+.roadmap-q {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+.roadmap-item.highlight { border-left: 4px solid #34d399; }
+
+/* ─── Absorb cards (gaps) ─────────────────────────────────── */
+.absorb-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  border-left: 4px solid #fbbf24;
+}
+.absorb-card.priority-low { border-left-color: #94a3b8; }
+.plan-box {
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  color: #ddd6fe;
+  margin-top: 1rem;
+}
+.plan-box.slate {
+  background: rgba(148,163,184,0.1);
+  border-color: rgba(148,163,184,0.2);
+  color: #cbd5e1;
+}
+
+/* ─── Fade in on scroll ────────────────────────────────────── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.fade-in.visible { opacity: 1; transform: translateY(0); }
+
+/* ─── Footer ──────────────────────────────────────────────── */
+.footer {
+  padding: 3rem 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  text-align: center;
+}
+.footer p { color: #475569; font-size: 0.75rem; }
+
+/* ─── Print ────────────────────────────────────────────────── */
+@media print {
+  body { background: white !important; color: #0f172a !important; }
+  .glass, .glass-strong, .stack-card, .roadmap-item, .absorb-card, .table-wrap {
+    background: white !important;
+    border: 1px solid #cbd5e1 !important;
   }
-  .glass {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
-  .glass-strong {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  .glow-violet {
-    box-shadow: 0 0 80px rgba(139, 92, 246, 0.15);
-  }
-  .grid-bg {
-    background-image:
-      radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-      radial-gradient(ellipse at bottom, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 50px 50px, 50px 50px;
-  }
-  .fade-in {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.8s ease, transform 0.8s ease;
-  }
-  .fade-in.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  .number-huge {
-    font-size: clamp(3rem, 8vw, 6rem);
-    line-height: 1;
-    font-weight: 800;
-    letter-spacing: -0.04em;
-  }
-  /* Tabela comparativa */
-  .feature-cell {
-    text-align: center;
-    font-size: 1rem;
-  }
-  .check-yes { color: #10b981; }
-  .check-no { color: #f43f5e; }
-  .check-partial { color: #f59e0b; }
-  /* Print */
-  @media print {
-    body { background: white !important; color: black !important; }
-    .glass, .glass-strong { background: white !important; border: 1px solid #ddd !important; }
-    .gradient-text { -webkit-text-fill-color: #6366f1 !important; }
-  }
+  .gradient-text { -webkit-text-fill-color: #6366f1 !important; color: #6366f1 !important; }
+  .hero-bg, .violet-tint, .indigo-tint, .cta-bg { background: white !important; }
+  .muted, .lead { color: #475569 !important; }
+  .num-big, .num-mid, .num-card, .num-small { color: #0f172a; }
+  .h-hero, .h-section, .h-card { color: #0f172a; }
+}
 </style>
 </head>
-<body class="bg-slate-950 text-slate-100 antialiased">
+<body>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     HERO
-═══════════════════════════════════════════════════════════════════ -->
-<section class="grid-bg min-h-screen flex items-center relative overflow-hidden">
-  <div class="max-w-6xl mx-auto px-6 py-24 relative z-10">
+<!-- HERO ─────────────────────────────────────────────────────── -->
+<section class="hero-bg">
+  <div class="container" style="position: relative; z-index: 1; padding-top: 6rem; padding-bottom: 6rem;">
     <div class="flex items-center gap-3 mb-12">
-      <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-2xl font-black shadow-2xl glow-violet">F</div>
+      <div class="logo-mark glow-violet">F</div>
       <div>
-        <p class="text-2xl font-bold">Finn</p>
-        <p class="text-xs text-slate-400">Suas finanças, sem fricção</p>
+        <p style="font-size: 1.5rem; font-weight: 700;">Finn</p>
+        <p class="text-xs muted">Suas finanças, sem fricção</p>
       </div>
     </div>
 
-    <h1 class="text-5xl md:text-7xl font-black tracking-tight leading-[1.05] mb-6">
-      Seu <span class="gradient-text">CFO</span><br>
-      no WhatsApp.
+    <h1 class="h-hero mb-6">
+      Seu <span class="gradient-text">CFO</span><br>no WhatsApp.
     </h1>
 
-    <p class="text-xl md:text-2xl text-slate-300 max-w-3xl leading-relaxed mb-12">
-      Brasileiros registram gastos pelo WhatsApp — por <strong class="text-white">áudio</strong>, <strong class="text-white">foto do cupom</strong> ou <strong class="text-white">texto</strong>. A IA do Finn entende, categoriza e devolve insights conversacionais sobre o dinheiro deles.
+    <p class="lead max-w-3xl mb-12" style="font-size: 1.25rem;">
+      Brasileiros registram gastos pelo WhatsApp — por <strong style="color: white;">áudio</strong>, <strong style="color: white;">foto do cupom</strong> ou <strong style="color: white;">texto</strong>. A IA do Finn entende, categoriza e devolve insights conversacionais sobre o dinheiro deles.
     </p>
 
     <div class="flex flex-wrap gap-3 mb-16">
-      <span class="glass px-4 py-2 rounded-full text-sm font-medium">🇧🇷 Brasil</span>
-      <span class="glass px-4 py-2 rounded-full text-sm font-medium">📱 WhatsApp + Web App</span>
-      <span class="glass px-4 py-2 rounded-full text-sm font-medium">🤖 Powered by Claude Sonnet 4.6</span>
-      <span class="glass px-4 py-2 rounded-full text-sm font-medium">✅ MVP em produção</span>
+      <span class="pill">🇧🇷 Brasil</span>
+      <span class="pill">📱 WhatsApp + Web App</span>
+      <span class="pill">🤖 Powered by Claude Sonnet 4.6</span>
+      <span class="pill">✅ MVP em produção</span>
     </div>
 
-    <div class="grid md:grid-cols-3 gap-4 max-w-3xl">
-      <div class="glass-strong rounded-2xl p-6">
-        <p class="text-4xl font-black gradient-text mb-2">3</p>
-        <p class="text-sm text-slate-300">canais de entrada<br>(áudio, foto, texto)</p>
+    <div class="grid grid-3 max-w-3xl">
+      <div class="glass-strong glass-pad-sm">
+        <p class="num-big gradient-text">3</p>
+        <p class="text-sm muted mt-3">canais de entrada<br>(áudio, foto, texto)</p>
       </div>
-      <div class="glass-strong rounded-2xl p-6">
-        <p class="text-4xl font-black gradient-text mb-2">10</p>
-        <p class="text-sm text-slate-300">tools financeiras<br>na IA conversacional</p>
+      <div class="glass-strong glass-pad-sm">
+        <p class="num-big gradient-text">10</p>
+        <p class="text-sm muted mt-3">tools financeiras<br>na IA conversacional</p>
       </div>
-      <div class="glass-strong rounded-2xl p-6">
-        <p class="text-4xl font-black gradient-text mb-2">99%</p>
-        <p class="text-sm text-slate-300">dos smartphones BR<br>já têm WhatsApp</p>
+      <div class="glass-strong glass-pad-sm">
+        <p class="num-big gradient-text">99%</p>
+        <p class="text-sm muted mt-3">dos smartphones BR<br>já têm WhatsApp</p>
       </div>
     </div>
 
-    <div class="mt-16 text-sm text-slate-500">
-      <p>Pitch atualizado em <span class="text-slate-300">maio/2026</span> · Founder: Pablo Rôla · pablofcr@gmail.com</p>
+    <div class="mt-16 text-sm" style="color: #475569;">
+      <p>Pitch atualizado em <span style="color: #cbd5e1;">maio/2026</span> · Founder: Pablo Rôla · pablofcr@gmail.com</p>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     PROBLEMA
-═══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 border-t border-white/5">
-  <div class="max-w-6xl mx-auto px-6 fade-in">
-    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">O problema</p>
-    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-6 max-w-3xl">
+<!-- PROBLEMA ────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container fade-in">
+    <p class="eyebrow">O problema</p>
+    <h2 class="h-section max-w-3xl">
       Aplicativo de finanças pessoais é abandonado em 2 semanas.
     </h2>
-    <p class="text-lg text-slate-400 max-w-3xl mb-16">
+    <p class="lead max-w-3xl mb-16">
       Os apps tradicionais exigem digitação manual cansativa. A pessoa começa motivada, esquece um dia, dois, e nunca mais volta. O ciclo se repete com cada novo app.
     </p>
 
-    <div class="grid md:grid-cols-3 gap-6">
-      <div class="glass rounded-2xl p-8">
-        <div class="text-rose-400 text-3xl font-black mb-3">~80%</div>
+    <div class="grid grid-3">
+      <div class="glass">
+        <div class="num-mid rose-text mb-3">~80%</div>
         <p class="text-base font-semibold mb-2">dos brasileiros</p>
-        <p class="text-sm text-slate-400">não conseguem manter controle consistente dos gastos pessoais</p>
+        <p class="text-sm muted">não conseguem manter controle consistente dos gastos pessoais</p>
       </div>
-      <div class="glass rounded-2xl p-8">
-        <div class="text-rose-400 text-3xl font-black mb-3">14 dias</div>
+      <div class="glass">
+        <div class="num-mid rose-text mb-3">14 dias</div>
         <p class="text-base font-semibold mb-2">é o tempo médio</p>
-        <p class="text-sm text-slate-400">até o usuário desinstalar o app de finanças que baixou</p>
+        <p class="text-sm muted">até o usuário desinstalar o app de finanças que baixou</p>
       </div>
-      <div class="glass rounded-2xl p-8">
-        <div class="text-rose-400 text-3xl font-black mb-3">Manual</div>
+      <div class="glass">
+        <div class="num-mid rose-text mb-3">Manual</div>
         <p class="text-base font-semibold mb-2">é o gargalo</p>
-        <p class="text-sm text-slate-400">a fricção de abrir o app, escolher categoria e digitar mata o hábito</p>
+        <p class="text-sm muted">a fricção de abrir o app, escolher categoria e digitar mata o hábito</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     SOLUÇÃO
-═══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 border-t border-white/5 bg-gradient-to-b from-slate-950 to-violet-950/20">
-  <div class="max-w-6xl mx-auto px-6 fade-in">
-    <p class="text-emerald-400 font-semibold uppercase tracking-wider text-sm mb-4">A solução</p>
-    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-6 max-w-3xl">
+<!-- SOLUÇÃO ─────────────────────────────────────────────────── -->
+<section class="section violet-tint">
+  <div class="container fade-in">
+    <p class="eyebrow green">A solução</p>
+    <h2 class="h-section max-w-3xl">
       O Finn vive onde o brasileiro já vive: <span class="gradient-text">no WhatsApp</span>.
     </h2>
-    <p class="text-lg text-slate-400 max-w-3xl mb-16">
+    <p class="lead max-w-3xl mb-16">
       Sem app pra abrir. Sem categoria pra escolher. Sem planilha. O usuário fala, fotografa ou escreve — a IA entende e organiza.
     </p>
 
-    <!-- 3 canais -->
-    <div class="grid md:grid-cols-3 gap-6 mb-16">
-      <div class="glass-strong rounded-2xl p-8">
-        <div class="text-5xl mb-4">🎙</div>
-        <h3 class="text-xl font-bold mb-3">Áudio</h3>
-        <p class="text-slate-400 text-sm leading-relaxed mb-4">
-          Manda igual mandaria pra um amigo. <em class="text-slate-300">"Almocei 32 reais hoje no PIX."</em> Em 3 segundos tá registrado.
+    <div class="grid grid-3 mb-16">
+      <div class="glass-strong">
+        <div style="font-size: 2.5rem; margin-bottom: 1rem;">🎙</div>
+        <h3 class="h-card">Áudio</h3>
+        <p class="text-sm muted mb-4" style="line-height: 1.6;">
+          Manda igual mandaria pra um amigo. <em style="color: #cbd5e1;">"Almocei 32 reais hoje no PIX."</em> Em 3 segundos tá registrado.
         </p>
-        <div class="text-xs text-violet-300 font-mono bg-violet-500/10 px-3 py-2 rounded-lg border border-violet-500/20">
-          Whisper → parsing → categorização IA
-        </div>
+        <div class="code-mini">Whisper → parsing → categorização IA</div>
       </div>
-      <div class="glass-strong rounded-2xl p-8">
-        <div class="text-5xl mb-4">📸</div>
-        <h3 class="text-xl font-bold mb-3">Foto do cupom</h3>
-        <p class="text-slate-400 text-sm leading-relaxed mb-4">
+      <div class="glass-strong">
+        <div style="font-size: 2.5rem; margin-bottom: 1rem;">📸</div>
+        <h3 class="h-card">Foto do cupom</h3>
+        <p class="text-sm muted mb-4" style="line-height: 1.6;">
           Tira foto do cupom da padaria, da farmácia, do supermercado — a IA lê valor, estabelecimento e categoriza sozinho.
         </p>
-        <div class="text-xs text-violet-300 font-mono bg-violet-500/10 px-3 py-2 rounded-lg border border-violet-500/20">
-          GPT-4o Vision → OCR estruturado
-        </div>
+        <div class="code-mini">GPT-4o Vision → OCR estruturado</div>
       </div>
-      <div class="glass-strong rounded-2xl p-8">
-        <div class="text-5xl mb-4">✍️</div>
-        <h3 class="text-xl font-bold mb-3">Texto</h3>
-        <p class="text-slate-400 text-sm leading-relaxed mb-4">
-          Em reunião? Bebê dormindo? Escreve curto: <em class="text-slate-300">"café 8 reais"</em>. Tá registrado.
+      <div class="glass-strong">
+        <div style="font-size: 2.5rem; margin-bottom: 1rem;">✍️</div>
+        <h3 class="h-card">Texto</h3>
+        <p class="text-sm muted mb-4" style="line-height: 1.6;">
+          Em reunião? Bebê dormindo? Escreve curto: <em style="color: #cbd5e1;">"café 8 reais"</em>. Tá registrado.
         </p>
-        <div class="text-xs text-violet-300 font-mono bg-violet-500/10 px-3 py-2 rounded-lg border border-violet-500/20">
-          Parser pt-BR custom + Haiku 4.5 router
-        </div>
+        <div class="code-mini">Parser pt-BR custom + Haiku 4.5 router</div>
       </div>
     </div>
 
-    <!-- Demo conversational -->
-    <div class="glass-strong rounded-3xl p-8 md:p-12">
-      <p class="text-violet-400 font-semibold uppercase tracking-wider text-xs mb-4">A camada que ninguém mais tem</p>
-      <h3 class="text-3xl md:text-4xl font-black mb-6">IA conversacional sobre os <em class="gradient-text">seus</em> dados.</h3>
-      <div class="grid md:grid-cols-2 gap-8 items-center">
+    <!-- Demo conversation -->
+    <div class="glass-strong glass-pad-lg">
+      <p class="eyebrow">A camada que ninguém mais tem</p>
+      <h3 style="font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 900; letter-spacing: -0.025em; margin-bottom: 1.5rem;">
+        IA conversacional sobre os <em class="gradient-text" style="font-style: italic;">seus</em> dados.
+      </h3>
+      <div class="grid grid-2" style="align-items: center;">
         <div>
-          <p class="text-slate-300 leading-relaxed mb-6">
-            O Finn não é só um registrador. Você pode <strong class="text-white">conversar</strong> sobre seu dinheiro:
+          <p style="color: #cbd5e1; line-height: 1.7; margin-bottom: 1.5rem;">
+            O Finn não é só um registrador. Você pode <strong style="color: white;">conversar</strong> sobre seu dinheiro:
           </p>
-          <ul class="space-y-3 text-sm text-slate-300">
-            <li class="flex gap-3"><span class="text-violet-400">✓</span> "Quanto gastei com mercado em março?"</li>
-            <li class="flex gap-3"><span class="text-violet-400">✓</span> "Compara meu mês atual com o anterior"</li>
-            <li class="flex gap-3"><span class="text-violet-400">✓</span> "Onde tô gastando demais essa semana?"</li>
-            <li class="flex gap-3"><span class="text-violet-400">✓</span> "Paguei o aluguel?" → marca a recorrência</li>
-            <li class="flex gap-3"><span class="text-violet-400">✓</span> "Corrige o último Uber pra crédito"</li>
+          <ul style="list-style: none; font-size: 0.875rem; color: #cbd5e1;">
+            <li class="mb-2"><span class="violet">✓</span> "Quanto gastei com mercado em março?"</li>
+            <li class="mb-2"><span class="violet">✓</span> "Compara meu mês atual com o anterior"</li>
+            <li class="mb-2"><span class="violet">✓</span> "Onde tô gastando demais essa semana?"</li>
+            <li class="mb-2"><span class="violet">✓</span> "Paguei o aluguel?" → marca a recorrência</li>
+            <li><span class="violet">✓</span> "Corrige o último Uber pra crédito"</li>
           </ul>
         </div>
-        <div class="space-y-3">
-          <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 ml-12 text-sm">
-            <p class="text-xs text-emerald-300 font-semibold mb-1">Você 🎙</p>
-            <p class="italic text-slate-300">"quanto gastei com restaurante esse mês?"</p>
+        <div>
+          <div class="bubble-user">
+            <p>Você 🎙</p>
+            <p style="font-style: italic; color: #cbd5e1;">"quanto gastei com restaurante esse mês?"</p>
           </div>
-          <div class="bg-violet-500/10 border border-violet-500/20 rounded-xl p-4 mr-12 text-sm">
-            <p class="text-xs text-violet-300 font-semibold mb-1">Finn ✨</p>
-            <p class="text-slate-200">Você gastou <strong>R$ 642,30</strong> em restaurante até agora em maio (12 transações). Tá <strong>18% acima</strong> da média dos últimos 3 meses. Quer ver o top 5 onde mais gastou?</p>
+          <div class="bubble-bot">
+            <p>Finn ✨</p>
+            <p style="color: #e2e8f0;">Você gastou <strong>R$ 642,30</strong> em restaurante até agora em maio (12 transações). Tá <strong>18% acima</strong> da média dos últimos 3 meses. Quer ver o top 5 onde mais gastou?</p>
           </div>
         </div>
       </div>
@@ -233,518 +590,512 @@
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     MERCADO
-═══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 border-t border-white/5">
-  <div class="max-w-6xl mx-auto px-6 fade-in">
-    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">O mercado</p>
-    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-6 max-w-3xl">
+<!-- MERCADO ─────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container fade-in">
+    <p class="eyebrow">O mercado</p>
+    <h2 class="h-section max-w-3xl">
       Brasil é o <span class="gradient-text">mercado mais ávido</span> do mundo por finanças via WhatsApp.
     </h2>
 
-    <div class="grid md:grid-cols-4 gap-4 mt-16">
-      <div class="glass rounded-2xl p-8">
-        <p class="number-huge gradient-text">215M</p>
-        <p class="text-sm text-slate-400 mt-3">brasileiros</p>
+    <div class="grid grid-4 mt-16">
+      <div class="glass">
+        <p class="num-big gradient-text">215M</p>
+        <p class="text-sm muted mt-3">brasileiros</p>
       </div>
-      <div class="glass rounded-2xl p-8">
-        <p class="number-huge gradient-text">99%</p>
-        <p class="text-sm text-slate-400 mt-3">com WhatsApp instalado</p>
+      <div class="glass">
+        <p class="num-big gradient-text">99%</p>
+        <p class="text-sm muted mt-3">com WhatsApp instalado</p>
       </div>
-      <div class="glass rounded-2xl p-8">
-        <p class="number-huge gradient-text">15%</p>
-        <p class="text-sm text-slate-400 mt-3">crescimento anual<br>do setor PFM no BR</p>
+      <div class="glass">
+        <p class="num-big gradient-text">15%</p>
+        <p class="text-sm muted mt-3">crescimento anual<br>do setor PFM no BR</p>
       </div>
-      <div class="glass rounded-2xl p-8">
-        <p class="number-huge gradient-text">10M</p>
-        <p class="text-sm text-slate-400 mt-3">downloads cumulativos<br>do líder atual (Mobills)</p>
+      <div class="glass">
+        <p class="num-big gradient-text">10M</p>
+        <p class="text-sm muted mt-3">downloads cumulativos<br>do líder atual (Mobills)</p>
       </div>
     </div>
 
-    <p class="text-base text-slate-400 max-w-3xl mt-12 leading-relaxed">
-      Mobills tem 10M downloads históricos. Mas o WhatsApp tem <strong class="text-white">230M de instalações ativas</strong> no país. Captar 1% desse mercado WhatsApp-first significa <strong class="text-white">2.3M de usuários potenciais</strong> — e o produto entrega exatamente no canal onde o brasileiro já vive.
+    <p class="text-base muted max-w-3xl mt-12" style="line-height: 1.7;">
+      Mobills tem 10M downloads históricos. Mas o WhatsApp tem <strong style="color: white;">230M de instalações ativas</strong> no país. Captar 1% desse mercado WhatsApp-first significa <strong style="color: white;">2.3M de usuários potenciais</strong> — e o produto entrega exatamente no canal onde o brasileiro já vive.
     </p>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     COMPETITIVE MOAT — TABLE
-═══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 border-t border-white/5 bg-gradient-to-b from-slate-950 to-indigo-950/30">
-  <div class="max-w-6xl mx-auto px-6 fade-in">
-    <p class="text-emerald-400 font-semibold uppercase tracking-wider text-sm mb-4">Competitive moat</p>
-    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-6 max-w-3xl">
+<!-- COMPETITIVE MOAT ────────────────────────────────────────── -->
+<section class="section indigo-tint">
+  <div class="container fade-in">
+    <p class="eyebrow green">Competitive moat</p>
+    <h2 class="h-section max-w-3xl">
       Finn vence onde o mercado <span class="gradient-text">tradicional não consegue</span>.
     </h2>
-    <p class="text-lg text-slate-400 max-w-3xl mb-12">
-      Os 8 principais concorrentes do Brasil em 2026 — e como o Finn se posiciona.
+    <p class="lead max-w-3xl mb-12">
+      Os 7 principais concorrentes do Brasil em 2026 — e como o Finn se posiciona.
     </p>
 
-    <div class="glass-strong rounded-2xl p-2 overflow-x-auto">
-      <table class="w-full text-sm">
+    <div class="table-wrap">
+      <table class="compare">
         <thead>
-          <tr class="border-b border-white/10">
-            <th class="text-left p-4 font-bold text-base">Feature</th>
-            <th class="p-4 font-semibold text-violet-300">Finn</th>
-            <th class="p-4 font-semibold text-slate-400">Mobills</th>
-            <th class="p-4 font-semibold text-slate-400">Organizze</th>
-            <th class="p-4 font-semibold text-slate-400">Porquim</th>
-            <th class="p-4 font-semibold text-slate-400">Financinha</th>
-            <th class="p-4 font-semibold text-slate-400">ZapGastos</th>
-            <th class="p-4 font-semibold text-slate-400">Jota</th>
+          <tr>
+            <th>Feature</th>
+            <th class="col-finn">Finn</th>
+            <th>Mobills</th>
+            <th>Organizze</th>
+            <th>Porquim</th>
+            <th>Financinha</th>
+            <th>ZapGastos</th>
+            <th>Jota</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-white/5">
-          <tr class="bg-violet-500/5">
-            <td class="p-4 font-bold">Preço (R$/mês entry)</td>
-            <td class="feature-cell font-bold text-violet-300">R$ 14,90</td>
-            <td class="feature-cell text-emerald-400 font-semibold">R$ 8,40</td>
-            <td class="feature-cell text-slate-300">R$ 19,90</td>
-            <td class="feature-cell text-emerald-400 font-semibold">R$ 5,58</td>
-            <td class="feature-cell text-rose-400">R$ 26,90</td>
-            <td class="feature-cell text-emerald-400 font-semibold">R$ 9,90</td>
-            <td class="feature-cell text-emerald-400 font-semibold">Grátis</td>
+        <tbody>
+          <tr class="highlight">
+            <td>Preço (R$/mês entry)</td>
+            <td class="price-finn">R$ 14,90</td>
+            <td class="price-cheap">R$ 8,40</td>
+            <td>R$ 19,90</td>
+            <td class="price-cheap">R$ 5,58</td>
+            <td class="price-expensive">R$ 26,90</td>
+            <td class="price-cheap">R$ 9,90</td>
+            <td class="price-cheap">Grátis</td>
           </tr>
           <tr>
-            <td class="p-4 font-medium">WhatsApp bot conversacional</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
+            <td>WhatsApp bot conversacional</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-no">✗</td>
+            <td class="cell-no">✗</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
           </tr>
           <tr>
-            <td class="p-4 font-medium">Áudio pra registrar</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
+            <td>Áudio pra registrar</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-no">✗</td>
+            <td class="cell-no">✗</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
           </tr>
           <tr>
-            <td class="p-4 font-medium">Foto cupom OCR</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
+            <td>Foto cupom OCR</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-no">✗</td>
+            <td class="cell-no">✗</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
           </tr>
-          <tr class="bg-violet-500/5">
-            <td class="p-4 font-bold">IA conversacional profunda (Q&A sobre dados)</td>
-            <td class="feature-cell check-yes text-lg">✓ <span class="text-xs">10 tools</span></td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-partial">parcial</td>
-            <td class="feature-cell check-partial">parcial</td>
-            <td class="feature-cell check-partial">parcial</td>
-            <td class="feature-cell check-partial">parcial</td>
-          </tr>
-          <tr>
-            <td class="p-4 font-medium">Web dashboard completo</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-no">✗</td>
+          <tr class="highlight">
+            <td>IA conversacional profunda (Q&A sobre dados)</td>
+            <td class="cell-yes">✓ <span class="text-xs">10 tools</span></td>
+            <td class="cell-no">✗</td>
+            <td class="cell-no">✗</td>
+            <td class="cell-partial">parcial</td>
+            <td class="cell-partial">parcial</td>
+            <td class="cell-partial">parcial</td>
+            <td class="cell-partial">parcial</td>
           </tr>
           <tr>
-            <td class="p-4 font-medium">Recorrências + alertas inteligentes</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-partial">parcial</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-partial">parcial</td>
+            <td>Web dashboard completo</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-no">✗</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-no">✗</td>
           </tr>
           <tr>
-            <td class="p-4 font-medium">Fatura cartão automática</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-partial">parcial</td>
+            <td>Recorrências + alertas inteligentes</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-partial">parcial</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-partial">parcial</td>
           </tr>
           <tr>
-            <td class="p-4 font-medium">Open Finance (auto-import)</td>
-            <td class="feature-cell check-partial text-xs">roadmap Q3</td>
-            <td class="feature-cell check-yes">✓</td>
-            <td class="feature-cell check-partial">premium</td>
-            <td class="feature-cell check-no">✗</td>
-            <td class="feature-cell check-partial">soon</td>
-            <td class="feature-cell check-partial">premium</td>
-            <td class="feature-cell check-yes">✓</td>
+            <td>Fatura cartão automática</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-no">✗</td>
+            <td class="cell-no">✗</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-partial">parcial</td>
+          </tr>
+          <tr>
+            <td>Open Finance (auto-import)</td>
+            <td class="cell-partial">roadmap Q3</td>
+            <td class="cell-yes">✓</td>
+            <td class="cell-partial">premium</td>
+            <td class="cell-no">✗</td>
+            <td class="cell-partial">soon</td>
+            <td class="cell-partial">premium</td>
+            <td class="cell-yes">✓</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div class="grid md:grid-cols-2 gap-6 mt-12">
-      <div class="glass rounded-2xl p-8 border-l-4 border-emerald-400">
-        <p class="text-emerald-400 font-bold uppercase tracking-wide text-xs mb-3">Onde Finn vence</p>
-        <h3 class="text-xl font-bold mb-4">IA conversacional profunda</h3>
-        <p class="text-slate-300 text-sm leading-relaxed">
-          Único produto do mercado com IA que <strong>responde perguntas complexas</strong> sobre os dados financeiros do user. <em>"Qual meu gasto médio com restaurante nos últimos 6 meses, comparado ao trimestre anterior, descontando viagens?"</em> — só Finn responde. 10 tools financeiras orquestradas pelo Claude Sonnet 4.6.
+    <div class="grid grid-2 mt-12">
+      <div class="glass border-l-emerald">
+        <p class="eyebrow green" style="margin-bottom: 0.75rem;">Onde Finn vence</p>
+        <h3 class="h-card">IA conversacional profunda</h3>
+        <p class="text-sm muted" style="line-height: 1.7;">
+          Único produto do mercado com IA que <strong style="color: white;">responde perguntas complexas</strong> sobre os dados financeiros do user. <em style="color: #cbd5e1;">"Qual meu gasto médio com restaurante nos últimos 6 meses, comparado ao trimestre anterior, descontando viagens?"</em> — só Finn responde. 10 tools financeiras orquestradas pelo Claude Sonnet 4.6.
         </p>
       </div>
-      <div class="glass rounded-2xl p-8 border-l-4 border-violet-400">
-        <p class="text-violet-400 font-bold uppercase tracking-wide text-xs mb-3">Posicionamento</p>
-        <h3 class="text-xl font-bold mb-4">Mobills + WhatsApp</h3>
-        <p class="text-slate-300 text-sm leading-relaxed">
-          Mobills tem 10M downloads e <strong>nenhum WhatsApp bot</strong>. Organizze é premium-tradicional, sem AI. Bots existentes (Porquim, Financinha) são WhatsApp-only ou caros. Finn é o único que combina: <strong>app robusto + bot completo + AI conversacional</strong>.
+      <div class="glass border-l-violet">
+        <p class="eyebrow" style="margin-bottom: 0.75rem;">Posicionamento</p>
+        <h3 class="h-card">Mobills + WhatsApp</h3>
+        <p class="text-sm muted" style="line-height: 1.7;">
+          Mobills tem 10M downloads e <strong style="color: white;">nenhum WhatsApp bot</strong>. Organizze é premium-tradicional, sem AI. Bots existentes (Porquim, Financinha) são WhatsApp-only ou caros. Finn é o único que combina: <strong style="color: white;">app robusto + bot completo + AI conversacional</strong>.
         </p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     VANTAGENS DE CONCORRENTES — A ABSORVER
-═══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 border-t border-white/5">
-  <div class="max-w-6xl mx-auto px-6 fade-in">
-    <p class="text-amber-300 font-semibold uppercase tracking-wider text-sm mb-4">Honestidade competitiva</p>
-    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-6 max-w-3xl">
+<!-- VANTAGENS A ABSORVER ────────────────────────────────────── -->
+<section class="section">
+  <div class="container fade-in">
+    <p class="eyebrow amber">Honestidade competitiva</p>
+    <h2 class="h-section max-w-3xl">
       As 4 vantagens dos concorrentes que <span class="gradient-text">vamos absorver</span>.
     </h2>
-    <p class="text-lg text-slate-400 max-w-3xl mb-12">
+    <p class="lead max-w-3xl mb-12">
       Onde os outros estão à frente — e como o Finn fecha cada gap em 12 meses.
     </p>
 
-    <div class="grid md:grid-cols-2 gap-6">
-      <!-- Open Finance -->
-      <div class="glass-strong rounded-2xl p-8 border-l-4 border-amber-400">
-        <div class="flex items-start justify-between mb-3 gap-3">
-          <p class="text-amber-300 font-bold uppercase tracking-wide text-xs">Gap #1 · existencial</p>
-          <span class="text-xs bg-violet-500/20 text-violet-200 px-2 py-1 rounded-full font-semibold whitespace-nowrap">Roadmap Q3</span>
+    <div class="grid grid-2">
+      <div class="absorb-card">
+        <div class="flex justify-between items-start gap-3 mb-3">
+          <p class="eyebrow amber" style="margin-bottom: 0;">Gap #1 · existencial</p>
+          <span class="pill-violet">Roadmap Q3</span>
         </div>
-        <h3 class="text-xl font-bold mb-3">🏦 Open Finance auto-import</h3>
-        <p class="text-slate-300 text-sm leading-relaxed mb-4">
-          <strong class="text-white">Têm:</strong> Mobills, Organizze, PicPay, ZapGastos Conectado, Jota, Financinha (anunciado).<br>
-          <strong class="text-white">Por que importa:</strong> usuário com 4 contas + 3 cartões prefere importação automática a entrada manual, mesmo sendo conversacional. Usuário high-LTV.
+        <h3 class="h-card">🏦 Open Finance auto-import</h3>
+        <p class="text-sm muted mb-4" style="line-height: 1.7;">
+          <strong style="color: white;">Têm:</strong> Mobills, Organizze, PicPay, ZapGastos Conectado, Jota, Financinha (anunciado).<br>
+          <strong style="color: white;">Por que importa:</strong> usuário com 4 contas + 3 cartões prefere importação automática a entrada manual, mesmo sendo conversacional. Usuário high-LTV.
         </p>
-        <div class="bg-violet-500/10 border border-violet-500/20 rounded-lg p-3 text-xs text-violet-200">
+        <div class="plan-box">
           <strong>Plano Finn:</strong> integração via Pluggy (BR-native) ou Belvo (LATAM) em Q3/2026. Pode justificar tier PRO+ a R$ 24,90/mês.
         </div>
       </div>
 
-      <!-- Multi-user -->
-      <div class="glass-strong rounded-2xl p-8 border-l-4 border-amber-400">
-        <div class="flex items-start justify-between mb-3 gap-3">
-          <p class="text-amber-300 font-bold uppercase tracking-wide text-xs">Gap #2 · segmento bloqueado</p>
-          <span class="text-xs bg-violet-500/20 text-violet-200 px-2 py-1 rounded-full font-semibold whitespace-nowrap">Roadmap Q4</span>
+      <div class="absorb-card">
+        <div class="flex justify-between items-start gap-3 mb-3">
+          <p class="eyebrow amber" style="margin-bottom: 0;">Gap #2 · segmento bloqueado</p>
+          <span class="pill-violet">Roadmap Q4</span>
         </div>
-        <h3 class="text-xl font-bold mb-3">👨‍👩‍👧 Família compartilhada (multi-user)</h3>
-        <p class="text-slate-300 text-sm leading-relaxed mb-4">
-          <strong class="text-white">Têm:</strong> Financinha (5 users), ZapGastos Plus (5), GranaZen (Zen plan).<br>
-          <strong class="text-white">Por que importa:</strong> casais e famílias compartilhando finanças é segmento high-LTV inteiro fechado pra Finn hoje. Casais juntam o orçamento — e abrem mão do app que não suporta.
+        <h3 class="h-card">👨‍👩‍👧 Família compartilhada (multi-user)</h3>
+        <p class="text-sm muted mb-4" style="line-height: 1.7;">
+          <strong style="color: white;">Têm:</strong> Financinha (5 users), ZapGastos Plus (5), GranaZen (Zen plan).<br>
+          <strong style="color: white;">Por que importa:</strong> casais e famílias compartilhando finanças é segmento high-LTV inteiro fechado pra Finn hoje. Casais juntam o orçamento — e abrem mão do app que não suporta.
         </p>
-        <div class="bg-violet-500/10 border border-violet-500/20 rounded-lg p-3 text-xs text-violet-200">
+        <div class="plan-box">
           <strong>Plano Finn:</strong> tier "Família" a R$ 29,90/mês com até 5 perfis vinculados. Permissões por perfil.
         </div>
       </div>
 
-      <!-- Multi-currency -->
-      <div class="glass-strong rounded-2xl p-8 border-l-4 border-slate-400">
-        <div class="flex items-start justify-between mb-3 gap-3">
-          <p class="text-slate-300 font-bold uppercase tracking-wide text-xs">Gap #3 · nicho freelancer</p>
-          <span class="text-xs bg-slate-500/20 text-slate-300 px-2 py-1 rounded-full font-semibold whitespace-nowrap">Avaliar Y2</span>
+      <div class="absorb-card priority-low">
+        <div class="flex justify-between items-start gap-3 mb-3">
+          <p class="eyebrow" style="margin-bottom: 0; color: #cbd5e1;">Gap #3 · nicho freelancer</p>
+          <span class="pill-slate">Avaliar Y2</span>
         </div>
-        <h3 class="text-xl font-bold mb-3">🌍 Multi-currency (BRL/USD/EUR/JPY)</h3>
-        <p class="text-slate-300 text-sm leading-relaxed mb-4">
-          <strong class="text-white">Tem:</strong> Financinha.<br>
-          <strong class="text-white">Por que importa:</strong> freelancers e profissionais remotos brasileiros recebem em USD/EUR. Hoje, pra Finn, é tudo BRL — força o user a converter manualmente.
+        <h3 class="h-card">🌍 Multi-currency (BRL/USD/EUR/JPY)</h3>
+        <p class="text-sm muted mb-4" style="line-height: 1.7;">
+          <strong style="color: white;">Tem:</strong> Financinha.<br>
+          <strong style="color: white;">Por que importa:</strong> freelancers e profissionais remotos brasileiros recebem em USD/EUR. Hoje, pra Finn, é tudo BRL — força o user a converter manualmente.
         </p>
-        <div class="bg-slate-500/10 border border-slate-500/20 rounded-lg p-3 text-xs text-slate-300">
+        <div class="plan-box slate">
           <strong>Plano Finn:</strong> avaliar em Y2 baseado em demanda real. Nicho importante mas não-prioritário em Y1.
         </div>
       </div>
 
-      <!-- Brand / distribution -->
-      <div class="glass-strong rounded-2xl p-8 border-l-4 border-amber-400">
-        <div class="flex items-start justify-between mb-3 gap-3">
-          <p class="text-amber-300 font-bold uppercase tracking-wide text-xs">Gap #4 · vento contra</p>
-          <span class="text-xs bg-violet-500/20 text-violet-200 px-2 py-1 rounded-full font-semibold whitespace-nowrap">Estratégia Y1</span>
+      <div class="absorb-card">
+        <div class="flex justify-between items-start gap-3 mb-3">
+          <p class="eyebrow amber" style="margin-bottom: 0;">Gap #4 · vento contra</p>
+          <span class="pill-violet">Estratégia Y1</span>
         </div>
-        <h3 class="text-xl font-bold mb-3">📣 Marca + distribuição (10M downloads Mobills)</h3>
-        <p class="text-slate-300 text-sm leading-relaxed mb-4">
-          <strong class="text-white">Tem:</strong> Mobills (10M+) e Organizze (~1M+) — anos de SEO, App Store ASO e brand awareness.<br>
-          <strong class="text-white">Por que importa:</strong> Finn começa do zero. Sem inércia. Cada usuário precisa ser conquistado individualmente.
+        <h3 class="h-card">📣 Marca + distribuição (10M downloads Mobills)</h3>
+        <p class="text-sm muted mb-4" style="line-height: 1.7;">
+          <strong style="color: white;">Tem:</strong> Mobills (10M+) e Organizze (~1M+) — anos de SEO, App Store ASO e brand awareness.<br>
+          <strong style="color: white;">Por que importa:</strong> Finn começa do zero. Sem inércia. Cada usuário precisa ser conquistado individualmente.
         </p>
-        <div class="bg-violet-500/10 border border-violet-500/20 rounded-lg p-3 text-xs text-violet-200">
+        <div class="plan-box">
           <strong>Plano Finn:</strong> capturar 1-2% dos usuários Mobills cansados de digitar (~100-200k pessoas). Conteúdo orgânico TikTok/Reels demonstrando o áudio + parcerias com micro-influencers. Sem Meta Ads (CAC inviável em fintech BR).
         </div>
       </div>
     </div>
 
-    <p class="text-sm text-slate-400 mt-12 max-w-3xl italic">
+    <p class="text-sm muted mt-12 max-w-3xl italic">
       Honestidade competitiva acelera produto. Quem mostra os gaps cresce. Quem esconde estagna.
     </p>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     STACK & TECH MOAT
-═══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 border-t border-white/5">
-  <div class="max-w-6xl mx-auto px-6 fade-in">
-    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">Stack & arquitetura</p>
-    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-12 max-w-3xl">
+<!-- STACK ──────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container fade-in">
+    <p class="eyebrow">Stack & arquitetura</p>
+    <h2 class="h-section max-w-3xl">
       Construído com a IA mais avançada do mundo.
     </h2>
 
-    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="glass rounded-2xl p-6">
-        <div class="text-2xl mb-3">🧠</div>
-        <h3 class="font-bold mb-2">Claude Sonnet 4.6</h3>
-        <p class="text-xs text-slate-400">Agent conversacional com 10 tools financeiras orquestradas</p>
+    <div class="grid grid-4">
+      <div class="stack-card">
+        <span class="stack-icon">🧠</span>
+        <h3 style="font-weight: 700; margin-bottom: 0.5rem;">Claude Sonnet 4.6</h3>
+        <p class="text-xs muted">Agent conversacional com 10 tools financeiras orquestradas</p>
       </div>
-      <div class="glass rounded-2xl p-6">
-        <div class="text-2xl mb-3">⚡</div>
-        <h3 class="font-bold mb-2">Claude Haiku 4.5</h3>
-        <p class="text-xs text-slate-400">Router rápido + parser pt-BR custom (latência sub-segundo)</p>
+      <div class="stack-card">
+        <span class="stack-icon">⚡</span>
+        <h3 style="font-weight: 700; margin-bottom: 0.5rem;">Claude Haiku 4.5</h3>
+        <p class="text-xs muted">Router rápido + parser pt-BR custom (latência sub-segundo)</p>
       </div>
-      <div class="glass rounded-2xl p-6">
-        <div class="text-2xl mb-3">🎙</div>
-        <h3 class="font-bold mb-2">Whisper</h3>
-        <p class="text-xs text-slate-400">Transcrição de áudio pt-BR de alta acurácia</p>
+      <div class="stack-card">
+        <span class="stack-icon">🎙</span>
+        <h3 style="font-weight: 700; margin-bottom: 0.5rem;">Whisper</h3>
+        <p class="text-xs muted">Transcrição de áudio pt-BR de alta acurácia</p>
       </div>
-      <div class="glass rounded-2xl p-6">
-        <div class="text-2xl mb-3">👁</div>
-        <h3 class="font-bold mb-2">GPT-4o Vision</h3>
-        <p class="text-xs text-slate-400">OCR estruturado pra cupons fiscais brasileiros</p>
+      <div class="stack-card">
+        <span class="stack-icon">👁</span>
+        <h3 style="font-weight: 700; margin-bottom: 0.5rem;">GPT-4o Vision</h3>
+        <p class="text-xs muted">OCR estruturado pra cupons fiscais brasileiros</p>
       </div>
-      <div class="glass rounded-2xl p-6">
-        <div class="text-2xl mb-3">📱</div>
-        <h3 class="font-bold mb-2">WhatsApp Cloud API</h3>
-        <p class="text-xs text-slate-400">Canal direto Meta · sem intermediário</p>
+      <div class="stack-card">
+        <span class="stack-icon">📱</span>
+        <h3 style="font-weight: 700; margin-bottom: 0.5rem;">WhatsApp Cloud API</h3>
+        <p class="text-xs muted">Canal direto Meta · sem intermediário</p>
       </div>
-      <div class="glass rounded-2xl p-6">
-        <div class="text-2xl mb-3">▲</div>
-        <h3 class="font-bold mb-2">Next.js 15 + Vercel</h3>
-        <p class="text-xs text-slate-400">App full-stack edge-deployed</p>
+      <div class="stack-card">
+        <span class="stack-icon">▲</span>
+        <h3 style="font-weight: 700; margin-bottom: 0.5rem;">Next.js 15 + Vercel</h3>
+        <p class="text-xs muted">App full-stack edge-deployed</p>
       </div>
-      <div class="glass rounded-2xl p-6">
-        <div class="text-2xl mb-3">🗄️</div>
-        <h3 class="font-bold mb-2">Supabase + Postgres</h3>
-        <p class="text-xs text-slate-400">DB com row-level security · LGPD-ready</p>
+      <div class="stack-card">
+        <span class="stack-icon">🗄️</span>
+        <h3 style="font-weight: 700; margin-bottom: 0.5rem;">Supabase + Postgres</h3>
+        <p class="text-xs muted">DB com row-level security · LGPD-ready</p>
       </div>
-      <div class="glass rounded-2xl p-6">
-        <div class="text-2xl mb-3">🔐</div>
-        <h3 class="font-bold mb-2">Privacy-first</h3>
-        <p class="text-xs text-slate-400">Dados isolados por user · zero compartilhamento</p>
+      <div class="stack-card">
+        <span class="stack-icon">🔐</span>
+        <h3 style="font-weight: 700; margin-bottom: 0.5rem;">Privacy-first</h3>
+        <p class="text-xs muted">Dados isolados por user · zero compartilhamento</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     BUSINESS MODEL
-═══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 border-t border-white/5 bg-gradient-to-b from-slate-950 to-violet-950/20">
-  <div class="max-w-6xl mx-auto px-6 fade-in">
-    <p class="text-emerald-400 font-semibold uppercase tracking-wider text-sm mb-4">Modelo de receita</p>
-    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-12 max-w-3xl">
+<!-- BUSINESS MODEL ─────────────────────────────────────────── -->
+<section class="section violet-tint">
+  <div class="container fade-in">
+    <p class="eyebrow green">Modelo de receita</p>
+    <h2 class="h-section max-w-3xl mb-12">
       Freemium SaaS com unit economics validados.
     </h2>
 
-    <!-- Pricing cards -->
-    <div class="grid md:grid-cols-3 gap-6 mb-16">
-      <div class="glass rounded-2xl p-8">
-        <p class="text-xs uppercase tracking-wider text-slate-400 mb-3">Free</p>
-        <p class="text-3xl font-black mb-2">R$ 0</p>
-        <p class="text-sm text-slate-400 mb-6">/mês · onboarding aberto</p>
-        <ul class="text-sm space-y-2 text-slate-300">
-          <li>✓ Bot WhatsApp completo</li>
-          <li>✓ Limite de transações/mês</li>
+    <div class="grid grid-3 mb-16">
+      <div class="glass">
+        <p class="text-xs muted-small" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem;">Free</p>
+        <p class="num-small">R$ 0</p>
+        <p class="text-sm muted mb-6">/mês · onboarding aberto</p>
+        <ul style="list-style: none; font-size: 0.875rem; color: #cbd5e1;">
+          <li class="mb-2">✓ Bot WhatsApp completo</li>
+          <li class="mb-2">✓ Limite de transações/mês</li>
           <li>✓ App + dashboard</li>
         </ul>
       </div>
-      <div class="glass-strong rounded-2xl p-8 ring-2 ring-violet-500 relative">
-        <div class="absolute -top-3 left-6 bg-violet-500 text-xs font-bold px-3 py-1 rounded-full">RECOMENDADO</div>
-        <p class="text-xs uppercase tracking-wider text-violet-300 mb-3">Pro</p>
-        <p class="text-3xl font-black gradient-text mb-2">R$ 14,90</p>
-        <p class="text-sm text-slate-400 mb-6">/mês · ou R$ 119/ano</p>
-        <ul class="text-sm space-y-2 text-slate-200">
-          <li class="text-violet-300">✓ Tudo do Free</li>
-          <li>✓ Transações ilimitadas</li>
-          <li>✓ AI conversacional sem limite</li>
-          <li>✓ Insights semanais</li>
+      <div class="glass-strong" style="position: relative; outline: 2px solid #8b5cf6;">
+        <div class="recommend-tag">RECOMENDADO</div>
+        <p class="text-xs" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; color: #c4b5fd;">Pro</p>
+        <p class="num-small gradient-text">R$ 14,90</p>
+        <p class="text-sm muted mb-6">/mês · ou R$ 119/ano</p>
+        <ul style="list-style: none; font-size: 0.875rem; color: #e2e8f0;">
+          <li class="mb-2 violet">✓ Tudo do Free</li>
+          <li class="mb-2">✓ Transações ilimitadas</li>
+          <li class="mb-2">✓ AI conversacional sem limite</li>
+          <li class="mb-2">✓ Insights semanais</li>
           <li>✓ Recorrências + auto-launch</li>
         </ul>
       </div>
-      <div class="glass rounded-2xl p-8 border border-amber-500/30">
-        <p class="text-xs uppercase tracking-wider text-amber-300 mb-3">Founders Lifetime</p>
-        <p class="text-3xl font-black mb-2">R$ 397</p>
-        <p class="text-sm text-slate-400 mb-6">único · 100 vagas</p>
-        <ul class="text-sm space-y-2 text-slate-300">
-          <li>✓ PRO pra sempre</li>
-          <li>✓ Badge Founders</li>
-          <li>✓ Acesso antecipado a features</li>
+      <div class="glass ring-amber">
+        <p class="text-xs amber-text" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem;">Founders Lifetime</p>
+        <p class="num-small">R$ 397</p>
+        <p class="text-sm muted mb-6">único · 100 vagas</p>
+        <ul style="list-style: none; font-size: 0.875rem; color: #cbd5e1;">
+          <li class="mb-2">✓ PRO pra sempre</li>
+          <li class="mb-2">✓ Badge Founders</li>
+          <li class="mb-2">✓ Acesso antecipado a features</li>
           <li>✓ Voz no roadmap</li>
         </ul>
       </div>
     </div>
 
-    <!-- Unit economics -->
-    <div class="glass-strong rounded-3xl p-10">
-      <h3 class="text-2xl font-bold mb-8">Unit economics</h3>
-      <div class="grid md:grid-cols-4 gap-6">
+    <div class="glass-strong glass-pad-lg">
+      <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 2rem;">Unit economics</h3>
+      <div class="grid grid-4">
         <div>
-          <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">LTV bruto</p>
-          <p class="text-3xl font-black gradient-text">R$ 186</p>
-          <p class="text-xs text-slate-500 mt-1">12.5 meses × R$ 14,90</p>
+          <p class="text-xs muted-small" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">LTV bruto</p>
+          <p class="num-small gradient-text">R$ 186</p>
+          <p class="muted-small mt-1">12.5 meses × R$ 14,90</p>
         </div>
         <div>
-          <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">COGS / mês</p>
-          <p class="text-3xl font-black">R$ 5,65</p>
-          <p class="text-xs text-slate-500 mt-1">AI + WhatsApp + infra</p>
+          <p class="text-xs muted-small" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">COGS / mês</p>
+          <p class="num-small">R$ 5,65</p>
+          <p class="muted-small mt-1">AI + WhatsApp + infra</p>
         </div>
         <div>
-          <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Margem bruta</p>
-          <p class="text-3xl font-black text-emerald-400">62%</p>
-          <p class="text-xs text-slate-500 mt-1">Contribution R$ 9,25</p>
+          <p class="text-xs muted-small" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">Margem bruta</p>
+          <p class="num-small green-text">62%</p>
+          <p class="muted-small mt-1">Contribution R$ 9,25</p>
         </div>
         <div>
-          <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">CAC ceiling</p>
-          <p class="text-3xl font-black">R$ 38</p>
-          <p class="text-xs text-slate-500 mt-1">LTV:CAC saudável 3:1</p>
+          <p class="text-xs muted-small" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">CAC ceiling</p>
+          <p class="num-small">R$ 38</p>
+          <p class="muted-small mt-1">LTV:CAC saudável 3:1</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     PROJEÇÃO Y1
-═══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 border-t border-white/5">
-  <div class="max-w-6xl mx-auto px-6 fade-in">
-    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">Projeção Year 1</p>
-    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-12 max-w-3xl">
+<!-- PROJEÇÃO Y1 ────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container fade-in">
+    <p class="eyebrow">Projeção Year 1</p>
+    <h2 class="h-section max-w-3xl mb-12">
       Crescimento orgânico realista — 800+ usuários e <span class="gradient-text">~R$ 22k ARR</span> no mês 12.
     </h2>
 
-    <div class="overflow-x-auto glass-strong rounded-2xl p-2 mb-12">
-      <table class="w-full text-sm">
+    <div class="table-wrap mb-12">
+      <table class="compare">
         <thead>
-          <tr class="border-b border-white/10">
-            <th class="text-left p-3 font-bold">Mês</th>
-            <th class="text-right p-3 font-semibold">Total signups</th>
-            <th class="text-right p-3 font-semibold">PRO ativos</th>
-            <th class="text-right p-3 font-semibold">MRR</th>
-            <th class="text-right p-3 font-semibold">ARR run-rate</th>
+          <tr>
+            <th>Mês</th>
+            <th class="text-right">Total signups</th>
+            <th class="text-right">PRO ativos</th>
+            <th class="text-right">MRR</th>
+            <th class="text-right">ARR run-rate</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-white/5">
-          <tr><td class="p-3 font-medium">Mês 3</td><td class="p-3 text-right">110</td><td class="p-3 text-right">12</td><td class="p-3 text-right">R$ 179</td><td class="p-3 text-right">R$ 2.148</td></tr>
-          <tr><td class="p-3 font-medium">Mês 6</td><td class="p-3 text-right">290</td><td class="p-3 text-right">38</td><td class="p-3 text-right">R$ 566</td><td class="p-3 text-right">R$ 6.792</td></tr>
-          <tr><td class="p-3 font-medium">Mês 9</td><td class="p-3 text-right">515</td><td class="p-3 text-right">75</td><td class="p-3 text-right">R$ 1.118</td><td class="p-3 text-right">R$ 13.416</td></tr>
-          <tr class="bg-violet-500/10">
-            <td class="p-3 font-bold">Mês 12</td>
-            <td class="p-3 text-right font-bold">810</td>
-            <td class="p-3 text-right font-bold gradient-text text-lg">124</td>
-            <td class="p-3 text-right font-bold gradient-text text-lg">R$ 1.848</td>
-            <td class="p-3 text-right font-bold">R$ 22.176</td>
+        <tbody>
+          <tr>
+            <td>Mês 3</td>
+            <td style="text-align: right;">110</td>
+            <td style="text-align: right;">12</td>
+            <td style="text-align: right;">R$ 179</td>
+            <td style="text-align: right;">R$ 2.148</td>
+          </tr>
+          <tr>
+            <td>Mês 6</td>
+            <td style="text-align: right;">290</td>
+            <td style="text-align: right;">38</td>
+            <td style="text-align: right;">R$ 566</td>
+            <td style="text-align: right;">R$ 6.792</td>
+          </tr>
+          <tr>
+            <td>Mês 9</td>
+            <td style="text-align: right;">515</td>
+            <td style="text-align: right;">75</td>
+            <td style="text-align: right;">R$ 1.118</td>
+            <td style="text-align: right;">R$ 13.416</td>
+          </tr>
+          <tr class="highlight">
+            <td>Mês 12</td>
+            <td style="text-align: right; font-weight: 700;">810</td>
+            <td style="text-align: right; font-weight: 700;" class="gradient-text">124</td>
+            <td style="text-align: right; font-weight: 700;" class="gradient-text">R$ 1.848</td>
+            <td style="text-align: right; font-weight: 700;">R$ 22.176</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div class="grid md:grid-cols-3 gap-6">
-      <div class="glass rounded-2xl p-6">
-        <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Cenário conservador</p>
-        <p class="text-2xl font-black mb-1">~60 PRO</p>
-        <p class="text-sm text-slate-400">MRR R$ 894</p>
+    <div class="grid grid-3">
+      <div class="glass glass-pad-sm">
+        <p class="text-xs muted-small" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">Cenário conservador</p>
+        <p class="num-card">~60 PRO</p>
+        <p class="text-sm muted">MRR R$ 894</p>
       </div>
-      <div class="glass-strong rounded-2xl p-6 ring-1 ring-violet-500/40">
-        <p class="text-xs uppercase tracking-wider text-violet-300 mb-2">Realista (base case)</p>
-        <p class="text-2xl font-black mb-1 gradient-text">~124 PRO</p>
-        <p class="text-sm text-slate-300">MRR R$ 1.848</p>
+      <div class="glass-strong glass-pad-sm" style="outline: 1px solid rgba(139,92,246,0.4);">
+        <p class="text-xs" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; color: #c4b5fd;">Realista (base case)</p>
+        <p class="num-card gradient-text">~124 PRO</p>
+        <p class="text-sm" style="color: #cbd5e1;">MRR R$ 1.848</p>
       </div>
-      <div class="glass rounded-2xl p-6">
-        <p class="text-xs uppercase tracking-wider text-emerald-400 mb-2">Achievable upside</p>
-        <p class="text-2xl font-black mb-1">~195 PRO</p>
-        <p class="text-sm text-slate-400">MRR R$ 2.906 · ARR R$ 35k</p>
+      <div class="glass glass-pad-sm">
+        <p class="text-xs green-text" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">Achievable upside</p>
+        <p class="num-card">~195 PRO</p>
+        <p class="text-sm muted">MRR R$ 2.906 · ARR R$ 35k</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     ROADMAP
-═══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 border-t border-white/5 bg-gradient-to-b from-slate-950 to-indigo-950/30">
-  <div class="max-w-6xl mx-auto px-6 fade-in">
-    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">Roadmap 2026</p>
-    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-12 max-w-3xl">
+<!-- ROADMAP ────────────────────────────────────────────────── -->
+<section class="section indigo-tint">
+  <div class="container fade-in">
+    <p class="eyebrow">Roadmap 2026</p>
+    <h2 class="h-section max-w-3xl mb-12">
       O caminho até dominar o segmento WhatsApp-first.
     </h2>
 
-    <div class="space-y-6">
-      <div class="glass-strong rounded-2xl p-8 flex gap-6 items-start">
-        <div class="text-3xl font-black gradient-text">Q1</div>
-        <div>
-          <h3 class="text-xl font-bold mb-2">Fundação comercial</h3>
-          <p class="text-slate-300 text-sm leading-relaxed">Lançar Founders Lifetime (100 vagas, R$ 397) · Conteúdo orgânico TikTok/Reels · Parcerias com micro-influencers de finanças BR · Confirmar fator R com contador (Anexo III, 6%)</p>
-        </div>
+    <div class="roadmap-item">
+      <div class="roadmap-q gradient-text">Q1</div>
+      <div>
+        <h3 class="h-card">Fundação comercial</h3>
+        <p class="text-sm muted" style="line-height: 1.7;">Lançar Founders Lifetime (100 vagas, R$ 397) · Conteúdo orgânico TikTok/Reels · Parcerias com micro-influencers de finanças BR · Confirmar fator R com contador (Anexo III, 6%)</p>
       </div>
-      <div class="glass-strong rounded-2xl p-8 flex gap-6 items-start">
-        <div class="text-3xl font-black gradient-text">Q2</div>
-        <div>
-          <h3 class="text-xl font-bold mb-2">Aceleração orgânica</h3>
-          <p class="text-slate-300 text-sm leading-relaxed">Trial 14 dias sem cartão · A/B test de pricing · 1-2 parcerias estratégicas · SEO blog começa a indexar</p>
-        </div>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-q gradient-text">Q2</div>
+      <div>
+        <h3 class="h-card">Aceleração orgânica</h3>
+        <p class="text-sm muted" style="line-height: 1.7;">Trial 14 dias sem cartão · A/B test de pricing · 1-2 parcerias estratégicas · SEO blog começa a indexar</p>
       </div>
-      <div class="glass-strong rounded-2xl p-8 flex gap-6 items-start border-l-4 border-emerald-400">
-        <div class="text-3xl font-black gradient-text">Q3</div>
-        <div>
-          <h3 class="text-xl font-bold mb-2">Open Finance · maior unlock competitivo</h3>
-          <p class="text-slate-300 text-sm leading-relaxed">Integração Pluggy/Belvo pra auto-import de extratos bancários e cartões. Fecha gap crítico vs Mobills/Organizze. Pode justificar tier PRO+ a R$ 24,90.</p>
-        </div>
+    </div>
+    <div class="roadmap-item highlight">
+      <div class="roadmap-q gradient-text">Q3</div>
+      <div>
+        <h3 class="h-card">Open Finance · maior unlock competitivo</h3>
+        <p class="text-sm muted" style="line-height: 1.7;">Integração Pluggy/Belvo pra auto-import de extratos bancários e cartões. Fecha gap crítico vs Mobills/Organizze. Pode justificar tier PRO+ a R$ 24,90.</p>
       </div>
-      <div class="glass-strong rounded-2xl p-8 flex gap-6 items-start">
-        <div class="text-3xl font-black gradient-text">Q4</div>
-        <div>
-          <h3 class="text-xl font-bold mb-2">Multi-user · família compartilhada</h3>
-          <p class="text-slate-300 text-sm leading-relaxed">Casais e famílias compartilhando finanças no mesmo WhatsApp. Segmento high-LTV. Tier "Família" a R$ 29,90/mês.</p>
-        </div>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-q gradient-text">Q4</div>
+      <div>
+        <h3 class="h-card">Multi-user · família compartilhada</h3>
+        <p class="text-sm muted" style="line-height: 1.7;">Casais e famílias compartilhando finanças no mesmo WhatsApp. Segmento high-LTV. Tier "Família" a R$ 29,90/mês.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     TEAM
-═══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 border-t border-white/5">
-  <div class="max-w-6xl mx-auto px-6 fade-in">
-    <p class="text-violet-400 font-semibold uppercase tracking-wider text-sm mb-4">Quem está construindo</p>
-    <h2 class="text-4xl md:text-5xl font-black tracking-tight mb-12">Solo founder · ship-velocity alto.</h2>
+<!-- TEAM ─────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container fade-in">
+    <p class="eyebrow">Quem está construindo</p>
+    <h2 class="h-section mb-12">Solo founder · ship-velocity alto.</h2>
 
-    <div class="glass-strong rounded-3xl p-10 max-w-3xl">
+    <div class="glass-strong glass-pad-lg" style="max-width: 48rem;">
       <div class="flex items-start gap-6">
-        <div class="h-20 w-20 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-3xl font-black shrink-0 glow-violet">P</div>
+        <div class="logo-mark logo-mark-lg glow-violet">P</div>
         <div>
-          <h3 class="text-2xl font-bold mb-2">Pablo Rôla</h3>
-          <p class="text-violet-300 mb-4 font-medium">Founder · Engineering · Product</p>
-          <p class="text-slate-300 text-sm leading-relaxed mb-6">
+          <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Pablo Rôla</h3>
+          <p class="violet font-medium mb-4">Founder · Engineering · Product</p>
+          <p class="text-sm muted mb-6" style="line-height: 1.7;">
             Background em construção civil (VERT C. Incorporadora). Migrando pra tech como solo founder do Finn. Stack moderna, foco em qualidade de produto e experiência conversacional. Aberto a co-founders técnicos e M&A conversations.
           </p>
-          <div class="flex gap-2 flex-wrap text-xs">
-            <span class="bg-white/5 border border-white/10 rounded-full px-3 py-1">Brasil · Fortaleza/CE</span>
-            <span class="bg-white/5 border border-white/10 rounded-full px-3 py-1">pablofcr@gmail.com</span>
+          <div class="flex gap-2 flex-wrap">
+            <span class="pill" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">Brasil · Fortaleza/CE</span>
+            <span class="pill" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">pablofcr@gmail.com</span>
           </div>
         </div>
       </div>
@@ -752,49 +1103,38 @@
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     CALL TO ACTION
-═══════════════════════════════════════════════════════════════════ -->
-<section class="py-32 border-t border-white/5 bg-gradient-to-br from-violet-900/30 via-indigo-900/30 to-slate-950 relative overflow-hidden">
-  <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
-    <h2 class="text-5xl md:text-6xl font-black tracking-tight mb-6">
-      Vamos conversar?
-    </h2>
-    <p class="text-xl text-slate-300 mb-12 max-w-2xl mx-auto">
+<!-- CTA ──────────────────────────────────────────────────────── -->
+<section class="cta-bg" style="padding: 8rem 0;">
+  <div class="container text-center" style="max-width: 56rem; position: relative; z-index: 1;">
+    <h2 class="h-section" style="font-size: clamp(2.5rem, 6vw, 3.75rem); margin-bottom: 1.5rem;">Vamos conversar?</h2>
+    <p class="lead mb-12" style="font-size: 1.25rem; max-width: 36rem; margin-left: auto; margin-right: auto;">
       Investimento, parceria estratégica ou aquisição — qualquer formato sério, eu respondo em 24h.
     </p>
-    <div class="flex flex-col md:flex-row gap-4 justify-center items-center mb-12">
-      <a href="mailto:pablofcr@gmail.com?subject=Finn%20-%20Investidor"
-         class="bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold px-8 py-4 rounded-xl hover:opacity-90 transition glow-violet">
+    <div class="flex flex-wrap gap-4 justify-center mb-12">
+      <a href="mailto:pablofcr@gmail.com?subject=Finn%20-%20Investidor" class="btn btn-primary">
         Conversar com o founder →
       </a>
-      <a href="https://finn-steel.vercel.app" target="_blank"
-         class="glass-strong text-white font-semibold px-8 py-4 rounded-xl hover:bg-white/10 transition">
+      <a href="https://finn-steel.vercel.app" target="_blank" class="btn btn-secondary">
         Ver o produto ao vivo
       </a>
     </div>
-    <p class="text-xs text-slate-500">
-      Pitch atualizado em maio/2026 · Data abertura empresa: aguardando · Pablo Rôla · pablofcr@gmail.com
+    <p class="text-xs muted-small">
+      Pitch atualizado em maio/2026 · Pablo Rôla · pablofcr@gmail.com
     </p>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     FOOTER
-═══════════════════════════════════════════════════════════════════ -->
-<footer class="py-12 border-t border-white/5 text-center">
-  <p class="text-xs text-slate-600">
+<!-- FOOTER ──────────────────────────────────────────────────── -->
+<footer class="footer">
+  <p>
     © 2026 Finn · Todas projeções são estimativas baseadas em premissas conservadoras.<br>
     Mais detalhes técnicos disponíveis sob NDA.
   </p>
 </footer>
 
 <script>
-  // Fade-in on scroll
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) entry.target.classList.add('visible')
-    })
+    entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible') })
   }, { threshold: 0.1 })
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el))
 </script>
