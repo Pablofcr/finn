@@ -62,6 +62,24 @@ export async function GET() {
   const txMap = new Map(lastTxByUser.map(r => [r.userId, r._max.createdAt]))
   const inboundMap = new Map(lastInboundByUser.map(r => [r.userId, r._max.createdAt]))
 
+  // Último nudge de re-engagement por user — pra mostrar no admin que o
+  // sistema tá trabalhando nos casos de risco (e contagem do lifetime cap).
+  const allNudges = userIds.length > 0
+    ? await prisma.reengagementNudge.findMany({
+        where: { userId: { in: userIds } },
+        orderBy: { sentAt: 'desc' },
+        select: { userId: true, sentAt: true, status: true, engagementStatus: true },
+      })
+    : []
+  const lastNudgeMap = new Map<string, { sentAt: Date; status: string; engagementStatus: string }>()
+  const nudgeCountMap = new Map<string, number>()
+  for (const n of allNudges) {
+    if (!lastNudgeMap.has(n.userId)) {
+      lastNudgeMap.set(n.userId, { sentAt: n.sentAt, status: n.status, engagementStatus: n.engagementStatus })
+    }
+    nudgeCountMap.set(n.userId, (nudgeCountMap.get(n.userId) || 0) + 1)
+  }
+
   type EngagementStatus = 'engaged' | 'warning' | 'at-risk' | 'inactive' | 'new'
   function statusFor(daysSince: number | null, daysSinceCreation: number): EngagementStatus {
     // Usuários novos (<3 dias desde criação) começam como 'new' — não são
@@ -88,6 +106,7 @@ export async function GET() {
     const daysSinceCreation = Math.floor((now.getTime() - u.createdAt.getTime()) / dayMs)
     const engagementStatus = statusFor(daysSinceLast, daysSinceCreation)
 
+    const lastNudge = lastNudgeMap.get(u.id)
     return {
       id: u.id,
       email: u.email,
@@ -100,6 +119,10 @@ export async function GET() {
       lastActivityAt: lastActivityAt?.toISOString() || null,
       daysSinceLast,
       engagementStatus,
+      lastNudgeAt: lastNudge?.sentAt.toISOString() || null,
+      lastNudgeStatus: lastNudge?.status || null,
+      lastNudgeEngagementStatus: lastNudge?.engagementStatus || null,
+      nudgeCount: nudgeCountMap.get(u.id) || 0,
     }
   })
 

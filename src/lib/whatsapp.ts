@@ -155,6 +155,49 @@ export async function sendWhatsAppWelcomeMessages(to: string, firstName: string)
   await sendWhatsAppWelcomeMsg2(to, firstName)
 }
 
+/**
+ * Mensagens de re-engajamento — copy escrita pelo copy-squad/andre-chaperon.
+ * Tom shifts subtly por status: warning friendly check-in, at-risk
+ * curiosity, inactive vulnerable honesty. Específicas (não guilt-trip
+ * genérico) — Fader flagged: copy genérica vira mute do bot.
+ */
+export type ReengagementStatus = 'warning' | 'at-risk' | 'inactive'
+
+export async function sendWhatsAppReengagement(
+  to: string,
+  firstName: string,
+  status: ReengagementStatus,
+) {
+  let text: string
+  switch (status) {
+    case 'warning':
+      text =
+        `Oi, ${firstName} 👋\n\n` +
+        `Reparei que tu sumiu uns dias por aqui. Sem cobrança — a vida acontece.\n\n` +
+        `Só queria te lembrar de uma coisa que muita gente esquece: o Finn não precisa de planilha, nem de categoria, nem de nada formal. Tu pode mandar um áudio de 3 segundos agora — _"gastei 40 num lanche"_ — e tá feito.\n\n` +
+        `É isso. Esse é o uso que mais funciona pra quem volta.\n\n` +
+        `Manda aí o último gasto que tu lembra. Eu cuido do resto.`
+      break
+    case 'at-risk':
+      text =
+        `Oi, ${firstName} 🤔\n\n` +
+        `Tô curioso, honestamente. Uns dez dias atrás tu tava registrando direitinho, e aí parou.\n\n` +
+        `Não vou tentar adivinhar o motivo. Mas se tu me mandar os 3 últimos gastos que lembrar — só os 3 — eu te devolvo um padrão que tu provavelmente não percebeu sobre como tu tá gastando esse mês.\n\n` +
+        `É de graça e leva 30 segundos. Se não for útil, tu me xinga.\n\n` +
+        `Combinado?`
+      break
+    case 'inactive':
+      text =
+        `Oi, ${firstName}\n\n` +
+        `Vou ser direto: faz mais de 20 dias que tu não usa o Finn, e eu não vou fingir que não notei.\n\n` +
+        `Mais importante que te trazer de volta é entender por quê tu saiu. Foi chato de usar? Faltou alguma coisa? Achou outro app melhor? Ou só não era a hora?\n\n` +
+        `Qualquer resposta me ajuda — inclusive _"esquece, não era pra mim"_. Sem hard feelings.\n\n` +
+        `Se quiser responder com uma palavra só, tá ótimo 🙏`
+      break
+  }
+  await sendWhatsAppMessage({ to, text })
+}
+
 export type PaymentAlertVariant =
   | 'upcoming-3d'         // D-3: 3 dias antes (manhã)
   | 'upcoming-1d'         // D-1: 1 dia antes (manhã)

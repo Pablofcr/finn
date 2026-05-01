@@ -134,9 +134,32 @@ model User {
   recurringTransactions RecurringTransaction[]
   notificationSetting   NotificationSetting?
   invoices              Invoice[]
+  reengagementNudges    ReengagementNudge[]
 
   @@index([supabaseId])
   @@index([email])
+}
+
+/// Histórico de mensagens de re-engajamento enviadas. Cron diário roda
+/// Ter-Qui 10:30 BRT pra users em warning (d6) / at-risk (d14) /
+/// inactive (d30). Cooldown 21d/45d/never. Cap lifetime: 3 nudges.
+model ReengagementNudge {
+  id               String   @id @default(uuid())
+  userId           String
+  sentAt           DateTime @default(now())
+  /// 'sent' | 'failed'
+  status           String
+  /// erro details quando status='failed', senão null
+  statusDetail     String?
+  /// snapshot do engagementStatus do user no momento ('warning' | 'at-risk' | 'inactive')
+  engagementStatus String
+  /// quantos dias o user estava sem atividade quando o nudge foi disparado
+  daysSinceLast    Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sentAt])
 }
 
 model Account {

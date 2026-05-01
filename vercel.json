@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/weekly-insights",
       "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/reengagement",
+      "schedule": "30 13 * * 2-4"
     }
   ]
 }

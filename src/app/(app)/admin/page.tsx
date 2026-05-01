@@ -28,6 +28,10 @@ interface UserData {
   lastActivityAt: string | null
   daysSinceLast: number | null
   engagementStatus: EngagementStatus
+  lastNudgeAt: string | null
+  lastNudgeStatus: string | null
+  lastNudgeEngagementStatus: string | null
+  nudgeCount: number
 }
 
 interface Stats {
@@ -311,6 +315,7 @@ export default function AdminPage() {
                 <tr className="border-b bg-muted/30">
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Usuário</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Engajamento</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Último nudge</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Plano</th>
                   <th className="text-center px-4 py-3 font-medium text-muted-foreground">Transações</th>
                   <th className="text-center px-4 py-3 font-medium text-muted-foreground">Bot</th>
@@ -336,6 +341,24 @@ export default function AdminPage() {
                       >
                         {pill.label}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {u.lastNudgeAt ? (
+                        <span
+                          className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+                            u.lastNudgeStatus === 'sent'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                              : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                          }`}
+                          title={`Status no envio: ${u.lastNudgeEngagementStatus} · Total enviados: ${u.nudgeCount}/3`}
+                        >
+                          {u.lastNudgeStatus === 'sent' ? '✓' : '✗'}{' '}
+                          {new Date(u.lastNudgeAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          {u.nudgeCount > 1 && <span className="opacity-70">({u.nudgeCount}x)</span>}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Badge
