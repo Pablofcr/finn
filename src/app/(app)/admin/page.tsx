@@ -11,6 +11,7 @@ import {
   Users, Crown, TrendingUp, ArrowLeftRight, Wallet,
   DollarSign, UserPlus, MessageCircle, ShieldAlert,
   Clock, CheckCircle2, XCircle, PlayCircle, Presentation, ExternalLink,
+  Megaphone,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -198,17 +199,30 @@ export default function AdminPage() {
           <h1 className="text-2xl font-bold">Painel Admin</h1>
           <p className="text-sm text-muted-foreground">Visão geral do Finn</p>
         </div>
-        <a
-          href="/pitch.html"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white text-sm font-semibold px-4 py-2.5 shadow-md shadow-violet-500/30 transition"
-          title="Abre o pitch deck pra investidores e potenciais compradores em nova aba"
-        >
-          <Presentation className="h-4 w-4" />
-          Pitch deck
-          <ExternalLink className="h-3.5 w-3.5 opacity-70" />
-        </a>
+        <div className="flex items-center gap-2 flex-wrap">
+          <a
+            href="/marketing.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm font-semibold px-4 py-2.5 shadow-md shadow-emerald-500/30 transition"
+            title="Plano de marketing 30 dias com calendário diário, hooks, DM script e estratégia de canais"
+          >
+            <Megaphone className="h-4 w-4" />
+            Plano de marketing
+            <ExternalLink className="h-3.5 w-3.5 opacity-70" />
+          </a>
+          <a
+            href="/pitch.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white text-sm font-semibold px-4 py-2.5 shadow-md shadow-violet-500/30 transition"
+            title="Abre o pitch deck pra investidores e potenciais compradores em nova aba"
+          >
+            <Presentation className="h-4 w-4" />
+            Pitch deck
+            <ExternalLink className="h-3.5 w-3.5 opacity-70" />
+          </a>
+        </div>
       </div>
 
       {/* Stats Grid */}

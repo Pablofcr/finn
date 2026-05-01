@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Finn — Plano de Marketing 30 dias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #020617;
+  color: #f1f5f9;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+
+.container { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem; }
+.section { padding: 5rem 0; border-top: 1px solid rgba(255,255,255,0.05); }
+
+h1, h2, h3, h4 { font-weight: 800; letter-spacing: -0.025em; line-height: 1.15; }
+.h-hero { font-size: clamp(2.25rem, 6vw, 4rem); font-weight: 900; }
+.h-section { font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 900; margin-bottom: 1rem; }
+.h-card { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; }
+
+.eyebrow {
+  color: #a78bfa;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  margin-bottom: 1rem;
+}
+.eyebrow.green { color: #34d399; }
+.eyebrow.amber { color: #fbbf24; }
+.eyebrow.rose  { color: #fb7185; }
+.lead { font-size: 1.125rem; color: #94a3b8; line-height: 1.6; }
+.muted { color: #94a3b8; }
+.muted-sm { color: #64748b; font-size: 0.75rem; }
+
+.gradient-text {
+  background: linear-gradient(135deg, #a78bfa 0%, #818cf8 50%, #6366f1 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #6366f1;
+}
+
+.hero-bg {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  padding: 4rem 0 5rem;
+  background:
+    radial-gradient(ellipse at top, rgba(139, 92, 246, 0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+    #020617;
+  background-size: 100% 100%, 100% 100%, 50px 50px, 50px 50px, 100% 100%;
+}
+.violet-tint { background: linear-gradient(180deg, #020617 0%, rgba(67, 28, 130, 0.2) 100%); }
+.indigo-tint { background: linear-gradient(180deg, #020617 0%, rgba(49, 46, 129, 0.3) 100%); }
+
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+.glass-strong {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  padding: 2rem;
+}
+
+.logo-mark {
+  width: 3rem; height: 3rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 900; color: white;
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4);
+}
+
+.pill {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 0.4rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.pill-violet {
+  background: rgba(139,92,246,0.15);
+  color: #ddd6fe;
+  padding: 0.2rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  display: inline-block;
+  white-space: nowrap;
+}
+.pill-amber  { background: rgba(251,191,36,0.15);  color: #fde68a; padding: 0.2rem 0.625rem; border-radius: 9999px; font-size: 0.6875rem; font-weight: 700; display: inline-block; white-space: nowrap; }
+.pill-emerald { background: rgba(52,211,153,0.15); color: #86efac; padding: 0.2rem 0.625rem; border-radius: 9999px; font-size: 0.6875rem; font-weight: 700; display: inline-block; white-space: nowrap; }
+.pill-rose   { background: rgba(251,113,133,0.15); color: #fda4af; padding: 0.2rem 0.625rem; border-radius: 9999px; font-size: 0.6875rem; font-weight: 700; display: inline-block; white-space: nowrap; }
+.pill-slate  { background: rgba(148,163,184,0.15); color: #cbd5e1; padding: 0.2rem 0.625rem; border-radius: 9999px; font-size: 0.6875rem; font-weight: 700; display: inline-block; white-space: nowrap; }
+
+.grid { display: grid; gap: 1.5rem; }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
+
+.flex { display: flex; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.gap-6 { gap: 1.5rem; }
+
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 0.75rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-6 { margin-top: 1.5rem; }
+.mt-8 { margin-top: 2rem; }
+.mt-12 { margin-top: 3rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 0.75rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+.mb-12 { margin-bottom: 3rem; }
+.max-w-3xl { max-width: 48rem; }
+.max-w-2xl { max-width: 36rem; }
+
+.text-sm { font-size: 0.875rem; }
+.text-xs { font-size: 0.75rem; }
+.text-base { font-size: 1rem; }
+.text-lg { font-size: 1.125rem; }
+.font-bold { font-weight: 700; }
+.font-black { font-weight: 900; }
+.font-semibold { font-weight: 600; }
+.italic { font-style: italic; }
+.violet { color: #c4b5fd; }
+.green-text { color: #34d399; }
+.amber-text { color: #fbbf24; }
+.rose-text  { color: #fb7185; }
+
+/* ─── TOC sticky nav ─────────────────────────────────────── */
+.toc {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.75rem 0;
+}
+.toc-inner { display: flex; gap: 1.25rem; overflow-x: auto; padding: 0 1.5rem; max-width: 80rem; margin: 0 auto; }
+.toc a {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  padding: 0.25rem 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  font-weight: 500;
+}
+.toc a:hover { color: #f1f5f9; border-bottom-color: #8b5cf6; }
+
+/* ─── Channel priority bar ─────────────────────────────── */
+.channel-bar {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.channel-pct {
+  font-size: 1.5rem; font-weight: 900;
+  min-width: 4rem; text-align: right;
+  color: #c4b5fd;
+}
+.channel-name { font-weight: 700; font-size: 1rem; }
+.channel-desc { font-size: 0.8125rem; color: #94a3b8; margin-top: 0.125rem; line-height: 1.45; }
+.channel-bar.priority-high { border-left: 4px solid #8b5cf6; }
+.channel-bar.priority-mid  { border-left: 4px solid #6366f1; }
+.channel-bar.priority-low  { border-left: 4px solid rgba(255,255,255,0.1); }
+
+/* ─── Day card (calendar) ─────────────────────────────── */
+.day-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.875rem;
+  padding: 1.25rem 1.5rem;
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.day-card.pillar-1 { border-left: 4px solid #fb7185; }  /* dor */
+.day-card.pillar-2 { border-left: 4px solid #34d399; }  /* solução */
+.day-card.pillar-3 { border-left: 4px solid #fbbf24; }  /* social proof */
+.day-card.pillar-4 { border-left: 4px solid #c4b5fd; }  /* personalidade */
+.day-num {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #c4b5fd;
+}
+.day-num small { display: block; font-size: 0.625rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.125rem; }
+.day-format { font-size: 0.6875rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+.day-hook { font-size: 0.9375rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.5rem; line-height: 1.4; }
+.day-body { font-size: 0.8125rem; color: #cbd5e1; line-height: 1.55; margin-bottom: 0.5rem; }
+.day-cta { font-size: 0.75rem; color: #c4b5fd; font-weight: 600; }
+.day-cta::before { content: '→ '; color: #8b5cf6; }
+
+/* ─── Hook list ───────────────────────────────────────── */
+.hook-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.hook-item {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.625rem;
+  padding: 0.875rem 1.125rem;
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+.hook-num {
+  font-size: 1rem; font-weight: 900; color: #c4b5fd; letter-spacing: -0.02em;
+}
+.hook-text { font-weight: 600; color: #f1f5f9; font-size: 0.9375rem; }
+.hook-why { font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem; line-height: 1.5; }
+
+/* ─── Carrossel templates ────────────────────────────── */
+.carousel-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.875rem;
+  padding: 1.5rem;
+}
+.carousel-slides {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+}
+.carousel-slides li {
+  padding: 0.5rem 0.875rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: 0.5rem;
+  border-left: 3px solid rgba(139,92,246,0.4);
+}
+.carousel-slides li:first-child {
+  background: rgba(139,92,246,0.12);
+  border-left-color: #8b5cf6;
+  color: #f1f5f9;
+  font-weight: 600;
+}
+.carousel-slides li:last-child {
+  background: rgba(52,211,153,0.1);
+  border-left-color: #34d399;
+  color: #f1f5f9;
+}
+
+/* ─── DM Script ───────────────────────────────────────── */
+.dm-block {
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 4px solid #8b5cf6;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0 0.75rem 0.75rem 0;
+  margin-bottom: 1rem;
+}
+.dm-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #c4b5fd;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+.dm-text { font-size: 0.9375rem; line-height: 1.6; color: #e2e8f0; font-style: italic; }
+.dm-why { font-size: 0.75rem; color: #94a3b8; margin-top: 0.625rem; line-height: 1.55; }
+
+/* ─── Influencer table ───────────────────────────────── */
+.infl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.infl-table th {
+  text-align: left;
+  padding: 0.875rem 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.infl-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: #cbd5e1;
+  vertical-align: top;
+}
+.infl-table td:first-child { font-weight: 600; color: #f1f5f9; }
+
+/* ─── Trap card ──────────────────────────────────────── */
+.trap-card {
+  background: rgba(251, 113, 133, 0.04);
+  border: 1px solid rgba(251, 113, 133, 0.2);
+  border-left: 4px solid #fb7185;
+  border-radius: 0.875rem;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1rem;
+}
+.trap-card h3 { color: #fda4af; }
+.trap-card p { color: #cbd5e1; font-size: 0.9375rem; line-height: 1.6; margin-top: 0.5rem; }
+
+/* ─── Footer ─────────────────────────────────────────── */
+.footer {
+  padding: 3rem 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  text-align: center;
+}
+.footer p { color: #475569; font-size: 0.75rem; }
+
+/* ─── Print ──────────────────────────────────────────── */
+@media print {
+  body { background: white !important; color: #0f172a !important; }
+  .glass, .glass-strong, .day-card, .hook-item, .carousel-card, .dm-block, .channel-bar, .trap-card, .infl-table {
+    background: white !important; border-color: #cbd5e1 !important; color: #0f172a !important;
+  }
+  .gradient-text, .channel-pct, .day-num, .hook-num, .violet { -webkit-text-fill-color: #6366f1 !important; color: #6366f1 !important; }
+  .toc { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- HERO ─────────────────────────────────────────────── -->
+<section class="hero-bg">
+  <div class="container">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="logo-mark">F</div>
+      <div>
+        <p style="font-size: 1.25rem; font-weight: 700;">Finn</p>
+        <p class="text-xs muted">Plano de Marketing 30 dias</p>
+      </div>
+    </div>
+
+    <h1 class="h-hero mb-6">
+      Como conseguir os primeiros<br>
+      <span class="gradient-text">50 clientes Founders</span> em 30 dias.
+    </h1>
+
+    <p class="lead max-w-3xl mb-8" style="font-size: 1.125rem;">
+      Plano consolidado com inputs de 3 especialistas: <strong style="color: #f1f5f9;">Pedro Sobral</strong> (estratégia de canais BR),
+      <strong style="color: #f1f5f9;">Hormozi Content</strong> (calendário + hooks + DM script),
+      <strong style="color: #f1f5f9;">Pesquisa de mercado 2026</strong> (algoritmos atuais + influencers BR + benchmarks).
+    </p>
+
+    <div class="flex flex-wrap gap-2">
+      <span class="pill">📅 30 dias detalhados</span>
+      <span class="pill">🎯 4 pilares de conteúdo</span>
+      <span class="pill">📝 20 hooks prontos</span>
+      <span class="pill">💬 Script DM completo</span>
+      <span class="pill">👥 Lista de 15 influencers</span>
+      <span class="pill">📊 KPIs e armadilhas</span>
+    </div>
+  </div>
+</section>
+
+<!-- TOC ─────────────────────────────────────────────── -->
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#norte">Norte estratégico</a>
+    <a href="#canais">Canais</a>
+    <a href="#calendario">Calendário 30d</a>
+    <a href="#hooks">20 hooks</a>
+    <a href="#carrosseis">Carrosséis</a>
+    <a href="#dms">Script DM</a>
+    <a href="#parcerias">Parcerias</a>
+    <a href="#influencers">Influencers</a>
+    <a href="#funil">Funil</a>
+    <a href="#ads">Quando ligar ads</a>
+    <a href="#metricas">Métricas</a>
+    <a href="#armadilhas">Armadilhas</a>
+  </div>
+</nav>
+
+<!-- NORTE ───────────────────────────────────────────── -->
+<section class="section" id="norte">
+  <div class="container">
+    <p class="eyebrow">Norte estratégico</p>
+    <h2 class="h-section max-w-3xl">A verdade nua: orçamento Padawan, estratégia Jedi.</h2>
+    <p class="lead max-w-3xl mb-8">
+      Com R$ 0–500/mês nos primeiros 6 meses, seu canal <strong style="color: white;">não é tráfego pago</strong>.
+      É orgânico + parcerias. Cada centavo é um teste — teste de R$ 500 em fintech B2C BR é estatisticamente irrelevante.
+      Estratégia: <strong style="color: white;">orgânico vira sua máquina de descoberta · parcerias viram seu acelerador · ads entram só quando criativo já tá validado.</strong>
+    </p>
+    <div class="grid grid-3 mt-8">
+      <div class="glass">
+        <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em;">Meta 30 dias</p>
+        <p style="font-size: 2rem; font-weight: 900; margin: 0.5rem 0;" class="gradient-text">50 Founders</p>
+        <p class="text-sm muted">R$ 397 × 50 = R$ 19.850 · runway de 6+ meses garantido</p>
+      </div>
+      <div class="glass">
+        <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em;">Posts/semana</p>
+        <p style="font-size: 2rem; font-weight: 900; margin: 0.5rem 0;" class="gradient-text">5+</p>
+        <p class="text-sm muted">4 Reels + 1 Carrossel · 5-7 TikToks reaproveitados · 1 vídeo longo YouTube</p>
+      </div>
+      <div class="glass">
+        <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em;">Tempo/dia</p>
+        <p style="font-size: 2rem; font-weight: 900; margin: 0.5rem 0;" class="gradient-text">1-2h</p>
+        <p class="text-sm muted">Solo founder · 2h conteúdo, batch grava 1× semana, edição em CapCut</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CANAIS ─────────────────────────────────────────── -->
+<section class="section violet-tint" id="canais">
+  <div class="container">
+    <p class="eyebrow green">Priorização</p>
+    <h2 class="h-section max-w-3xl">Onde Pablo deve atuar — e em qual % do tempo.</h2>
+    <p class="lead max-w-3xl mb-8">
+      Tese: <strong style="color: white;">1 conteúdo, 4 cortes</strong>. Grava uma vez, distribui em Reels, TikTok, Shorts e Status. Solo founder não tem tempo de criar 4 estratégias separadas.
+    </p>
+
+    <div class="channel-bar priority-high">
+      <div class="channel-pct">35%</div>
+      <div>
+        <div class="channel-name">Instagram (Reels + Stories) <span class="pill-violet" style="margin-left: 0.5rem;">PRIORITÁRIO</span></div>
+        <div class="channel-desc">Onde sua audiência vive (classe C/B, 25-50yo). Reels é o algoritmo mais generoso pra contas pequenas em 2026 — distribuição orgânica ainda existe. Stories converte (DM-to-WhatsApp). 4 Reels/semana + 1 Story diário + 1 carrossel/semana.</div>
+      </div>
+    </div>
+
+    <div class="channel-bar priority-high">
+      <div class="channel-pct">25%</div>
+      <div>
+        <div class="channel-name">TikTok</div>
+        <div class="channel-desc">Algoritmo BR ainda dá alcance brutal pra conta nova com hook bom. Audiência migrou pra finanças (#dinheirotok, #financaspessoais explodiram). 5-7 vídeos/semana — reaproveita Reels (NÃO compartilhe link, baixa e reposta nativo).</div>
+      </div>
+    </div>
+
+    <div class="channel-bar priority-mid">
+      <div class="channel-pct">20%</div>
+      <div>
+        <div class="channel-name">YouTube (Shorts + 1 vídeo longo/semana)</div>
+        <div class="channel-desc">Shorts pegam reaproveitamento. 1 vídeo longo de 8-15min/semana vira ATIVO de SEO — quem busca "como organizar finanças" no YouTube tá MUITO mais perto da compra. Trabalha pra você por 2-3 anos.</div>
+      </div>
+    </div>
+
+    <div class="channel-bar priority-mid">
+      <div class="channel-pct">10%</div>
+      <div>
+        <div class="channel-name">WhatsApp orgânico (Comunidades + Status)</div>
+        <div class="channel-desc">Brasil é único no mundo. Status do WhatsApp é subutilizado, Comunidades dá distribuição grátis pra base, e o produto É WhatsApp — reforço de proof. CTWA (Click-to-WhatsApp) é o canal de melhor unit economics do BR (40-80% lift vs landing page).</div>
+      </div>
+    </div>
+
+    <div class="channel-bar priority-low">
+      <div class="channel-pct">5%</div>
+      <div>
+        <div class="channel-name">Threads + Twitter/X</div>
+        <div class="channel-desc">Não pra adquirir cliente. Pra construir relacionamento com micro-influencers e parceiros. Brasileiro de finanças tá no Threads em 2026.</div>
+      </div>
+    </div>
+
+    <div class="channel-bar priority-low">
+      <div class="channel-pct">3% + 2%</div>
+      <div>
+        <div class="channel-name">LinkedIn (3%) · Blog/SEO (2%)</div>
+        <div class="channel-desc">LinkedIn só pra captar parceiros/investidores. Blog/SEO long game — não compensa investir antes do mês 9 (espaço saturado por Mobills, Serasa, Nubank).</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CALENDÁRIO 30 DIAS ─────────────────────────────── -->
+<section class="section" id="calendario">
+  <div class="container">
+    <p class="eyebrow">Execução diária</p>
+    <h2 class="h-section max-w-3xl">Calendário 30 dias — o que postar, dia a dia.</h2>
+    <p class="lead max-w-3xl mb-8">
+      Cada dia: formato · hook · corpo · CTA · pilar. Cores no canto esquerdo:
+      <span class="pill-rose">Pilar 1 · dor</span>
+      <span class="pill-emerald">Pilar 2 · solução</span>
+      <span class="pill-amber">Pilar 3 · prova social</span>
+      <span class="pill-violet">Pilar 4 · personalidade</span>
+    </p>
+
+    <h3 style="font-size: 1.25rem; font-weight: 800; margin: 2rem 0 1rem;">Semana 1 — Dor pesa. Você é estranho. Conquista o scroll.</h3>
+
+    <div class="day-card pillar-1">
+      <div class="day-num">01<small>terça</small></div>
+      <div>
+        <p class="day-format">Reel Instagram + TikTok</p>
+        <p class="day-hook">"Se você não sabe pra onde foi seu salário esse mês, esse vídeo é pra você."</p>
+        <p class="day-body">Pablo na câmera, 30s. Lista 4 lugares onde dinheiro some (iFood, Uber, parcelas esquecidas, assinatura zumbi). Termina: "criei uma coisa que resolve isso."</p>
+        <p class="day-cta">Comenta FINN que te mando o link</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-2">
+      <div class="day-num">02<small>quarta</small></div>
+      <div>
+        <p class="day-format">Reel Instagram</p>
+        <p class="day-hook">"Planilha de gastos não funciona. Nunca funcionou."</p>
+        <p class="day-body">Mostra screenshot de planilha abandonada de março. Cut pro celular: WhatsApp recebendo "gastei 45 no almoço" → Finn responde categorizado. "Por isso fiz no WhatsApp."</p>
+        <p class="day-cta">Link na bio</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-1">
+      <div class="day-num">03<small>quinta</small></div>
+      <div>
+        <p class="day-format">Carrossel Instagram (7 slides)</p>
+        <p class="day-hook">"5 hábitos que estão te mantendo pobre (e você nem percebe)"</p>
+        <p class="day-body">Hábitos cotidianos brasileiros: parcelar tudo em 12x, iFood diário, não saber saldo, assinatura zumbi, faturas surpresa. Slide 7: Finn como solução.</p>
+        <p class="day-cta">Salva esse post e me chama no DM</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-2">
+      <div class="day-num">04<small>sexta</small></div>
+      <div>
+        <p class="day-format">Reel demo</p>
+        <p class="day-hook">"Manda foto da fatura. Olha o que acontece."</p>
+        <p class="day-body">Screen record: foto da fatura do Nubank → Finn extrai todos os lançamentos → categoriza. Tempo total: 8 segundos.</p>
+        <p class="day-cta">Quer testar? Comenta FATURA</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-4">
+      <div class="day-num">05<small>sábado</small></div>
+      <div>
+        <p class="day-format">Tweet thread (X) + repost Story IG</p>
+        <p class="day-hook">"App de finanças brasileiro perdeu pra burocracia."</p>
+        <p class="day-body">Thread 4 tweets sobre por que Mobills/Organizze não funcionam pra 95% das pessoas (abandono em 14 dias). Solução: WhatsApp já tá aberto.</p>
+        <p class="day-cta">Tô construindo isso. Link no perfil.</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-2">
+      <div class="day-num">06<small>domingo</small></div>
+      <div>
+        <p class="day-format">Story Series (5) + Reel curto</p>
+        <p class="day-hook">"Domingo de planejamento financeiro? Tenta isso."</p>
+        <p class="day-body">Pablo manda áudio: "quanto gastei semana passada?" Finn responde com gráfico/breakdown. 15s.</p>
+        <p class="day-cta">Print isso e me manda no DM com a palavra DOMINGO</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-4">
+      <div class="day-num">07<small>segunda</small></div>
+      <div>
+        <p class="day-format">Reel storytelling</p>
+        <p class="day-hook">"Por que eu desisti de planilha (depois de 8 anos tentando)"</p>
+        <p class="day-body">Pablo em câmera, 45s. Conta da própria luta com finanças. Termina mostrando Finn no WhatsApp.</p>
+        <p class="day-cta">Tá enrolado igual eu tava? Comenta SOS</p>
+      </div>
+    </div>
+
+    <h3 style="font-size: 1.25rem; font-weight: 800; margin: 2.5rem 0 1rem;">Semana 2 — Demos + primeira prova social. Converte os mornos.</h3>
+
+    <div class="day-card pillar-2">
+      <div class="day-num">08<small>terça</small></div>
+      <div>
+        <p class="day-format">Reel</p>
+        <p class="day-hook">"3 perguntas que seu app de finanças não responde."</p>
+        <p class="day-body">Mostra Finn respondendo: "quanto gastei com mãe esse mês?", "qual minha categoria que mais cresceu?", "tô gastando mais que ano passado?". App tradicional não faz.</p>
+        <p class="day-cta">Link bio. Tem 7 dias grátis.</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-2">
+      <div class="day-num">09<small>quarta</small></div>
+      <div>
+        <p class="day-format">Carrossel (7 slides)</p>
+        <p class="day-hook">"Como controlar suas finanças em 30 segundos por dia (sem planilha)"</p>
+        <p class="day-body">Os 4 jeitos de mandar gasto pro Finn (texto, áudio, foto, encaminhar Nubank). Slide final = oferta.</p>
+        <p class="day-cta">Salva e segue @finn</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-1">
+      <div class="day-num">10<small>quinta</small></div>
+      <div>
+        <p class="day-format">Reel</p>
+        <p class="day-hook">"Brasileiro tem 4 cartões de crédito em média. E zero ideia de quanto deve."</p>
+        <p class="day-body">Stat-driven. Pablo agita. Mostra Finn somando faturas de 3 cartões automaticamente.</p>
+        <p class="day-cta">Manda DM CARTÃO</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-4">
+      <div class="day-num">11<small>sexta</small></div>
+      <div>
+        <p class="day-format">Tweet thread (X)</p>
+        <p class="day-hook">"Por que construí um app de finanças no WhatsApp e não na App Store."</p>
+        <p class="day-body">6 tweets. Build-in-public. Por que app não funciona pra mass market BR. Termina com link.</p>
+        <p class="day-cta">RT se faz sentido</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-3">
+      <div class="day-num">12<small>sábado</small></div>
+      <div>
+        <p class="day-format">Reel UGC-style</p>
+        <p class="day-hook">"Recebi essa mensagem ontem e quase chorei."</p>
+        <p class="day-body">Print de DM real (com permissão) ou autêntico do beta. "Cara, primeiro mês que sei pra onde foi meu dinheiro." Pablo lê e reage.</p>
+        <p class="day-cta">Comenta TESTE pra entrar no beta</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-1">
+      <div class="day-num">13<small>domingo</small></div>
+      <div>
+        <p class="day-format">Story poll + Reel</p>
+        <p class="day-hook">"Você sabe quanto gastou com iFood mês passado? (a resposta vai te assustar)"</p>
+        <p class="day-body">Pablo manda no Finn "iFood março". Finn responde R$ 847. "A média do brasileiro é 600+. E a maioria não sabe."</p>
+        <p class="day-cta">Quer descobrir o seu? Link bio</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-4">
+      <div class="day-num">14<small>segunda</small></div>
+      <div>
+        <p class="day-format">LinkedIn post (text-only)</p>
+        <p class="day-hook">"Saí de R$ 0 pra primeiro produto pago em 90 dias. Aqui o que aprendi sobre finanças no Brasil."</p>
+        <p class="day-body">Post longo. Mass market BR não usa Mobills. WhatsApp tem 96% penetração. Insight de produto. Convite pro Founders.</p>
+        <p class="day-cta">Founders Lifetime: R$ 397 vitalício, 100 vagas. Link no perfil.</p>
+      </div>
+    </div>
+
+    <h3 style="font-size: 1.25rem; font-weight: 800; margin: 2.5rem 0 1rem;">Semana 3 — Pressiona forte. Escassez Founders escala.</h3>
+
+    <div class="day-card pillar-1">
+      <div class="day-num">15<small>terça</small></div>
+      <div>
+        <p class="day-format">Reel</p>
+        <p class="day-hook">"Tá faltando dinheiro no fim do mês? Não é o salário."</p>
+        <p class="day-body">Pablo conta a verdade desconfortável: 80% do problema não é renda, é cegueira financeira. Finn = óculos.</p>
+        <p class="day-cta">Founders Lifetime tá em 53/100. Link bio.</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-3">
+      <div class="day-num">16<small>quarta</small></div>
+      <div>
+        <p class="day-format">Carrossel (7 slides)</p>
+        <p class="day-hook">"Antes vs depois: 30 dias usando o Finn"</p>
+        <p class="day-body">Caso real (Pablo ou beta tester). Slide 1: caos. Slides 2-6: prints reais de uso. Slide 7: número final.</p>
+        <p class="day-cta">Quer esse antes/depois pra você? DM</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-2">
+      <div class="day-num">17<small>quinta</small></div>
+      <div>
+        <p class="day-format">Reel demo "wow moment"</p>
+        <p class="day-hook">"Mandei um áudio falando 'gastei 80 no rango'. Olha o que ele entendeu."</p>
+        <p class="day-body">Áudio real. Finn transcreve, categoriza "Alimentação", confirma. Mostra também: "parcelei em 3x" → registra parcela. Magic.</p>
+        <p class="day-cta">Testa: link bio</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-1">
+      <div class="day-num">18<small>sexta</small></div>
+      <div>
+        <p class="day-format">Tweet (X) + repost IG</p>
+        <p class="day-hook">"Mobills tem 10 milhões de download. 9 milhões abandonaram em 30 dias."</p>
+        <p class="day-body">Stat (real ou estimado, com fonte). Por que. Finn resolve isso.</p>
+        <p class="day-cta">Construí pra essas 9 milhões. Link.</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-4">
+      <div class="day-num">19<small>sábado</small></div>
+      <div>
+        <p class="day-format">Reel founder vlog</p>
+        <p class="day-hook">"Sábado às 7am. Construindo o Finn sozinho. Vem comigo."</p>
+        <p class="day-body">BTS 30s. Pablo no notebook. Mostra código? Mostra DM de usuário? Termina com "47 Founders já tão dentro."</p>
+        <p class="day-cta">Vagas no link bio</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-2">
+      <div class="day-num">20<small>domingo</small></div>
+      <div>
+        <p class="day-format">Carrossel (7 slides)</p>
+        <p class="day-hook">"10 perguntas que você deveria saber responder sobre seu dinheiro"</p>
+        <p class="day-body">As 10 perguntas (quanto gastei com X, quanto sobrou mês passado, etc). Slide 7: "Finn responde todas em segundos."</p>
+        <p class="day-cta">Comenta DINHEIRO</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-4">
+      <div class="day-num">21<small>segunda</small></div>
+      <div>
+        <p class="day-format">Reel</p>
+        <p class="day-hook">"Esse é o momento exato em que tudo mudou pra mim."</p>
+        <p class="day-body">Pablo conta a história pessoal — momento que percebeu que precisava de um sistema. Conecta com Finn.</p>
+        <p class="day-cta">Quem mais tá nesse momento? Comenta.</p>
+      </div>
+    </div>
+
+    <h3 style="font-size: 1.25rem; font-weight: 800; margin: 2.5rem 0 1rem;">Semana 4 — Fecha. Escassez. Converte DMs hesitantes.</h3>
+
+    <div class="day-card pillar-3">
+      <div class="day-num">22<small>terça</small></div>
+      <div>
+        <p class="day-format">Reel urgência</p>
+        <p class="day-hook">"Restam 38 vagas Founders Lifetime. Depois acabou pra sempre."</p>
+        <p class="day-body">Pablo direto. Explica oferta: R$ 397 uma vez, vitalício. Compara com R$ 14,90/mês = paga em 27 meses, depois é grátis pro resto da vida.</p>
+        <p class="day-cta">Link bio. Não vai ter de novo.</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-2">
+      <div class="day-num">23<small>quarta</small></div>
+      <div>
+        <p class="day-format">Reel objection-killer</p>
+        <p class="day-hook">"'Mas eu já uso planilha.' Beleza, faz isso aí."</p>
+        <p class="day-body">Pablo desafia: "abre sua planilha agora e me fala quanto gastou com delivery semana passada". Cut pro Finn respondendo em 2s.</p>
+        <p class="day-cta">Comenta TESTE</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-3">
+      <div class="day-num">24<small>quinta</small></div>
+      <div>
+        <p class="day-format">Carrossel (7 slides)</p>
+        <p class="day-hook">"5 motivos pra NÃO comprar o Founders Lifetime"</p>
+        <p class="day-body">Reverse psychology. 5 motivos honestos (não é pra quem ama planilha, etc). Slide 7: "Se nada disso é você, link bio."</p>
+        <p class="day-cta">Founders 32/100</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-4">
+      <div class="day-num">25<small>sexta</small></div>
+      <div>
+        <p class="day-format">Tweet thread (X)</p>
+        <p class="day-hook">"Founders Lifetime do Finn: por que R$ 397 vitalício e não R$ 14,90/mês."</p>
+        <p class="day-body">Thread sobre por que essa oferta existe. Honestidade radical: precisa de capital pra crescer, em troca você paga uma vez e nunca mais.</p>
+        <p class="day-cta">Link no bio</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-3">
+      <div class="day-num">26<small>sábado</small></div>
+      <div>
+        <p class="day-format">Reel testimonial</p>
+        <p class="day-hook">"Print real de ontem. Sem edição."</p>
+        <p class="day-body">DM ou print de tela de usuário Founders. Pablo lê. Reage. "É por isso que faço isso."</p>
+        <p class="day-cta">Próximo print pode ser o seu</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-1">
+      <div class="day-num">27<small>domingo</small></div>
+      <div>
+        <p class="day-format">Story sequence (10) + Reel resumo</p>
+        <p class="day-hook">"Domingo é o dia mais caro da semana do brasileiro. Provo."</p>
+        <p class="day-body">Stat sobre gastos de domingo (delivery + lazer). Finn ajuda a antecipar.</p>
+        <p class="day-cta">Quer entrar no controle? DM</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-3">
+      <div class="day-num">28<small>segunda</small></div>
+      <div>
+        <p class="day-format">Reel urgência real</p>
+        <p class="day-hook">"Vagas Founders: menos de 25. Vou tirar do ar dia [DATA]."</p>
+        <p class="day-body">Pablo direto, 30s. Repete oferta. Mostra contagem real (se possível, ao vivo).</p>
+        <p class="day-cta">Link bio. Sem prorrogação.</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-4">
+      <div class="day-num">29<small>terça</small></div>
+      <div>
+        <p class="day-format">Carrossel (7 slides)</p>
+        <p class="day-hook">"Tudo que aprendi em 30 dias postando sobre o Finn"</p>
+        <p class="day-body">Build-in-public. Lições. Compounding. Convida quem ainda não entrou.</p>
+        <p class="day-cta">Comenta um número de 1-10: o quanto você quer organizar suas finanças</p>
+      </div>
+    </div>
+
+    <div class="day-card pillar-3">
+      <div class="day-num">30<small>quarta</small></div>
+      <div>
+        <p class="day-format">Reel last call</p>
+        <p class="day-hook">"Última chamada. Founders fecha hoje 23:59."</p>
+        <p class="day-body">Pablo na cara. Direto. "Se você ouviu falar do Finn nesse mês e tava enrolando, é agora ou R$ 14,90/mês pra sempre." Mostra contador.</p>
+        <p class="day-cta">Link bio. Encerro hoje.</p>
+      </div>
+    </div>
+
+    <div class="glass mt-8" style="border-left: 4px solid #c4b5fd;">
+      <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">Stories diárias (paralelo)</p>
+      <p class="text-sm" style="line-height: 1.7;">2-3 stories/dia, rotação entre: BTS (Pablo no computador), polls ("você sabe quanto gastou ontem?"), repost do Reel do dia, prints de DM (com permissão), <strong>Founders counter</strong> ("hoje: 47/100"), pergunta do dia + resposta do Finn.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 20 HOOKS ───────────────────────────────────────── -->
+<section class="section indigo-tint" id="hooks">
+  <div class="container">
+    <p class="eyebrow amber">Banco de hooks</p>
+    <h2 class="h-section max-w-3xl">20 hooks pt-BR prontos pra usar.</h2>
+    <p class="lead max-w-3xl mb-8">
+      Os primeiros 0,5s decidem 50% do destino do vídeo. Hook tem que estar no frame 1.
+      Esses 20 batem na psicologia BR de frustração com dinheiro.
+    </p>
+
+    <div class="hook-list">
+      <div class="hook-item"><div class="hook-num">01</div><div><p class="hook-text">"Se você não sabe pra onde foi seu salário, vê isso."</p><p class="hook-why">Pain point literal, segunda pessoa direta.</p></div></div>
+      <div class="hook-item"><div class="hook-num">02</div><div><p class="hook-text">"Planilha não funciona. Nunca funcionou."</p><p class="hook-why">Statement contrarian, valida frustração silenciosa.</p></div></div>
+      <div class="hook-item"><div class="hook-num">03</div><div><p class="hook-text">"3 perguntas que seu app de finanças não responde."</p><p class="hook-why">Curiosity gap + open loop.</p></div></div>
+      <div class="hook-item"><div class="hook-num">04</div><div><p class="hook-text">"Manda foto da fatura. Olha o que acontece."</p><p class="hook-why">Demo invite, cria expectativa visual.</p></div></div>
+      <div class="hook-item"><div class="hook-num">05</div><div><p class="hook-text">"Brasileiro tem 4 cartões. Zero ideia de quanto deve."</p><p class="hook-why">Stat + agitação coletiva.</p></div></div>
+      <div class="hook-item"><div class="hook-num">06</div><div><p class="hook-text">"Por que desisti de planilha depois de 8 anos."</p><p class="hook-why">Vulnerável + curiosity (qual a alternativa?).</p></div></div>
+      <div class="hook-item"><div class="hook-num">07</div><div><p class="hook-text">"Tá faltando dinheiro no fim do mês? Não é o salário."</p><p class="hook-why">Contrarian, abre loop maior.</p></div></div>
+      <div class="hook-item"><div class="hook-num">08</div><div><p class="hook-text">"Mandei um áudio. Olha o que ele entendeu."</p><p class="hook-why">Tech-magic hook, demo.</p></div></div>
+      <div class="hook-item"><div class="hook-num">09</div><div><p class="hook-text">"Esse é o momento que tudo mudou pra mim."</p><p class="hook-why">Storytelling, faz parar pra ouvir.</p></div></div>
+      <div class="hook-item"><div class="hook-num">10</div><div><p class="hook-text">"Mobills tem 10 milhões de download. 9 abandonaram."</p><p class="hook-why">Stat-shock, valida abandono do espectador.</p></div></div>
+      <div class="hook-item"><div class="hook-num">11</div><div><p class="hook-text">"App de finanças brasileiro perdeu pra burocracia."</p><p class="hook-why">Statement provocativo, pega quem já tentou.</p></div></div>
+      <div class="hook-item"><div class="hook-num">12</div><div><p class="hook-text">"Sabe quanto gastou com iFood? A resposta assusta."</p><p class="hook-why">Curiosity específica + comportamento universal.</p></div></div>
+      <div class="hook-item"><div class="hook-num">13</div><div><p class="hook-text">"5 hábitos que tão te mantendo pobre (sem você ver)."</p><p class="hook-why">List + acusação suave + open loop.</p></div></div>
+      <div class="hook-item"><div class="hook-num">14</div><div><p class="hook-text">"Restam 38 vagas. Depois acabou pra sempre."</p><p class="hook-why">Escassez pura.</p></div></div>
+      <div class="hook-item"><div class="hook-num">15</div><div><p class="hook-text">"'Mas eu já uso planilha.' Tá. Faz isso aí."</p><p class="hook-why">Objection-killer hook, desafio direto.</p></div></div>
+      <div class="hook-item"><div class="hook-num">16</div><div><p class="hook-text">"Domingo é o dia mais caro do brasileiro. Provo."</p><p class="hook-why">Específico + promessa de prova.</p></div></div>
+      <div class="hook-item"><div class="hook-num">17</div><div><p class="hook-text">"Construí no WhatsApp e não na App Store. Por isso."</p><p class="hook-why">Build-in-public + curiosity.</p></div></div>
+      <div class="hook-item"><div class="hook-num">18</div><div><p class="hook-text">"Recebi essa mensagem ontem e quase chorei."</p><p class="hook-why">Emocional, social proof teaser.</p></div></div>
+      <div class="hook-item"><div class="hook-num">19</div><div><p class="hook-text">"R$ 397 vitalício ou R$ 14,90/mês pra sempre. Você escolhe."</p><p class="hook-why">Decision frame, oferta direta.</p></div></div>
+      <div class="hook-item"><div class="hook-num">20</div><div><p class="hook-text">"Print real de ontem. Sem edição."</p><p class="hook-why">Authenticity hook, social proof bruto.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CARROSSEL TEMPLATES ──────────────────────────── -->
+<section class="section" id="carrosseis">
+  <div class="container">
+    <p class="eyebrow">Templates</p>
+    <h2 class="h-section max-w-3xl">5 carrosséis prontos.</h2>
+    <p class="lead max-w-3xl mb-8">
+      Carrossel converte 3× mais que single image entre seguidores existentes. Pico de reach em 7-10 slides.
+    </p>
+
+    <div class="grid grid-2">
+      <div class="carousel-card">
+        <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">Template 1 · Pilar 1 (dor)</p>
+        <h3 class="h-card">5 Hábitos Pobres</h3>
+        <ol class="carousel-slides">
+          <li>"5 hábitos que estão te mantendo pobre (e você nem vê)"</li>
+          <li>Hábito 1: Parcelar tudo em 12x "porque cabe no bolso"</li>
+          <li>Hábito 2: Não saber o saldo da conta agora</li>
+          <li>Hábito 3: Assinaturas zumbis (Netflix, Disney, etc)</li>
+          <li>Hábito 4: iFood "só essa vez" 4x na semana</li>
+          <li>Hábito 5: Não ter ideia do total das faturas</li>
+          <li>CTA: "Finn resolve os 5. WhatsApp. Link bio."</li>
+        </ol>
+      </div>
+
+      <div class="carousel-card">
+        <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">Template 2 · Pilar 3 (prova social)</p>
+        <h3 class="h-card">Antes vs Depois 30 dias</h3>
+        <ol class="carousel-slides">
+          <li>"Antes vs Depois: 30 dias com o Finn"</li>
+          <li>Antes: print da planilha vazia + caos</li>
+          <li>Antes: faturas não pagas, surpresas</li>
+          <li>Depois — semana 1: registrando gastos por áudio</li>
+          <li>Depois — semana 2: primeira pergunta ao Finn</li>
+          <li>Depois — semana 4: dashboard, padrões claros</li>
+          <li>CTA: "Comenta DEPOIS pra começar o seu"</li>
+        </ol>
+      </div>
+
+      <div class="carousel-card">
+        <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">Template 3 · Pilar 2 (solução)</p>
+        <h3 class="h-card">30 segundos por dia</h3>
+        <ol class="carousel-slides">
+          <li>"Como controlar finanças em 30 segundos/dia"</li>
+          <li>Manhã: foto da fatura → Finn extrai tudo</li>
+          <li>Almoço: áudio "gastei 35 no rango" → categorizado</li>
+          <li>Tarde: encaminha pix do Nubank → registra automático</li>
+          <li>Noite: pergunta "quanto sobrou?" → resposta na hora</li>
+          <li>Fim do mês: relatório completo, sem você fazer nada</li>
+          <li>CTA: "É no WhatsApp que você já usa. Link bio."</li>
+        </ol>
+      </div>
+
+      <div class="carousel-card">
+        <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">Template 4 · Pilar 2 (educação)</p>
+        <h3 class="h-card">10 Perguntas Sobre Seu Dinheiro</h3>
+        <ol class="carousel-slides">
+          <li>"10 perguntas sobre seu dinheiro que você deveria saber responder"</li>
+          <li>Quanto gastei mês passado (total)?</li>
+          <li>Qual minha maior categoria de gasto?</li>
+          <li>Quanto gastei com delivery nos últimos 30 dias?</li>
+          <li>Tô gastando mais ou menos que ano passado?</li>
+          <li>Quanto vai pesar a fatura do mês que vem?</li>
+          <li>CTA: "Finn responde todas em segundos. Comenta PERGUNTA."</li>
+        </ol>
+      </div>
+
+      <div class="carousel-card" style="grid-column: span 2;">
+        <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">Template 5 · Pilar 3 (reverse psychology close)</p>
+        <h3 class="h-card">5 Motivos pra NÃO comprar o Founders</h3>
+        <ol class="carousel-slides">
+          <li>"5 motivos pra NÃO comprar o Founders Lifetime"</li>
+          <li>Motivo 1: Se você ama planilha, fica nela</li>
+          <li>Motivo 2: Se controle financeiro pra você é "olhar saldo", não precisa</li>
+          <li>Motivo 3: Se R$ 397 vitalício é caro mas R$ 14,90/mês "ah suave"</li>
+          <li>Motivo 4: Se você prefere abrir 1 app a mais</li>
+          <li>Motivo 5: Se "ano que vem eu organizo" funciona pra você há 5 anos</li>
+          <li>CTA: "Se nenhum é você, link bio. 32 vagas."</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DM SCRIPT ─────────────────────────────────────── -->
+<section class="section violet-tint" id="dms">
+  <div class="container">
+    <p class="eyebrow green">Conversão</p>
+    <h2 class="h-section max-w-3xl">Script DM — do "interessado" ao Founders Lifetime.</h2>
+    <p class="lead max-w-3xl mb-8">
+      Quando alguém comenta ou manda DM. Não venda. Pergunte. Faça a pessoa se autoqualificar e contar a dor — ativa o investimento emocional dela.
+    </p>
+
+    <div class="dm-block">
+      <p class="dm-label">1. Resposta inicial (sem ser salesy)</p>
+      <p class="dm-text">"Opa! Vi sua mensagem. Antes de qualquer coisa: o que te fez clicar no comentário? Tá tentando organizar as finanças há quanto tempo?"</p>
+      <p class="dm-why"><strong>Por que funciona:</strong> Não vende. Pergunta. Faz a pessoa se autoqualificar e começa a contar a dor.</p>
+    </div>
+
+    <div class="dm-block">
+      <p class="dm-label">2. Qualificação (depois da resposta dela)</p>
+      <p class="dm-text">"Entendi. E hoje você usa o quê? Planilha, app, anotação no caderno, ou tá no 'eu sei de cabeça'?"</p>
+      <p class="dm-text" style="margin-top: 0.5rem;">"E na real, quão satisfeito você tá com isso? De 1 a 10."</p>
+      <p class="dm-why"><strong>Por que funciona:</strong> Pega o gap. Se ela responde 3, você sabe que ela tá pronta pra solução.</p>
+    </div>
+
+    <div class="dm-block">
+      <p class="dm-label">3. Transição pra oferta</p>
+      <p class="dm-text">"Olha, fiz o Finn exatamente pra esse cenário. Funciona no WhatsApp que você já tá olhando agora — você manda áudio, foto da fatura, ou texto, e ele organiza, categoriza e responde tudo que você perguntar. Sem app novo, sem planilha.<br><br>Tem dois caminhos:<br>1. R$ 14,90/mês — começa com 7 dias grátis pra testar<br>2. <strong>Founders Lifetime: R$ 397 uma vez, vitalício pra sempre.</strong> Restam [X]/100 vagas. Depois nunca mais vai ter.<br><br>Quer que eu te mande o link?"</p>
+      <p class="dm-why"><strong>Por que funciona:</strong> Não pede compra. Pede permissão pra mandar link. Reduz fricção 90%.</p>
+    </div>
+
+    <div class="dm-block">
+      <p class="dm-label">4. Quando vier "vou pensar"</p>
+      <p class="dm-text">"Suave, faz total sentido. Posso te perguntar uma coisa? O que você precisaria ver/saber pra decidir? Se for grana, beleza. Se for dúvida do produto, te respondo. Não tô aqui pra empurrar — só quero entender."</p>
+      <p class="dm-why"><strong>Por que funciona:</strong> "Vou pensar" é objeção mascarada. Você desenterra a real. 60% das vezes vira venda na hora.</p>
+    </div>
+
+    <div class="dm-block">
+      <p class="dm-label">5. Quando vier "tô sem grana agora"</p>
+      <p class="dm-text">"Saquei. Realidade. Então faz o seguinte: começa com os 7 dias grátis. Sem cartão. Testa por uma semana, vê se faz diferença pro seu caso. Se virar essencial, no fim de mês você decide entre os R$ 14,90 ou os R$ 397 vitalício. <strong>Aliás, justamente por estar sem grana é que controlar gastos importa mais agora — você precisa saber pra onde tá indo cada real.</strong> Mando o link do trial?"</p>
+      <p class="dm-why"><strong>Por que funciona:</strong> Inverte a objeção (sem grana = MAIOR motivo pra usar). Reduz risco a zero. Mantém Founders no horizonte.</p>
+    </div>
+
+    <div class="dm-block">
+      <p class="dm-label">6. Founders push (entre R$ 14,90 e R$ 397)</p>
+      <p class="dm-text">"Pensa assim: R$ 14,90/mês = R$ 178/ano. Em 27 meses você já paga os R$ 397. Daí pra frente, o resto da sua vida usando Finn é grátis. E essas 100 vagas existem por um motivo: tô usando esse dinheiro pra construir o produto. Quando fechar, fechou. Não vou abrir de novo. Se você acredita que vai usar Finn por mais de 2 anos e meio, Founders é matemática. Se não, mensal tá ótimo. Qual faz mais sentido pra você?"</p>
+      <p class="dm-why"><strong>Por que funciona:</strong> Honestidade radical. Matemática simples. Devolve a decisão com framework claro.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PARCERIAS ────────────────────────────────────── -->
+<section class="section" id="parcerias">
+  <div class="container">
+    <p class="eyebrow">Parcerias</p>
+    <h2 class="h-section max-w-3xl">Seu maior unfair advantage com orçamento limitado.</h2>
+    <p class="lead max-w-3xl mb-8">
+      Esquece Nath Arcuri, Primo Rico, Bruno Perini. Tier alto custa R$ 50-300k/post. Não é seu jogo.
+      <strong style="color: white;">Sweet spot: 15k–80k seguidores.</strong> Engajamento ainda alto (4-8%), criador acessível, audiência confia, cachê negociável.
+    </p>
+
+    <div class="grid grid-2 mb-8">
+      <div class="glass">
+        <h3 class="h-card">5 tipos de parceiro ideal</h3>
+        <ol style="font-size: 0.875rem; color: #cbd5e1; padding-left: 1.25rem; line-height: 1.8;">
+          <li><strong style="color: white;">Micro-influencers de finanças "raiz"</strong> — não engravatados. Quem fala de organização e dia a dia, não investimento. Devedor classe C/B é seu cliente, não investidor.</li>
+          <li><strong style="color: white;">Criadores de produtividade + vida prática</strong> — "rotina de mãe", "dicas pra dona de casa", "como organizar tudo na palma da mão".</li>
+          <li><strong style="color: white;">Influencers regionais</strong> — Nordeste, interior SP/MG. CAC desses é absurdamente menor. Você é cearense, USA ISSO.</li>
+          <li><strong style="color: white;">Pastores e líderes cristãos financeiros</strong> — nicho gigantesco BR, subexplorado, alta confiança. "Mordomia financeira".</li>
+          <li><strong style="color: white;">Microempreendedores MEI</strong> — "Diário do MEI", "Vlog do dono de salão". Eles têm dor real e audiência igual a eles.</li>
+        </ol>
+      </div>
+
+      <div class="glass">
+        <h3 class="h-card">Modelo de remuneração (testa nessa ordem)</h3>
+        <table style="width: 100%; font-size: 0.8125rem; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <th style="text-align: left; padding: 0.5rem 0; color: #94a3b8; font-weight: 600;">Modelo</th>
+            <th style="text-align: left; padding: 0.5rem 0; color: #94a3b8; font-weight: 600;">Quando usar</th>
+          </tr>
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <td style="padding: 0.625rem 0.5rem 0.625rem 0; color: #f1f5f9;"><strong>Founders Lifetime grátis + 30% recorrente vitalício</strong></td>
+            <td style="padding: 0.625rem 0; color: #cbd5e1;">Padrão pra começar. Ganha-ganha.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <td style="padding: 0.625rem 0.5rem 0.625rem 0; color: #f1f5f9;"><strong>Cash R$ 200-500 fixo + 20% recorrente</strong></td>
+            <td style="padding: 0.625rem 0; color: #cbd5e1;">Criador 50k+ que pede cachê. Só após validar canal.</td>
+          </tr>
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <td style="padding: 0.625rem 0.5rem 0.625rem 0; color: #f1f5f9;"><strong>Permuta pura (lifetime + acesso founder)</strong></td>
+            <td style="padding: 0.625rem 0; color: #cbd5e1;">Criadores 5-15k começando. Primeiros 5-10 parceiros.</td>
+          </tr>
+          <tr>
+            <td style="padding: 0.625rem 0.5rem 0.625rem 0; color: #f1f5f9;"><strong>CPA R$ 30-40 por venda PRO</strong></td>
+            <td style="padding: 0.625rem 0; color: #cbd5e1;">Plataformas Hotmart/Eduzz. Cuidado: CAC saudável é R$ 38.</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="glass-strong" style="border-left: 4px solid #34d399;">
+      <p class="eyebrow green" style="margin-bottom: 0.5rem;">Pitch DM (copia, cola e adapta)</p>
+      <p style="font-size: 0.9375rem; line-height: 1.7; color: #e2e8f0; font-style: italic;">
+        "Oi [Nome], beleza? Sou Pablo, founder do Finn — app de finanças pelo WhatsApp (manda áudio 'gastei 50 no posto' e ele organiza tudo). Tô vendo seu conteúdo há um tempo e teu jeito de explicar [insere coisa ESPECÍFICA, tipo 'finança pra MEI sem firula'] é exatamente o público que sofre com Mobills/Excel. Quero te mandar acesso vitalício de graça pra você testar 2 semanas — sem compromisso, sem post obrigado. Se curtir e fizer sentido, monto uma parceria com 30% recorrente vitalício pra cada venda tua. Posso te mandar o acesso? Abraço!"
+      </p>
+      <p class="text-sm muted mt-4"><strong style="color: white;">Por que funciona:</strong> não vende, OFERECE. Brasileiro de 5-30k recebe 200 pitches/mês de "vamos fechar parceria 10% comissão". O seu é diferente: dá ANTES de pedir.</p>
+    </div>
+
+    <div class="glass mt-6">
+      <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">Onde encontrar (rotina semanal)</p>
+      <ul style="font-size: 0.875rem; color: #cbd5e1; line-height: 1.8; padding-left: 1.25rem;">
+        <li><strong style="color: white;">Instagram busca</strong>: hashtags <code>#financaspessoais #saiadasdividas #organizarfinancas #financasparamulheres #financasdomei #planilhafinanceira</code> · filtra por "Recentes" + contas 5k-80k</li>
+        <li><strong style="color: white;">TikTok busca</strong>: mesmas hashtags + <code>#dinheirotok</code>. Mostra contas crescendo MAIS rápido que Insta</li>
+        <li><strong style="color: white;">Heepsy / Favikon</strong> (free tier): filtra micro-influencers BR por nicho</li>
+        <li><strong style="color: white;">YouTube</strong>: busca "finanças pessoais" filtra "este mês" + canais 10k-100k</li>
+        <li><strong style="color: white;">Comentários</strong> do Primo Rico e Nath Arcuri — sobem MUITO criador novo de qualidade nos comentários</li>
+        <li><strong style="color: white;">Threads</strong>: 2026 virou rede de finance-twitter BR</li>
+      </ul>
+      <p class="text-sm mt-4" style="color: #fbbf24;"><strong>Meta realista:</strong> 20 DMs/semana → 4 respostas → 2 testando → 1 vira parceiro. Em 3 meses: 12 parceiros ativos.</p>
+    </div>
+  </div>
+</section>
+
+<!-- INFLUENCERS ──────────────────────────────────── -->
+<section class="section" id="influencers">
+  <div class="container">
+    <p class="eyebrow">Lista de abordagem</p>
+    <h2 class="h-section max-w-3xl">15 micro-influencers BR pra começar.</h2>
+    <p class="lead max-w-3xl mb-8">
+      Sweet spot 5k-200k. <strong style="color: white;">Validar tamanho atualizado antes de cada abordagem</strong> — números abaixo são aproximados ou da última pesquisa.
+    </p>
+
+    <div class="glass-strong" style="overflow-x: auto;">
+      <table class="infl-table">
+        <thead>
+          <tr>
+            <th>Nome / handle</th>
+            <th>Plataforma</th>
+            <th>Audiência aprox.</th>
+            <th>Nicho</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Boletinhos</td><td>Instagram</td><td>~80k</td><td>Finanças pra jovens</td></tr>
+          <tr><td>Grana Preta (Amanda Dias)</td><td>Instagram</td><td>~73k+</td><td>Emancipação financeira / comportamental</td></tr>
+          <tr><td>Favelado Investidor (Murilo Duarte)</td><td>YouTube + IG</td><td>359k YT / 647k IG</td><td>Classe C/D — acessível mesmo sendo maior</td></tr>
+          <tr><td>Thiago Godoy (Papai Financeiro)</td><td>IG / Podcast</td><td>~médio porte</td><td>Finanças familiares</td></tr>
+          <tr><td>@poupegrana</td><td>TikTok</td><td>verificar</td><td>Dicas curtas finanças</td></tr>
+          <tr><td>@primopobreensina</td><td>TikTok</td><td>verificar</td><td>Mentalidade financeira</td></tr>
+          <tr><td>@franlima.me</td><td>TikTok</td><td>verificar</td><td>Choques de realidade sobre dinheiro</td></tr>
+          <tr><td>@investindocomolucas</td><td>TikTok</td><td>verificar</td><td>Investimentos básicos</td></tr>
+          <tr><td>Educando seu Bolso</td><td>YouTube</td><td>médio porte</td><td>Canal antigo, autoridade</td></tr>
+          <tr><td>Carol Sandler (Finanças Femininas)</td><td>IG / Podcast</td><td>médio porte</td><td>Finanças pra mulheres</td></tr>
+          <tr><td>Clara Sodré</td><td>IG</td><td>médio porte</td><td>Analista XP, finanças pessoais femininas</td></tr>
+          <tr><td>Spilkaa (verificar)</td><td>IG / TikTok</td><td>verificar</td><td>Meme finance</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="glass mt-6" style="border-left: 4px solid #fbbf24;">
+      <p class="eyebrow amber" style="margin-bottom: 0.5rem;">Aviso importante (regulatório)</p>
+      <p class="text-sm" style="color: #cbd5e1; line-height: 1.7;">
+        <strong style="color: white;">Finfluencers sob ANBIMA</strong> (regulação 2023+) só podem promover produto financeiro com registro CVM/banco regulado. Pra Finn (categorização/orçamento, NÃO corretora), o atrito regulatório é menor — você é "ferramenta de organização", não "investimento". Mas confirme com o influencer antes de fechar.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- FUNIL ──────────────────────────────────────── -->
+<section class="section indigo-tint" id="funil">
+  <div class="container">
+    <p class="eyebrow">Conversão</p>
+    <h2 class="h-section max-w-3xl">Funil de vendas — Reel até R$ 14,90.</h2>
+    <p class="lead max-w-3xl mb-8">
+      Realista BR fintech 2026: <strong style="color: white;">5-8 toques</strong> antes da compra. Pessoa não compra na primeira. Não delira.
+    </p>
+
+    <div class="glass-strong">
+      <ol style="font-size: 0.9375rem; color: #e2e8f0; line-height: 1.8; padding-left: 1.5rem;">
+        <li><strong style="color: white;">Reel/TikTok/Short</strong> — primeiro toque (descoberta)</li>
+        <li>2-3 vídeos a mais consumidos (algoritmo entrega)</li>
+        <li>Vai no perfil, lê bio, vê Stories destacados</li>
+        <li>Clica no link da bio</li>
+        <li><strong style="color: white;">Cai em link DIRETO pro WhatsApp</strong> (NÃO landing page!)</li>
+        <li>Mensagem automática inicia conversa: "Oi! Posso te mostrar o Finn em 2min?"</li>
+        <li>Trial 7 dias gratuito — usuário usa de verdade</li>
+        <li>Mensagem dia 5 do trial: "Já economizou R$ X. Quer continuar?"</li>
+        <li><strong style="color: white;">PRO ativado</strong> (R$ 14,90) ou Founders R$ 397</li>
+      </ol>
+    </div>
+
+    <h3 style="font-size: 1.125rem; font-weight: 800; margin: 2rem 0 1rem;">Onde colocar CTA — ranking por taxa de conversão BR</h3>
+    <div class="grid grid-2">
+      <div class="glass">
+        <p class="green-text font-bold text-sm mb-2">🏆 1º lugar</p>
+        <p class="font-semibold mb-1">WhatsApp direto via wa.me</p>
+        <p class="text-sm muted">Brasileiro confia 10× mais em WhatsApp do que em landing page. Bio e descrição YouTube apontam pra cá.</p>
+      </div>
+      <div class="glass">
+        <p class="amber-text font-bold text-sm mb-2">2º</p>
+        <p class="font-semibold mb-1">Comentário fixado</p>
+        <p class="text-sm muted">"Link no primeiro comentário 👇" funciona ainda em 2026 BR.</p>
+      </div>
+      <div class="glass">
+        <p class="amber-text font-bold text-sm mb-2">3º</p>
+        <p class="font-semibold mb-1">DM ("manda 'finn' na DM")</p>
+        <p class="text-sm muted">Converte alto MAS exige Pablo respondendo. Não escala. Use só nas primeiras 200 conversões.</p>
+      </div>
+      <div class="glass">
+        <p class="muted-sm font-bold text-sm mb-2">4º</p>
+        <p class="font-semibold mb-1">Link na bio</p>
+        <p class="text-sm muted">NÃO Linktree. <strong style="color: white;">1 link só</strong>, direto pro WhatsApp. Múltiplas opções diluem.</p>
+      </div>
+    </div>
+
+    <h3 style="font-size: 1.125rem; font-weight: 800; margin: 2rem 0 1rem;">Reduzindo fricção — checklist</h3>
+    <div class="glass">
+      <ul style="font-size: 0.875rem; color: #cbd5e1; line-height: 1.8; padding-left: 1.25rem;">
+        <li><strong style="color: white;">Mata o cadastro inicial.</strong> Onboarding 100% no WhatsApp. Email/senha depois (ou nunca).</li>
+        <li><strong style="color: white;">Trial 7 dias com cartão NÃO obrigatório no início</strong>, peça no dia 5 com gatilho de valor já entregue.</li>
+        <li><strong style="color: white;">Pix avulso disponível</strong> além de cartão. Brasileiro classe C teme cartão recorrente. Conversão +30% nesse perfil.</li>
+        <li><strong style="color: white;">Prova social no onboarding</strong>: primeira mensagem após "oi" mostra 3 prints de depoimentos reais.</li>
+        <li><strong style="color: white;">Garantia 7 dias</strong> explícita: "não curtiu, devolvo seu dinheiro pelo Pix em 24h."</li>
+        <li><strong style="color: white;">Founders R$ 397 com escassez REAL</strong> (100 vagas, contador no perfil "73/100 vagas restantes"). FOMO BR funciona quando é honesto.</li>
+      </ul>
+      <p class="text-sm muted mt-4 italic">Meta de conversão razoável: 1.000 views Reel → 30 cliques link → 12 mensagens WhatsApp → 6 trials → 2 PRO pagos. ~0,2% view-to-paid. Parece pouco — é normal pra fintech B2C orgânico.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ADS ────────────────────────────────────────── -->
+<section class="section" id="ads">
+  <div class="container">
+    <p class="eyebrow rose">Não agora</p>
+    <h2 class="h-section max-w-3xl">Quando ligar tráfego pago?</h2>
+    <p class="lead max-w-3xl mb-8">
+      <strong style="color: #fb7185;">NÃO comece ads agora.</strong> Pedro Sobral é o cara do tráfego pago e tá te falando: espera. Ads amplifica o que JÁ funciona — não cria do zero.
+    </p>
+
+    <div class="glass-strong mb-6">
+      <h3 class="h-card mb-4">Marcos pra ligar a chave</h3>
+      <ol style="font-size: 0.9375rem; color: #e2e8f0; line-height: 1.8; padding-left: 1.5rem;">
+        <li><strong>50 clientes pagantes orgânicos validados</strong> (não trial — pagantes mês 2+). Prova que produto vende.</li>
+        <li><strong>3+ criativos orgânicos com >100k views</strong> comprovadamente trazendo conversão. Esses viram seu primeiro creative test em ads.</li>
+        <li><strong>Funil WhatsApp medindo cada etapa</strong>: clique → mensagem → trial → PRO. Sem isso, ads é torneira aberta no ralo.</li>
+        <li><strong>LTV documentado</strong>: pelo menos 30 clientes com 3 meses de retenção. Sem LTV você não sabe quanto pode pagar por CAC.</li>
+        <li><strong>R$ 1.000-2.000/mês de orçamento real e dispensável</strong> — não os R$ 500.</li>
+      </ol>
+      <p class="text-sm muted mt-4"><strong style="color: #c4b5fd;">Provavelmente: mês 4-6 de execução orgânica disciplinada.</strong></p>
+    </div>
+
+    <h3 class="h-card mb-4">Ranking dos canais de ads — fintech B2C BR 2026</h3>
+    <div class="glass-strong" style="overflow-x: auto;">
+      <table class="infl-table">
+        <thead>
+          <tr>
+            <th>Canal</th>
+            <th>CPM/CPC BR</th>
+            <th>CAC realista</th>
+            <th>Veredito</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Meta Ads (Insta/FB)</td>
+            <td>CPM R$ 18-35</td>
+            <td>R$ 80-200</td>
+            <td><span class="rose-text font-bold">NÃO</span> · CAC inviável</td>
+          </tr>
+          <tr>
+            <td>TikTok Ads</td>
+            <td>CPM R$ 8-18</td>
+            <td>R$ 40-90</td>
+            <td><span class="amber-text font-bold">TALVEZ</span> · pixel/atribuição BR ainda fraco</td>
+          </tr>
+          <tr style="background: rgba(52, 211, 153, 0.05);">
+            <td><strong>Google Ads (Search)</strong></td>
+            <td>CPC R$ 1,80-4,50</td>
+            <td><strong>R$ 35-65</strong></td>
+            <td><span class="green-text font-bold">MELHOR APOSTA</span> · intenção pura</td>
+          </tr>
+          <tr>
+            <td>Google Performance Max</td>
+            <td>variável</td>
+            <td>R$ 50-110</td>
+            <td><span class="rose-text">PULA</span> · queima budget pequeno</td>
+          </tr>
+          <tr>
+            <td>YouTube Ads (skippable + Shorts)</td>
+            <td>CPV R$ 0,03-0,12</td>
+            <td>R$ 45-100</td>
+            <td><span class="amber-text">RETARGETING</span> · não cold</td>
+          </tr>
+          <tr>
+            <td>Bing Ads</td>
+            <td>CPC R$ 0,80-1,50</td>
+            <td>R$ 25-50</td>
+            <td><span class="amber-text">TESTA R$ 100</span> · volume baixíssimo</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="glass mt-6" style="border-left: 4px solid #34d399;">
+      <p class="eyebrow green" style="margin-bottom: 0.5rem;">Plano quando o momento chegar</p>
+      <ul style="font-size: 0.9375rem; color: #cbd5e1; line-height: 1.8; padding-left: 1.25rem;">
+        <li><strong style="color: white;">60% Google Search</strong> — termos: "app finanças pelo whatsapp", "alternativa mobills", "planilha financeira whatsapp", nomes de concorrentes</li>
+        <li><strong style="color: white;">25% YouTube remarketing</strong> — quem viu seus vídeos longos</li>
+        <li><strong style="color: white;">15% TikTok Ads</strong> usando criativos orgânicos que já viralizaram</li>
+      </ul>
+      <p class="text-sm mt-3" style="color: #fbbf24;"><strong>Comece com R$ 30/dia em Google Search. 7 dias. Mede. Ajusta.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- MÉTRICAS ─────────────────────────────────── -->
+<section class="section violet-tint" id="metricas">
+  <div class="container">
+    <p class="eyebrow green">Tracking</p>
+    <h2 class="h-section max-w-3xl">3 métricas que importam (não vanity).</h2>
+    <p class="lead max-w-3xl mb-8">
+      Likes mentem. Follower count puro mente. View count sem contexto mente. Essas 3 NÃO mentem.
+    </p>
+
+    <div class="grid grid-3">
+      <div class="glass-strong">
+        <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em;">#1 — Topo</p>
+        <p style="font-size: 1.125rem; font-weight: 800; margin: 0.75rem 0;">DMs iniciadas por post</p>
+        <p class="text-sm muted">Indicador #1 de intenção de compra. Cada DM = 1 lead qualificado entrando no funil.</p>
+        <p class="green-text font-bold text-sm mt-3">Meta: 5/sem (sem 1) → 30+/sem (sem 4)</p>
+      </div>
+      <div class="glass-strong">
+        <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em;">#2 — Distribuição</p>
+        <p style="font-size: 1.125rem; font-weight: 800; margin: 0.75rem 0;">Saves + Shares por post</p>
+        <p class="text-sm muted">Save = "quero voltar nisso". Share = "minha amiga precisa ver". Algoritmo prioriza ambos sobre likes.</p>
+        <p class="green-text font-bold text-sm mt-3">Meta: ≥5% (saves+shares)/views nos posts de Pilar 1 e 2</p>
+      </div>
+      <div class="glass-strong">
+        <p class="muted-sm" style="text-transform: uppercase; letter-spacing: 0.08em;">#3 — Fim de funil</p>
+        <p style="font-size: 1.125rem; font-weight: 800; margin: 0.75rem 0;">DM → Founders ativado</p>
+        <p class="text-sm muted">Métrica de fim de funil. Diz se o conteúdo atrai compradores ou só curiosos. Valida o DM script.</p>
+        <p class="green-text font-bold text-sm mt-3">Meta mês 1: 15% conversão (1 a cada 7) → 50/100 Founders</p>
+      </div>
+    </div>
+
+    <div class="glass mt-6" style="border-left: 4px solid #c4b5fd;">
+      <p class="eyebrow" style="margin-bottom: 0.5rem;">Ritual de revisão (domingo, 30 min)</p>
+      <ol style="font-size: 0.875rem; color: #cbd5e1; line-height: 1.8; padding-left: 1.25rem;">
+        <li>Olha as 3 métricas da semana</li>
+        <li>Identifica o post-vencedor (mais DMs)</li>
+        <li>Repete o formato/hook/pillar dele 2x na semana seguinte</li>
+        <li><strong style="color: white;">Volume + dobrar no que funciona = receita pra crescer</strong></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ARMADILHAS ─────────────────────────────── -->
+<section class="section" id="armadilhas">
+  <div class="container">
+    <p class="eyebrow rose">Cuidado</p>
+    <h2 class="h-section max-w-3xl">3 armadilhas que matam fintechs solo founder BR.</h2>
+
+    <div class="trap-card">
+      <h3 class="h-card">⚠️ Armadilha 1 — "Vou contratar gestor de tráfego pra escalar rápido"</h3>
+      <p>Pablo, mata fintech BR solo founder mais que qualquer coisa. Você gasta R$ 1.500 (R$ 500 fee + R$ 1.000 ads), traz 5 leads, 0 viram PRO porque seu funil ainda não tá calibrado, gestor diz "precisa mais budget pra otimizar", você joga mais R$ 2k, queima R$ 5k em 2 meses, fica frustrado, abandona. <strong style="color: white;">Vi isso 200 vezes.</strong> Tráfego pago amplifica o que JÁ funciona — não cria do zero.</p>
+    </div>
+
+    <div class="trap-card">
+      <h3 class="h-card">⚠️ Armadilha 2 — "Vou virar influencer de finanças pra promover meu produto"</h3>
+      <p>Tentação clássica do founder. Pablo, você não é Nath Arcuri e não precisa ser. <strong style="color: white;">Você é o cara que CONSTRUIU O FINN.</strong> Esse é seu ângulo: founder transparente, building in public, mostrando o produto resolvendo problema real. Se tentar competir em "dicas de finanças genéricas", vai perder pra quem faz isso há 6 anos. Stay in your lane. <strong style="color: white;">Founder &gt; influencer.</strong></p>
+    </div>
+
+    <div class="trap-card">
+      <h3 class="h-card">⚠️ Armadilha 3 — "Vou testar 5 canais ao mesmo tempo pra não perder oportunidade"</h3>
+      <p>Padawan move. Solo founder dispersando atenção em LinkedIn + Twitter + Pinterest + Blog + podcast + Threads em paralelo = nada cresce, todos ficam medianos, Pablo queima. <strong style="color: white;">Foca em Insta + TikTok + YouTube por 90 dias com obsessão.</strong> Esses 3 são 80% do mercado BR e 90% reaproveitam o mesmo conteúdo. Depois de 90 dias com tração nesses, AÍ adiciona 1 canal por vez.</p>
+    </div>
+  </div>
+</section>
+
+<!-- RESUMO 90 DIAS ─────────────────────────── -->
+<section class="section indigo-tint">
+  <div class="container">
+    <p class="eyebrow green">Plano de 90 dias resumido</p>
+    <h2 class="h-section max-w-3xl">Cada centavo é um teste. Cada Reel é um teste.</h2>
+
+    <div class="grid grid-2 mt-8">
+      <div class="glass-strong" style="border-left: 4px solid #c4b5fd;">
+        <p class="violet font-bold mb-2">MÊS 1</p>
+        <h3 class="h-card">Foundation + primeiros Founders</h3>
+        <p class="text-sm muted" style="line-height: 1.7;">4 Reels/sem + 5 TikToks/sem + 1 longo YT/sem + 20 DMs/sem pra parceiros. <strong style="color: white;">Meta: 10 parceiros testando, 20 trials, 5 PRO pagos.</strong></p>
+      </div>
+      <div class="glass-strong" style="border-left: 4px solid #818cf8;">
+        <p class="violet font-bold mb-2">MÊS 2</p>
+        <h3 class="h-card">Dobrar no que funcionou</h3>
+        <p class="text-sm muted" style="line-height: 1.7;">Identificar top 3 hooks/formatos que viralizaram. Lançar Founders Lifetime com escassez. <strong style="color: white;">Meta: 20 PRO + 10 Founders = R$ 4.270 receita.</strong></p>
+      </div>
+      <div class="glass-strong" style="border-left: 4px solid #6366f1;">
+        <p class="violet font-bold mb-2">MÊS 3</p>
+        <h3 class="h-card">Preparar funil pra ads</h3>
+        <p class="text-sm muted" style="line-height: 1.7;">Identificar top 3 Reels (>50k views), preparar pra ads. Funil WhatsApp 100% medido. <strong style="color: white;">Meta: 50 PRO ativos.</strong></p>
+      </div>
+      <div class="glass-strong" style="border-left: 4px solid #34d399;">
+        <p class="green-text font-bold mb-2">MÊS 4-6</p>
+        <h3 class="h-card">Ligar Google Search Ads</h3>
+        <p class="text-sm muted" style="line-height: 1.7;">R$ 30/dia em Google Search. Escalar 10% por semana <strong style="color: white;">só se CAC &lt; R$ 38</strong>. Mantém orgânico no topo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA ─────────────────────────────────────── -->
+<section class="section" style="background: linear-gradient(135deg, rgba(91, 33, 182, 0.3), rgba(67, 56, 202, 0.3), #020617);">
+  <div class="container" style="text-align: center; max-width: 56rem;">
+    <h2 class="h-section">Padawan analisa por 3 meses.<br>Jedi grava o primeiro Reel hoje à noite.</h2>
+    <p class="lead mb-8">
+      Você tem o produto. Tem o pitch. Tem o plano. <strong style="color: white;">Vai lá e faz.</strong>
+    </p>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>
+    Plano consolidado · Pedro Sobral (canais BR) + Hormozi Content (calendário/hooks/DM) + Pesquisa de mercado 2026<br>
+    Versão maio/2026 · finn-steel.vercel.app/marketing.html
+  </p>
+</footer>
+
+</body>
+</html>
