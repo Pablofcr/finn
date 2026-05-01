@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
+type EngagementStatus = 'engaged' | 'warning' | 'at-risk' | 'inactive' | 'new'
+
 interface UserData {
   id: string
   email: string
@@ -23,6 +25,9 @@ interface UserData {
   transactions: number
   accounts: number
   botConnected: boolean
+  lastActivityAt: string | null
+  daysSinceLast: number | null
+  engagementStatus: EngagementStatus
 }
 
 interface Stats {
@@ -35,6 +40,35 @@ interface Stats {
   newUsersThisMonth: number
   newUsersThisWeek: number
   monthlyRevenue: number
+  usersAtRisk: number
+}
+
+// Pills de engajamento — recomendação UX: severity colors do app + tooltip
+// com dias. Sort default por urgência de ação (at-risk primeiro).
+const ENGAGEMENT_PILL: Record<EngagementStatus, { label: string; class: string }> = {
+  engaged:    { label: 'Engajado',  class: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
+  warning:    { label: 'Atenção',   class: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+  'at-risk':  { label: 'Em risco',  class: 'bg-rose-500/10 text-rose-600 dark:text-rose-400' },
+  inactive:   { label: 'Inativo',   class: 'bg-slate-500/15 text-slate-600 dark:text-slate-400' },
+  new:        { label: 'Novo',      class: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' },
+}
+
+// Ordem de urgência: at-risk (salvar agora) > warning > inactive > engaged > new
+const ENGAGEMENT_SORT: Record<EngagementStatus, number> = {
+  'at-risk': 0,
+  warning: 1,
+  inactive: 2,
+  engaged: 3,
+  new: 4,
+}
+
+function engagementTooltip(status: EngagementStatus, days: number | null): string {
+  if (status === 'new') return 'Cadastrado há poucos dias — em período de adaptação'
+  if (days === null) return 'Sem atividade registrada'
+  if (status === 'engaged') return days === 0 ? 'Ativo hoje' : `Ativo há ${days} ${days === 1 ? 'dia' : 'dias'}`
+  if (status === 'warning') return `${days} dias sem atividade — atenção`
+  if (status === 'at-risk') return `${days} dias sem atividade — precisa de contato`
+  return `${days} dias sem atividade — provavelmente abandonado`
 }
 
 interface CronRun {
@@ -169,7 +203,7 @@ export default function AdminPage() {
             { icon: Users, label: 'Usuários Free', value: stats.freeUsers, color: 'text-slate-500', bg: 'bg-slate-50 dark:bg-slate-500/10' },
             { icon: TrendingUp, label: 'Taxa de conversão', value: `${stats.conversionRate}%`, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
             { icon: ArrowLeftRight, label: 'Transações totais', value: stats.totalTransactions, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-500/10' },
-            { icon: Wallet, label: 'Contas bancárias', value: stats.totalAccounts, color: 'text-cyan-500', bg: 'bg-cyan-50 dark:bg-cyan-500/10' },
+            { icon: ShieldAlert, label: 'Em risco esta semana', value: stats.usersAtRisk, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-500/10' },
             { icon: UserPlus, label: 'Novos esta semana', value: stats.newUsersThisWeek, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-500/10' },
             { icon: DollarSign, label: 'Receita mensal (est.)', value: `R$ ${stats.monthlyRevenue.toFixed(2)}`, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
           ].map((stat) => (
@@ -259,12 +293,15 @@ export default function AdminPage() {
         </CardContent>
       </Card>
 
-      {/* Users Table */}
+      {/* Users Table — sorted por urgência de engajamento (at-risk primeiro) */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Users className="h-4 w-4" />
             Usuários ({users.length})
+            <span className="text-xs text-muted-foreground font-normal ml-2">
+              ordenados por urgência de engajamento
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -273,20 +310,32 @@ export default function AdminPage() {
               <thead>
                 <tr className="border-b bg-muted/30">
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Usuário</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Engajamento</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Plano</th>
                   <th className="text-center px-4 py-3 font-medium text-muted-foreground">Transações</th>
-                  <th className="text-center px-4 py-3 font-medium text-muted-foreground">Contas</th>
                   <th className="text-center px-4 py-3 font-medium text-muted-foreground">Bot</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cadastro</th>
                   <th className="text-right px-4 py-3 font-medium text-muted-foreground">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {users.map((u) => (
+                {[...users].sort((a, b) =>
+                  ENGAGEMENT_SORT[a.engagementStatus] - ENGAGEMENT_SORT[b.engagementStatus],
+                ).map((u) => {
+                  const pill = ENGAGEMENT_PILL[u.engagementStatus]
+                  return (
                   <tr key={u.id} className="hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-medium">{u.name}</p>
                       <p className="text-xs text-muted-foreground">{u.email}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-md ${pill.class}`}
+                        title={engagementTooltip(u.engagementStatus, u.daysSinceLast)}
+                      >
+                        {pill.label}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <Badge
@@ -302,7 +351,6 @@ export default function AdminPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-center">{u.transactions}</td>
-                    <td className="px-4 py-3 text-center">{u.accounts}</td>
                     <td className="px-4 py-3 text-center">
                       {u.botConnected ? (
                         <MessageCircle className="h-4 w-4 text-emerald-500 mx-auto" />
@@ -337,7 +385,8 @@ export default function AdminPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>

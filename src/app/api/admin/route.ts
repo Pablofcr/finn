@@ -34,6 +34,75 @@ export async function GET() {
     },
   })
 
+  // ── Engagement metric: DSLA (Days Since Last Activity) ──────────────────
+  // Recomendação do data-squad/peter-fader: pra produto de finanças pessoais
+  // (habit-forming, baixa frequência), recency domina frequência como
+  // preditor de churn. Usa só sinal INBOUND (não conta mensagens enviadas
+  // pelo cron — senão todo user parece "ativo" até desinstalar).
+  const userIds = users.map(u => u.id)
+
+  // Última transação criada (createdAt do registro, não a date do evento)
+  const lastTxByUser = userIds.length > 0
+    ? await prisma.transaction.groupBy({
+        by: ['userId'],
+        where: { userId: { in: userIds } },
+        _max: { createdAt: true },
+      })
+    : []
+
+  // Última mensagem INBOUND do usuário pro bot (não conta outbound do cron)
+  const lastInboundByUser = userIds.length > 0
+    ? await prisma.botMessage.groupBy({
+        by: ['userId'],
+        where: { userId: { in: userIds }, direction: 'INBOUND' },
+        _max: { createdAt: true },
+      })
+    : []
+
+  const txMap = new Map(lastTxByUser.map(r => [r.userId, r._max.createdAt]))
+  const inboundMap = new Map(lastInboundByUser.map(r => [r.userId, r._max.createdAt]))
+
+  type EngagementStatus = 'engaged' | 'warning' | 'at-risk' | 'inactive' | 'new'
+  function statusFor(daysSince: number | null, daysSinceCreation: number): EngagementStatus {
+    // Usuários novos (<3 dias desde criação) começam como 'new' — não são
+    // marcados como inativos só por não ter atividade ainda.
+    if (daysSinceCreation < 3 && daysSince === null) return 'new'
+    if (daysSince === null) return 'inactive'
+    if (daysSince <= 3) return 'engaged'
+    if (daysSince <= 9) return 'warning'
+    if (daysSince <= 20) return 'at-risk'
+    return 'inactive'
+  }
+
+  const dayMs = 1000 * 60 * 60 * 24
+  const usersWithEngagement = users.map(u => {
+    const txAt = txMap.get(u.id) || null
+    const inboundAt = inboundMap.get(u.id) || null
+    let lastActivityAt: Date | null = null
+    if (txAt && inboundAt) lastActivityAt = txAt > inboundAt ? txAt : inboundAt
+    else lastActivityAt = txAt || inboundAt
+
+    const daysSinceLast = lastActivityAt
+      ? Math.floor((now.getTime() - lastActivityAt.getTime()) / dayMs)
+      : null
+    const daysSinceCreation = Math.floor((now.getTime() - u.createdAt.getTime()) / dayMs)
+    const engagementStatus = statusFor(daysSinceLast, daysSinceCreation)
+
+    return {
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      plan: u.plan,
+      createdAt: u.createdAt,
+      transactions: u._count.transactions,
+      accounts: u._count.accounts,
+      botConnected: u._count.botConnections > 0,
+      lastActivityAt: lastActivityAt?.toISOString() || null,
+      daysSinceLast,
+      engagementStatus,
+    }
+  })
+
   // Aggregate stats
   const [totalUsers, proUsers, totalTransactions, newUsersThisMonth, newUsersThisWeek, totalAccounts] = await Promise.all([
     prisma.user.count(),
@@ -43,6 +112,14 @@ export async function GET() {
     prisma.user.count({ where: { createdAt: { gte: startOfWeek } } }),
     prisma.account.count(),
   ])
+
+  // Quantos users em risco essa semana (warning + at-risk + inactive,
+  // excluindo "new" — usuário criado há menos de 3 dias não é "em risco").
+  const usersAtRisk = usersWithEngagement.filter(u =>
+    u.engagementStatus === 'warning' ||
+    u.engagementStatus === 'at-risk' ||
+    u.engagementStatus === 'inactive',
+  ).length
 
   // Monthly revenue estimate
   const monthlyRevenue = proUsers * 14.90
@@ -59,17 +136,9 @@ export async function GET() {
         newUsersThisMonth,
         newUsersThisWeek,
         monthlyRevenue,
+        usersAtRisk,
       },
-      users: users.map(u => ({
-        id: u.id,
-        email: u.email,
-        name: u.name,
-        plan: u.plan,
-        createdAt: u.createdAt,
-        transactions: u._count.transactions,
-        accounts: u._count.accounts,
-        botConnected: u._count.botConnections > 0,
-      })),
+      users: usersWithEngagement,
     },
   })
 }
