@@ -8,7 +8,7 @@ export const transactionSchema = z.object({
   accountId: z.string().min(1, 'Conta é obrigatória'),
   categoryId: z.string().optional(),
   toAccountId: z.string().optional(),
-  paymentMethod: z.enum(['PIX', 'DEBIT', 'CREDIT', 'CASH', 'BOLETO', 'TRANSFER']).optional(),
+  paymentMethod: z.enum(['PIX', 'DEBIT', 'CREDIT', 'CASH', 'BOLETO', 'TRANSFER', 'MEAL_VOUCHER', 'FOOD_VOUCHER']).optional(),
   location: z.string().optional(),
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),

@@ -327,7 +327,7 @@ async function sendTransactionPreviewWhatsApp(
   botMsgId: string,
   parsed: { type: string; amount: number; description: string; date?: string | null; recurring?: { label: string } | null; installments?: number | null },
   category: { categoryName: string } | null,
-  paymentMethod: 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER',
+  paymentMethod: 'PIX' | 'DEBIT' | 'CREDIT' | 'CASH' | 'BOLETO' | 'TRANSFER' | 'MEAL_VOUCHER' | 'FOOD_VOUCHER',
   resolvedAccount: { name: string } | null,
 ) {
   const formatMoney = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)

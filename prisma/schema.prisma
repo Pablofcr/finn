@@ -81,6 +81,12 @@ enum PaymentMethod {
   CASH
   BOLETO
   TRANSFER
+  /// Cartão refeição (VR) — Sodexo Refeição, Alelo Refeição, Ticket
+  /// Refeição, Pluxee Refeição. Usado em restaurantes, lanchonetes, padarias.
+  MEAL_VOUCHER
+  /// Cartão alimentação (VA) — Sodexo Alimentação, Alelo Alimentação,
+  /// Ticket Alimentação, Pluxee Alimentação. Usado em supermercados.
+  FOOD_VOUCHER
 }
 
 enum InvoiceStatus {

@@ -32,6 +32,8 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   CASH: 'Dinheiro',
   BOLETO: 'Boleto',
   TRANSFER: 'Transferência',
+  MEAL_VOUCHER: 'Cartão Refeição',
+  FOOD_VOUCHER: 'Cartão Alimentação',
 }
 
 export const BUDGET_PERIOD_LABELS: Record<string, string> = {

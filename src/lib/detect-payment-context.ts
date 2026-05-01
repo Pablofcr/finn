@@ -27,9 +27,14 @@ export function detectPaymentContext(text: string, accounts: AccountLite[]) {
 
   let paymentMethod: PaymentMethod | null = null
 
-  // Priority: CREDIT > DEBIT > PIX > CASH > BOLETO > TRANSFER
-  // (credit is most specific because "no cartao" implies credit, not debit)
-  if (/\b(credito|no credito|pelo credito|cartao(?! de debito))\b/.test(normText)) {
+  // Priority: VR/VA > CREDIT > DEBIT > PIX > CASH > BOLETO > TRANSFER
+  // VR/VA precisam vir ANTES de CREDIT porque "cartão refeição" tem
+  // "cartão" e cairia em CREDIT se testado primeiro.
+  if (/\b(cartao refeicao|cartao-refeicao|vale refeicao|vale-refeicao|vr|ticket refeicao|alelo refeicao|sodexo refeicao|pluxee refeicao|edenred refeicao|ben refeicao)\b/.test(normText)) {
+    paymentMethod = 'MEAL_VOUCHER'
+  } else if (/\b(cartao alimentacao|cartao-alimentacao|vale alimentacao|vale-alimentacao|va|ticket alimentacao|alelo alimentacao|sodexo alimentacao|pluxee alimentacao|edenred alimentacao|ben alimentacao)\b/.test(normText)) {
+    paymentMethod = 'FOOD_VOUCHER'
+  } else if (/\b(credito|no credito|pelo credito|cartao(?! de debito))\b/.test(normText)) {
     paymentMethod = 'CREDIT'
   } else if (/\b(debito|no debito|pelo debito|cartao de debito)\b/.test(normText)) {
     paymentMethod = 'DEBIT'

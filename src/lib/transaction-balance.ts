@@ -58,7 +58,9 @@ export async function applyTransactionBalance(
     return
   }
 
-  // PIX / DEBIT / CASH / BOLETO / TRANSFER-as-method on bank account
+  // PIX / DEBIT / CASH / BOLETO / TRANSFER / MEAL_VOUCHER / FOOD_VOUCHER
+  // — debita direto da conta (sem fatura). VR/VA funcionam como conta de
+  // saldo: o user é creditado pelo empregador e gasta direto.
   if (args.type === 'EXPENSE') {
     await db.account.update({
       where: { id: args.accountId },
