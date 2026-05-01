@@ -383,6 +383,87 @@ table.compare tbody tr.highlight td:first-child { font-weight: 700; }
 }
 .roadmap-item.highlight { border-left: 4px solid #34d399; }
 
+/* ─── Tooltip ─────────────────────────────────────────────── */
+.tooltip-container {
+  position: relative;
+  cursor: help;
+}
+.tooltip-container .tooltip-icon {
+  display: inline-block;
+  width: 1rem; height: 1rem;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.2);
+  color: #c4b5fd;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1rem;
+  text-align: center;
+  margin-left: 0.25rem;
+  vertical-align: middle;
+  transition: background 0.2s;
+}
+.tooltip-container:hover .tooltip-icon {
+  background: rgba(139, 92, 246, 0.4);
+  color: white;
+}
+.tooltip-content {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  width: min(320px, 90vw);
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 0.75rem;
+  padding: 1rem 1.125rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: #e2e8f0;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 100;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8);
+}
+.tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(139, 92, 246, 0.5);
+}
+.tooltip-container:hover .tooltip-content,
+.tooltip-container:focus-within .tooltip-content {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(-10px);
+}
+.tooltip-content strong { color: white; font-weight: 700; }
+.tooltip-content .ttp-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0.5rem 0;
+  padding: 0.5rem 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.tooltip-content .ttp-line:first-of-type { border-top: none; padding-top: 0; }
+.tooltip-content .ttp-label { color: #cbd5e1; font-size: 0.75rem; }
+.tooltip-content .ttp-value { color: white; font-weight: 700; }
+.tooltip-content .ttp-foot {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.6875rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
 /* ─── Absorb cards (gaps) ─────────────────────────────────── */
 .absorb-card {
   background: rgba(255, 255, 255, 0.05);
@@ -958,10 +1039,25 @@ table.compare tbody tr.highlight td:first-child { font-weight: 700; }
           <p class="num-small green-text">62%</p>
           <p class="muted-small mt-1">sobra R$ 9,25 limpos por cliente/mês</p>
         </div>
-        <div>
-          <p class="text-xs muted-small" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">Quanto vale gastar<br>pra trazer 1 cliente</p>
+        <div class="tooltip-container">
+          <p class="text-xs muted-small" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">
+            Quanto vale gastar<br>pra trazer 1 cliente<span class="tooltip-icon">i</span>
+          </p>
           <p class="num-small">R$ 38</p>
           <p class="muted-small mt-1">teto recomendado pra anúncios e marketing — acima disso, o cliente custa mais do que rende</p>
+
+          <div class="tooltip-content">
+            <strong>Por exemplo, investindo R$ 1.000:</strong>
+            <div class="ttp-line">
+              <span class="ttp-label">Pra empatar (recuperar o gasto)</span>
+              <span class="ttp-value">9 clientes</span>
+            </div>
+            <div class="ttp-line">
+              <span class="ttp-label">Pra retorno saudável (3x)</span>
+              <span class="ttp-value">27 clientes</span>
+            </div>
+            <p class="ttp-foot">Cada cliente rende R$ 115 de lucro líquido ao longo de ~12,5 meses (R$ 186 de receita − R$ 71 de custos).</p>
+          </div>
         </div>
       </div>
     </div>
