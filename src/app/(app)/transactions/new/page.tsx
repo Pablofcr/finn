@@ -80,6 +80,17 @@ export default function NewTransactionPage() {
   const categoryId = watch('categoryId')
   const paymentMethod = watch('paymentMethod')
 
+  // Quando troca de aba (Despesa ↔ Receita), reseta o paymentMethod se ele
+  // não for válido pro novo tipo. Receita aceita só PIX/Dinheiro/VR/VA.
+  useEffect(() => {
+    if (type === 'INCOME') {
+      const validForIncome = ['PIX', 'CASH', 'MEAL_VOUCHER', 'FOOD_VOUCHER']
+      if (paymentMethod && !validForIncome.includes(paymentMethod)) {
+        setValue('paymentMethod', 'PIX', { shouldValidate: true })
+      }
+    }
+  }, [type, paymentMethod, setValue])
+
   function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value.replace(/\D/g, '')
     const cents = parseInt(raw || '0', 10)
@@ -392,25 +403,31 @@ export default function NewTransactionPage() {
               </div>
             )}
 
-            {/* Forma de pagamento — só em despesa. Em receita não faz sentido
-                (receita cai numa conta — info importante é a conta), em
-                transferência também não (já é entre contas). */}
-            {type === 'EXPENSE' && (
+            {/* Forma de pagamento.
+                - EXPENSE: todas as opções (PIX, Débito, Crédito, Dinheiro,
+                  Boleto, VR, VA)
+                - INCOME: só métodos que fazem sentido pra receber (PIX,
+                  Dinheiro, Transferência, VR, VA — sem Débito/Crédito/Boleto)
+                  Útil pra empregador que credita salário em VR/VA.
+                - TRANSFER: campo escondido (já é entre contas) */}
+            {type !== 'TRANSFER' && (
               <div className="space-y-2">
                 <Label htmlFor="pm-select">Forma de pagamento</Label>
                 <Select
                   onValueChange={(v) => {
                     if (!v) return
                     setValue('paymentMethod', v as any, { shouldValidate: true })
-                    // Switch CRÉDITO ↔ outros: troca a conta automaticamente
-                    const current = accounts.find(a => a.id === accountId)
-                    if (v === 'CREDIT' && current?.type !== 'CREDIT_CARD') {
-                      const firstCard = accounts.find(a => a.type === 'CREDIT_CARD')
-                      setValue('accountId', firstCard?.id || '', { shouldValidate: true })
-                    } else if (v !== 'CREDIT' && current?.type === 'CREDIT_CARD') {
-                      const defaultAcc = accounts.find(a => a.isDefault && a.type !== 'CREDIT_CARD')
-                        || accounts.find(a => a.type !== 'CREDIT_CARD')
-                      setValue('accountId', defaultAcc?.id || '', { shouldValidate: true })
+                    // Switch CRÉDITO ↔ outros (só faz sentido em despesa)
+                    if (type === 'EXPENSE') {
+                      const current = accounts.find(a => a.id === accountId)
+                      if (v === 'CREDIT' && current?.type !== 'CREDIT_CARD') {
+                        const firstCard = accounts.find(a => a.type === 'CREDIT_CARD')
+                        setValue('accountId', firstCard?.id || '', { shouldValidate: true })
+                      } else if (v !== 'CREDIT' && current?.type === 'CREDIT_CARD') {
+                        const defaultAcc = accounts.find(a => a.isDefault && a.type !== 'CREDIT_CARD')
+                          || accounts.find(a => a.type !== 'CREDIT_CARD')
+                        setValue('accountId', defaultAcc?.id || '', { shouldValidate: true })
+                      }
                     }
                   }}
                   value={paymentMethod}
@@ -422,7 +439,14 @@ export default function NewTransactionPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(PAYMENT_METHOD_LABELS)
-                      .filter(([key]) => key !== 'TRANSFER')
+                      .filter(([key]) => {
+                        if (key === 'TRANSFER') return false // método interno
+                        if (type === 'INCOME') {
+                          // Só métodos que fazem sentido em receita
+                          return ['PIX', 'CASH', 'MEAL_VOUCHER', 'FOOD_VOUCHER'].includes(key)
+                        }
+                        return true
+                      })
                       .map(([key, label]) => {
                         const noCreditCardAccounts = accounts.filter((a: any) => a.type === 'CREDIT_CARD').length === 0
                         const disabled = key === 'CREDIT' && noCreditCardAccounts
@@ -434,7 +458,7 @@ export default function NewTransactionPage() {
                       })}
                   </SelectContent>
                 </Select>
-                {paymentMethod === 'CREDIT' && (
+                {paymentMethod === 'CREDIT' && type === 'EXPENSE' && (
                   <p className="text-xs text-muted-foreground">
                     Valor vai pra fatura do cartão — saldo da conta bancária só muda quando você pagar.
                   </p>
