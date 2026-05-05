@@ -1,7 +1,10 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
-import { sendBotPaymentAlert, sendBotMessage } from '@/lib/messaging-adapter'
-import type { Platform, PaymentAlertVariant } from '@/lib/messaging-adapter'
+import {
+  sendWhatsAppNotification,
+  sendWhatsAppPaymentNotification,
+} from '@/lib/messaging-adapter'
+import type { PaymentAlertVariant } from '@/lib/messaging-adapter'
 import { markRecurringAsPaid } from '@/lib/finance-actions'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
@@ -138,7 +141,14 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
             `📌 *${payment.description}* — *${formattedAmount}*${accountLine}${methodLabel}\n\n` +
             `Saldo já atualizado. Se foi engano, abre *Transações* no app e exclui.`
 
-          await sendBotMessage(connection.platform as Platform, connection.platformUserId, text)
+          const sendResult = await sendWhatsAppNotification({
+            userId: payment.userId,
+            connection,
+            text,
+            templateFallback: {
+              bodyParameters: [`Lancei: ${payment.description} ${formattedAmount}`],
+            },
+          })
 
           await prisma.botMessage.create({
             data: {
@@ -146,11 +156,16 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
               connectionId: connection.id,
               direction: 'OUTBOUND',
               rawContent: `🤖 Auto-lançado: ${payment.description} - ${formattedAmount}`,
-              status: 'CONFIRMED',
+              status: sendResult.ok ? 'CONFIRMED' : 'REJECTED',
+              errorMessage: sendResult.ok ? null : sendResult.errorMessage ?? 'send failed',
             },
           })
 
-          autoLaunched++
+          if (sendResult.ok) {
+            autoLaunched++
+          } else {
+            failures.push({ id: payment.id, reason: `auto-launch notify failed: ${sendResult.errorMessage}` })
+          }
           continue  // skip alerta normal — já foi lançado
         } else {
           // Auto-launch falhou (sem conta, etc.) — fallback pro alerta normal
@@ -214,13 +229,17 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
     }
 
     try {
-      await sendBotPaymentAlert(connection.platform as Platform, connection.platformUserId, {
-        description: payment.description,
-        amount: Number(payment.amount),
-        dueDate: payment.nextDueDate.toISOString(),
-        recurringId: payment.id,
-        variant,
-        daysOverdue,
+      const sendResult = await sendWhatsAppPaymentNotification({
+        userId: payment.userId,
+        connection,
+        payment: {
+          description: payment.description,
+          amount: Number(payment.amount),
+          dueDate: payment.nextDueDate.toISOString(),
+          recurringId: payment.id,
+          variant,
+          daysOverdue,
+        },
       })
 
       const logPrefix = variant.startsWith('overdue')
@@ -234,12 +253,19 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
           userId: payment.userId,
           connectionId: connection.id,
           direction: 'OUTBOUND',
-          rawContent: `${logPrefix}: ${payment.description} - R$ ${Number(payment.amount).toFixed(2)}`,
-          status: 'CONFIRMED',
+          rawContent: `${logPrefix}: ${payment.description} - R$ ${Number(payment.amount).toFixed(2)} [${sendResult.channel ?? 'failed'}]`,
+          status: sendResult.ok ? 'CONFIRMED' : 'REJECTED',
+          errorMessage: sendResult.ok ? null : sendResult.errorMessage ?? 'send failed',
         },
       })
 
-      alertsSent++
+      if (sendResult.ok) {
+        alertsSent++
+      } else {
+        const reason = sendResult.errorMessage || 'send failed'
+        console.error(`[payment-alerts:${period}] Send failed for recurring ${payment.id}:`, JSON.stringify(sendResult.attempts))
+        failures.push({ id: payment.id, reason })
+      }
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err)
       console.error(`[payment-alerts:${period}] Failed to send alert for recurring ${payment.id}:`, reason)
@@ -309,17 +335,40 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
       `Pague agora em https://finn-steel.vercel.app/invoices/${invoice.id}`
 
     try {
-      await sendBotMessage(connection.platform as Platform, connection.platformUserId, text)
+      // O template específico (`invoice_reminder`) usa 3 placeholders;
+      // o genérico, 1. Como o adapter não sabe a assinatura do template,
+      // deixamos o caller decidir via templateName + bodyParameters.
+      const useSpecific = !!process.env.WHATSAPP_TEMPLATE_INVOICE_REMINDER
+      const sendResult = await sendWhatsAppNotification({
+        userId: invoice.userId,
+        connection,
+        text,
+        templateFallback: {
+          templateName: useSpecific
+            ? process.env.WHATSAPP_TEMPLATE_INVOICE_REMINDER
+            : process.env.WHATSAPP_TEMPLATE_GENERIC_NOTIFICATION,
+          bodyParameters: useSpecific
+            ? [invoice.card.name, formattedAmount, formattedDate]
+            : [`Fatura ${invoice.card.name}: ${formattedAmount} ${urgency}`],
+        },
+      })
       await prisma.botMessage.create({
         data: {
           userId: invoice.userId,
           connectionId: connection.id,
           direction: 'OUTBOUND',
-          rawContent: `Lembrete fatura: ${invoice.card.name} - ${formattedAmount}`,
-          status: 'CONFIRMED',
+          rawContent: `Lembrete fatura: ${invoice.card.name} - ${formattedAmount} [${sendResult.channel ?? 'failed'}]`,
+          status: sendResult.ok ? 'CONFIRMED' : 'REJECTED',
+          errorMessage: sendResult.ok ? null : sendResult.errorMessage ?? 'send failed',
         },
       })
-      invoiceSent++
+      if (sendResult.ok) {
+        invoiceSent++
+      } else {
+        const reason = sendResult.errorMessage || 'send failed'
+        console.error(`[payment-alerts:${period}] Send failed for invoice ${invoice.id}:`, JSON.stringify(sendResult.attempts))
+        invoiceFailures.push({ id: invoice.id, reason })
+      }
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err)
       console.error(`[payment-alerts:${period}] Failed invoice alert ${invoice.id}:`, reason)

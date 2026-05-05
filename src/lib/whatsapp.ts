@@ -32,25 +32,71 @@ interface SendListOptions {
   rows: { id: string; title: string; description?: string }[]
 }
 
-async function whatsappFetch(endpoint: string, body: Record<string, unknown>) {
-  const url = `${WHATSAPP_API}${endpoint}`
-  console.log('WhatsApp API call:', url, 'token exists:', !!WHATSAPP_TOKEN, 'token length:', WHATSAPP_TOKEN?.length)
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
-  const data = await res.json()
-  if (data.error) {
-    console.error('WhatsApp API error:', JSON.stringify(data.error))
+export interface WhatsAppSendResult {
+  ok: boolean
+  messageId?: string
+  /// Erro estruturado quando a Meta recusa. `isWindowError` = true quando o
+  /// motivo é janela de 24h fechada — sinal pro adapter cair em template HSM
+  /// ou fallback Telegram. Demais erros são fatais (token inválido, número
+  /// errado etc.) e não devem disparar fallback.
+  error?: {
+    code?: number
+    subcode?: number
+    message: string
+    isWindowError: boolean
   }
-  return data
 }
 
-export async function sendWhatsAppMessage({ to, text }: SendMessageOptions) {
+// Códigos da Meta que sinalizam "fora da janela de 24h" / re-engagement
+// required. Lista compilada da doc de error codes do Cloud API:
+//   - 131047: re-engagement message (mais comum)
+//   - 131026: undeliverable / 24h window
+//   - 131051: unsupported message type fora da janela
+//   - 470:    legado, ainda aparece em alguns números
+const WINDOW_ERROR_CODES = new Set([131047, 131026, 131051, 470])
+
+async function whatsappFetch(endpoint: string, body: Record<string, unknown>): Promise<WhatsAppSendResult> {
+  const url = `${WHATSAPP_API}${endpoint}`
+  let res: Response
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('WhatsApp fetch failed:', message)
+    return { ok: false, error: { message, isWindowError: false } }
+  }
+
+  const data = await res.json().catch(() => ({}))
+
+  if (data.error) {
+    const code = data.error.code as number | undefined
+    const subcode = data.error.error_subcode as number | undefined
+    const isWindowError = (code !== undefined && WINDOW_ERROR_CODES.has(code)) ||
+      (subcode !== undefined && WINDOW_ERROR_CODES.has(subcode))
+    console.error('WhatsApp API error:', JSON.stringify(data.error), 'isWindowError:', isWindowError)
+    return {
+      ok: false,
+      error: {
+        code,
+        subcode,
+        message: data.error.message || 'WhatsApp API error',
+        isWindowError,
+      },
+    }
+  }
+
+  const messageId = data.messages?.[0]?.id as string | undefined
+  return { ok: true, messageId }
+}
+
+export async function sendWhatsAppMessage({ to, text }: SendMessageOptions): Promise<WhatsAppSendResult> {
   return whatsappFetch('/messages', {
     messaging_product: 'whatsapp',
     to: normalizeRecipient(to),
@@ -59,7 +105,7 @@ export async function sendWhatsAppMessage({ to, text }: SendMessageOptions) {
   })
 }
 
-export async function sendWhatsAppInteractive({ to, body, buttons }: SendInteractiveOptions) {
+export async function sendWhatsAppInteractive({ to, body, buttons }: SendInteractiveOptions): Promise<WhatsAppSendResult> {
   return whatsappFetch('/messages', {
     messaging_product: 'whatsapp',
     to: normalizeRecipient(to),
@@ -78,6 +124,60 @@ export async function sendWhatsAppInteractive({ to, body, buttons }: SendInterac
 }
 
 /**
+ * Envia template HSM (mensagem pré-aprovada pela Meta).
+ *
+ * Único jeito de mandar mensagem fora da janela de 24h. Templates precisam
+ * ser criados/aprovados no Meta Business Manager antes de poder ser usados —
+ * o nome em `templateName` deve bater com o template aprovado.
+ *
+ * `bodyParameters` preenche os placeholders {{1}}, {{2}}, ... do body.
+ * `buttonPayloads` preenche payloads dinâmicos de botões QUICK_REPLY (na
+ * ordem em que aparecem no template).
+ */
+export async function sendWhatsAppTemplate({
+  to,
+  templateName,
+  languageCode = 'pt_BR',
+  bodyParameters = [],
+  buttonPayloads = [],
+}: {
+  to: string
+  templateName: string
+  languageCode?: string
+  bodyParameters?: string[]
+  buttonPayloads?: string[]
+}): Promise<WhatsAppSendResult> {
+  const components: Record<string, unknown>[] = []
+
+  if (bodyParameters.length > 0) {
+    components.push({
+      type: 'body',
+      parameters: bodyParameters.map(text => ({ type: 'text', text })),
+    })
+  }
+
+  buttonPayloads.forEach((payload, index) => {
+    components.push({
+      type: 'button',
+      sub_type: 'quick_reply',
+      index: String(index),
+      parameters: [{ type: 'payload', payload }],
+    })
+  })
+
+  return whatsappFetch('/messages', {
+    messaging_product: 'whatsapp',
+    to: normalizeRecipient(to),
+    type: 'template',
+    template: {
+      name: templateName,
+      language: { code: languageCode },
+      ...(components.length > 0 ? { components } : {}),
+    },
+  })
+}
+
+/**
  * MSG1 — apresentação + hero do áudio com diálogo simulado.
  * Disparada logo após o user conectar o WhatsApp. Em seguida, o webhook
  * espera uma resposta antes de mandar MSG2:
@@ -87,8 +187,8 @@ export async function sendWhatsAppInteractive({ to, body, buttons }: SendInterac
  * Copy v3 do copy-squad/andre-chaperon. Pablo iterou (v1 sem vida, v2
  * sem apresentação, layout do diálogo apertado, sem hold pra resposta).
  */
-export async function sendWhatsAppWelcomeMsg1(to: string, firstName: string) {
-  await sendWhatsAppMessage({
+export async function sendWhatsAppWelcomeMsg1(to: string, firstName: string): Promise<WhatsAppSendResult> {
+  return sendWhatsAppMessage({
     to,
     text:
       `Olá, ${firstName}! 👋\n\n` +
@@ -118,8 +218,8 @@ export async function sendWhatsAppWelcomeMsg1(to: string, firstName: string) {
  * MSG1 com saudação (não com transação). Se ele já manda áudio/foto/tx,
  * pulamos a MSG2 — ele já viu o sistema funcionar.
  */
-export async function sendWhatsAppWelcomeMsg2(to: string, firstName: string) {
-  await sendWhatsAppMessage({
+export async function sendWhatsAppWelcomeMsg2(to: string, firstName: string): Promise<WhatsAppSendResult> {
+  return sendWhatsAppMessage({
     to,
     text:
       `Boa, ${firstName}! 🙌\n\n` +
@@ -150,9 +250,10 @@ export async function sendWhatsAppWelcomeMsg2(to: string, firstName: string) {
  * separadamente — agora a MSG2 é disparada só após o user responder
  * com uma saudação (hold no fluxo de welcome).
  */
-export async function sendWhatsAppWelcomeMessages(to: string, firstName: string) {
-  await sendWhatsAppWelcomeMsg1(to, firstName)
-  await sendWhatsAppWelcomeMsg2(to, firstName)
+export async function sendWhatsAppWelcomeMessages(to: string, firstName: string): Promise<WhatsAppSendResult> {
+  const r1 = await sendWhatsAppWelcomeMsg1(to, firstName)
+  if (!r1.ok) return r1
+  return sendWhatsAppWelcomeMsg2(to, firstName)
 }
 
 /**
@@ -163,39 +264,46 @@ export async function sendWhatsAppWelcomeMessages(to: string, firstName: string)
  */
 export type ReengagementStatus = 'warning' | 'at-risk' | 'inactive'
 
-export async function sendWhatsAppReengagement(
-  to: string,
-  firstName: string,
-  status: ReengagementStatus,
-) {
-  let text: string
+/**
+ * Copy do reengagement, sem efeito colateral. Exportado pro cron de
+ * reengagement poder reusar via messaging-adapter (com fallback Telegram +
+ * template HSM) em vez de chamar `sendWhatsAppReengagement` direto.
+ */
+export function buildReengagementText(firstName: string, status: ReengagementStatus): string {
   switch (status) {
     case 'warning':
-      text =
+      return (
         `Oi, ${firstName} 👋\n\n` +
         `Reparei que tu sumiu uns dias por aqui. Sem cobrança — a vida acontece 🤷\n\n` +
         `Só queria te lembrar de uma coisa que muita gente esquece: o Finn não precisa de planilha, nem categoria, nem nada formal. Tu manda um áudio de 3 segundos agora 🎙 — _"gastei 40 num lanche"_ 🍔 — e tá feito.\n\n` +
         `É isso. Esse é o uso que mais funciona pra quem volta.\n\n` +
         `Manda aí o último gasto que tu lembra. Eu cuido do resto ✌️`
-      break
+      )
     case 'at-risk':
-      text =
+      return (
         `Oi, ${firstName} 🤔\n\n` +
         `Tô curioso, honestamente. Uns dez dias atrás tu tava registrando direitinho 📊, e aí parou.\n\n` +
         `Não vou tentar adivinhar o motivo. Mas se tu me mandar os *3 últimos gastos* que lembrar — só os 3 — eu te devolvo um padrão que tu provavelmente não percebeu sobre como tu tá gastando esse mês 👀\n\n` +
         `É de graça e leva 30 segundos ⏱. Se não for útil, tu me xinga 😄\n\n` +
         `Combinado?`
-      break
+      )
     case 'inactive':
-      text =
+      return (
         `Oi, ${firstName} 👋\n\n` +
         `Passei aqui só pra saber de ti, honestamente. Faz um tempinho que a gente não se fala 🌱\n\n` +
         `E olha — mais importante que te trazer de volta é entender por quê tu saiu. Foi chato de usar? Faltou alguma coisa? Achou outro app melhor? Ou só não era a hora? 🤔\n\n` +
         `Qualquer resposta me ajuda — inclusive _"esquece, não era pra mim"_. Sem hard feelings ✌️\n\n` +
         `Se quiser responder com uma palavra só, tá ótimo 🙏`
-      break
+      )
   }
-  await sendWhatsAppMessage({ to, text })
+}
+
+export async function sendWhatsAppReengagement(
+  to: string,
+  firstName: string,
+  status: ReengagementStatus,
+): Promise<WhatsAppSendResult> {
+  return sendWhatsAppMessage({ to, text: buildReengagementText(firstName, status) })
 }
 
 export type PaymentAlertVariant =
@@ -222,7 +330,7 @@ export async function sendWhatsAppPaymentAlert({
   recurringId: string
   variant: PaymentAlertVariant
   daysOverdue?: number  // só usado em variants overdue/overdue-pausable
-}) {
+}): Promise<WhatsAppSendResult> {
   const formattedAmount = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
@@ -308,7 +416,7 @@ export async function sendWhatsAppPaymentAlert({
   return sendWhatsAppInteractive({ to, body, buttons })
 }
 
-export async function sendWhatsAppList({ to, body, buttonLabel, sectionTitle, rows }: SendListOptions) {
+export async function sendWhatsAppList({ to, body, buttonLabel, sectionTitle, rows }: SendListOptions): Promise<WhatsAppSendResult> {
   return whatsappFetch('/messages', {
     messaging_product: 'whatsapp',
     to: normalizeRecipient(to),

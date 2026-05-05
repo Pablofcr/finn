@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import Anthropic from '@anthropic-ai/sdk'
-import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import { sendWhatsAppNotification } from '@/lib/messaging-adapter'
 
 export const maxDuration = 120
 
@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
 
   let insightsGenerated = 0
   let whatsappSent = 0
+  let sendFailed = 0
 
   for (const user of users) {
     // Check if auto insights are enabled
@@ -66,8 +67,25 @@ export async function GET(request: NextRequest) {
 
           message += '_Veja todos os insights no app Finn._'
 
-          await sendWhatsAppMessage({ to: connection.platformUserId, text: message })
-          whatsappSent++
+          // Adapter cuida da janela 24h: free-form se aberta, template
+          // genérico se fora. Sem template configurado e fora da janela,
+          // a notificação não chega — log explícito pra investigação.
+          const result = await sendWhatsAppNotification({
+            userId: user.id,
+            connection,
+            text: message,
+            templateFallback: {
+              bodyParameters: [
+                `Você tem ${importantInsights.length} insight(s) financeiro(s) novo(s). Abra o Finn pra ver.`,
+              ],
+            },
+          })
+          if (result.ok) {
+            whatsappSent++
+          } else {
+            sendFailed++
+            console.error(`[weekly-insights] Send failed for user ${user.id}:`, JSON.stringify(result.attempts))
+          }
         }
       }
     } catch (err) {
@@ -80,6 +98,7 @@ export async function GET(request: NextRequest) {
       usersProcessed: users.length,
       insightsGenerated,
       whatsappSent,
+      sendFailed,
       timestamp: new Date().toISOString(),
     },
   })

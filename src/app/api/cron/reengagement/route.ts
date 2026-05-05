@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
-import { sendWhatsAppReengagement, type ReengagementStatus } from '@/lib/whatsapp'
+import { sendWhatsAppNotification } from '@/lib/messaging-adapter'
+import { buildReengagementText, type ReengagementStatus } from '@/lib/whatsapp'
 
 /**
  * Cron de re-engagement — Ter-Qui 10:30 BRT (= 13:30 UTC).
@@ -43,7 +44,9 @@ export async function GET(request: NextRequest) {
   const now = startedAt
   const dayMs = 1000 * 60 * 60 * 24
 
-  // Fetch users com WhatsApp conectado + setting de notificação
+  // Fetch users com WhatsApp conectado + setting de notificação.
+  // Reengagement quase sempre roda fora da janela 24h (esse é o ponto:
+  // o user sumiu) — depende de template HSM aprovado pra entregar.
   const users = await prisma.user.findMany({
     where: {
       botConnections: { some: { platform: 'WHATSAPP', isVerified: true } },
@@ -127,16 +130,46 @@ export async function GET(request: NextRequest) {
     // Tudo certo — envia
     const firstName = user.name?.split(' ')[0] || 'usuário'
     try {
-      await sendWhatsAppReengagement(connection.platformUserId, firstName, status)
-      await prisma.reengagementNudge.create({
-        data: {
-          userId: user.id,
-          status: 'sent',
-          engagementStatus: status,
-          daysSinceLast: daysSince,
+      const text = buildReengagementText(firstName, status)
+      const result = await sendWhatsAppNotification({
+        userId: user.id,
+        connection,
+        text,
+        // Reengagement praticamente sempre roda fora da janela 24h (esse
+        // é o ponto: o user sumiu). Template HSM é a única forma de
+        // entregar — sem ele configurado, a notificação não chega.
+        templateFallback: {
+          bodyParameters: [
+            status === 'inactive'
+              ? `Oi ${firstName}, passei pra saber de ti. Faz um tempinho que a gente não se fala — qualquer resposta me ajuda.`
+              : `Oi ${firstName}, reparei que tu sumiu uns dias. Manda um áudio rápido com qualquer gasto que eu cuido do resto.`,
+          ],
         },
       })
-      sent++
+      if (result.ok) {
+        await prisma.reengagementNudge.create({
+          data: {
+            userId: user.id,
+            status: 'sent',
+            engagementStatus: status,
+            daysSinceLast: daysSince,
+          },
+        })
+        sent++
+      } else {
+        const reason = result.errorMessage || 'all channels failed'
+        await prisma.reengagementNudge.create({
+          data: {
+            userId: user.id,
+            status: 'failed',
+            statusDetail: reason,
+            engagementStatus: status,
+            daysSinceLast: daysSince,
+          },
+        })
+        failures.push({ userId: user.id, reason })
+        failed++
+      }
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err)
       await prisma.reengagementNudge.create({
