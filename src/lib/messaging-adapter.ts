@@ -21,28 +21,33 @@ const WINDOW_MS = WINDOW_HOURS * 60 * 60 * 1000
  * nome exato é definido no momento da aprovação no Meta Business Manager.
  *
  * Sem template configurado, mensagens fora da janela de 24h NÃO CHEGAM —
- * a Meta recusa free-form fora da janela e não temos canal alternativo.
- * Por isso é crítico que pelo menos `genericNotification` esteja sempre
- * configurado em produção.
+ * Meta recusa free-form fora da janela.
  *
- * Templates esperados (criar no Meta Business Manager → categoria UTILITY):
+ * Templates esperados (criar no Meta Business Manager via
+ * `scripts/create-whatsapp-templates.ts`):
  *
- *   WHATSAPP_TEMPLATE_PAYMENT_REMINDER
+ *   WHATSAPP_TEMPLATE_PAYMENT_REMINDER (UTILITY)
  *     Body com 3 placeholders: descrição, valor formatado, vencimento.
  *     Idealmente com 2 botões QUICK_REPLY ("Paguei", "Lembrar amanhã")
  *     que mandam payloads `paid:<id>` e `snooze:<id>` pro webhook.
  *
- *   WHATSAPP_TEMPLATE_INVOICE_REMINDER
+ *   WHATSAPP_TEMPLATE_INVOICE_REMINDER (UTILITY)
  *     Body com 3 placeholders: nome do cartão, valor, vencimento.
  *
- *   WHATSAPP_TEMPLATE_GENERIC_NOTIFICATION
- *     Body com 1 placeholder: mensagem livre. Usado pra insights e
- *     reengagement quando não há template específico.
+ *   WHATSAPP_TEMPLATE_BALANCE_UPDATE (UTILITY)
+ *     Body com 1 placeholder: descrição transacional curta.
+ *     Usado pra auto-launch e weekly-insights — atualizações de conta.
+ *
+ *   WHATSAPP_TEMPLATE_REENGAGEMENT (MARKETING)
+ *     Body com 2 placeholders: primeiro nome, copy de re-engajamento.
+ *     Marketing porque é relacional/customer care, não transacional —
+ *     classificação correta evita reclassificação automática da Meta.
  */
 const TEMPLATES = {
   paymentReminder: process.env.WHATSAPP_TEMPLATE_PAYMENT_REMINDER,
   invoiceReminder: process.env.WHATSAPP_TEMPLATE_INVOICE_REMINDER,
-  genericNotification: process.env.WHATSAPP_TEMPLATE_GENERIC_NOTIFICATION,
+  balanceUpdate: process.env.WHATSAPP_TEMPLATE_BALANCE_UPDATE,
+  reengagement: process.env.WHATSAPP_TEMPLATE_REENGAGEMENT,
 }
 
 const TEMPLATE_LANGUAGE = process.env.WHATSAPP_TEMPLATE_LANGUAGE || 'pt_BR'
@@ -95,16 +100,17 @@ interface PaymentAlertOpts {
  * → template HSM (se configurado e janela fechada). Retorna o canal usado
  * e detalhes de cada tentativa pra log/auditoria.
  *
- * `templateFallback` define qual template usar fora da janela e quais
- * placeholders preencher. Se ausente E a janela estiver fechada, retorna
- * ok=false sem enviar nada — caller deve logar/avisar admin.
+ * `templateFallback` é obrigatório quando a janela 24h pode estar fechada
+ * (= sempre, na prática). Caller passa `templateName` explicitamente pra
+ * que cada use case escolha a categoria certa (UTILITY vs MARKETING) —
+ * sem template, mensagem fora da janela retorna ok=false.
  */
 export async function sendWhatsAppNotification(opts: {
   userId: string
   connection: WhatsAppConnectionLite
   text: string
   templateFallback?: {
-    templateName?: string  // se não passar, usa TEMPLATES.genericNotification
+    templateName: string | undefined
     bodyParameters: string[]
     buttonPayloads?: string[]
   }
@@ -127,15 +133,14 @@ export async function sendWhatsAppNotification(opts: {
   }
 
   // 2) Janela fechada (ou free-form falhou por janela) → template HSM.
-  const templateName = opts.templateFallback?.templateName ?? TEMPLATES.genericNotification
-  if (!templateName || !opts.templateFallback) {
+  if (!opts.templateFallback?.templateName) {
     const reason = 'outside 24h window and no HSM template configured'
     return { ok: false, attempts, errorMessage: reason }
   }
 
   const r = await sendWhatsAppTemplate({
     to: opts.connection.platformUserId,
-    templateName,
+    templateName: opts.templateFallback.templateName,
     languageCode: TEMPLATE_LANGUAGE,
     bodyParameters: opts.templateFallback.bodyParameters,
     buttonPayloads: opts.templateFallback.buttonPayloads,

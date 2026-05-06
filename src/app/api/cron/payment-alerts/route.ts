@@ -146,6 +146,7 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
             connection,
             text,
             templateFallback: {
+              templateName: process.env.WHATSAPP_TEMPLATE_BALANCE_UPDATE,
               bodyParameters: [`Lancei: ${payment.description} ${formattedAmount}`],
             },
           })
@@ -335,21 +336,13 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
       `Pague agora em https://finn-steel.vercel.app/invoices/${invoice.id}`
 
     try {
-      // O template específico (`invoice_reminder`) usa 3 placeholders;
-      // o genérico, 1. Como o adapter não sabe a assinatura do template,
-      // deixamos o caller decidir via templateName + bodyParameters.
-      const useSpecific = !!process.env.WHATSAPP_TEMPLATE_INVOICE_REMINDER
       const sendResult = await sendWhatsAppNotification({
         userId: invoice.userId,
         connection,
         text,
         templateFallback: {
-          templateName: useSpecific
-            ? process.env.WHATSAPP_TEMPLATE_INVOICE_REMINDER
-            : process.env.WHATSAPP_TEMPLATE_GENERIC_NOTIFICATION,
-          bodyParameters: useSpecific
-            ? [invoice.card.name, formattedAmount, formattedDate]
-            : [`Fatura ${invoice.card.name}: ${formattedAmount} ${urgency}`],
+          templateName: process.env.WHATSAPP_TEMPLATE_INVOICE_REMINDER,
+          bodyParameters: [invoice.card.name, formattedAmount, formattedDate],
         },
       })
       await prisma.botMessage.create({

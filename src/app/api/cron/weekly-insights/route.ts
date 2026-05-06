@@ -68,15 +68,17 @@ export async function GET(request: NextRequest) {
           message += '_Veja todos os insights no app Finn._'
 
           // Adapter cuida da janela 24h: free-form se aberta, template
-          // genérico se fora. Sem template configurado e fora da janela,
-          // a notificação não chega — log explícito pra investigação.
+          // UTILITY (`balance_update`) se fora. Insights são transacionais
+          // (atualização de conta) — categoria UTILITY garante entrega
+          // confiável e custo baixo (~R$ 0,04/conversa).
           const result = await sendWhatsAppNotification({
             userId: user.id,
             connection,
             text: message,
             templateFallback: {
+              templateName: process.env.WHATSAPP_TEMPLATE_BALANCE_UPDATE,
               bodyParameters: [
-                `Você tem ${importantInsights.length} insight(s) financeiro(s) novo(s). Abra o Finn pra ver.`,
+                `${importantInsights.length} insight(s) novo(s) sobre seus gastos`,
               ],
             },
           })

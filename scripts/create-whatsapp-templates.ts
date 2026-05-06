@@ -70,12 +70,12 @@ const templates: TemplateDef[] = [
     ],
   },
   {
-    // Copy ancorada em "atualização da sua conta" pra qualificar como
-    // UTILITY (personal finance management updates). A v1 ("Olá! {{1}}...")
-    // foi reclassificada pra Marketing pelo classificador da Meta —
-    // genérica demais, sem âncora transacional. Nome novo (`account_update`)
-    // pra contornar a propagação lenta de deleção do `generic_notification` v1.
-    name: 'account_update',
+    // UTILITY pra atualizações transacionais: auto-launch de pagamento
+    // recorrente, weekly insights, etc. Sample value claramente
+    // transacional pra Meta classificar corretamente — tentativas
+    // anteriores ("Você tem N insights novos") foram pra Marketing
+    // porque o sample soava promocional.
+    name: 'balance_update',
     category: 'UTILITY',
     language: 'pt_BR',
     components: [
@@ -86,7 +86,33 @@ const templates: TemplateDef[] = [
           '{{1}}\n\n' +
           'Abra o app pra ver detalhes.',
         example: {
-          body_text: [['Você tem 2 insights financeiros novos esta semana']],
+          body_text: [['Lancei: Netflix R$ 49,90']],
+        },
+      },
+    ],
+  },
+  {
+    // MARKETING explícito porque reengagement É marketing — relacional,
+    // não transacional. Submetido como Marketing de propósito pra evitar
+    // reclassificação automática quando Meta vir o uso real.
+    // Custo ~R$ 0,30/conversa, mas volume baixo (só usuários inativos).
+    name: 'customer_reengagement',
+    category: 'MARKETING',
+    language: 'pt_BR',
+    components: [
+      {
+        type: 'BODY',
+        text:
+          'Oi, {{1}}! 👋\n\n' +
+          '{{2}}\n\n' +
+          'Quando quiser voltar a usar o Finn, é só me mandar uma mensagem aqui mesmo. Estou por aqui sempre que precisar.',
+        example: {
+          body_text: [
+            [
+              'Pablo',
+              'Reparei que tu sumiu uns dias. Manda um áudio rápido com qualquer gasto que eu cuido do resto.',
+            ],
+          ],
         },
       },
     ],
@@ -133,7 +159,8 @@ async function main() {
   console.log('\nQuando todos virarem APPROVED, seta as env vars no Vercel:')
   console.log('  WHATSAPP_TEMPLATE_PAYMENT_REMINDER=payment_reminder')
   console.log('  WHATSAPP_TEMPLATE_INVOICE_REMINDER=invoice_reminder')
-  console.log('  WHATSAPP_TEMPLATE_GENERIC_NOTIFICATION=account_update')
+  console.log('  WHATSAPP_TEMPLATE_BALANCE_UPDATE=balance_update')
+  console.log('  WHATSAPP_TEMPLATE_REENGAGEMENT=customer_reengagement')
 }
 
 main().catch((err) => {

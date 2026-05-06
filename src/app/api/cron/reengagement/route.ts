@@ -135,14 +135,17 @@ export async function GET(request: NextRequest) {
         userId: user.id,
         connection,
         text,
-        // Reengagement praticamente sempre roda fora da janela 24h (esse
-        // é o ponto: o user sumiu). Template HSM é a única forma de
-        // entregar — sem ele configurado, a notificação não chega.
+        // Reengagement praticamente sempre roda fora da janela 24h
+        // (o ponto é: o user sumiu). Template MARKETING é a forma certa —
+        // mensagem é relacional, não transacional. Submetida como Marketing
+        // explicitamente pra evitar reclassificação automática da Meta.
         templateFallback: {
+          templateName: process.env.WHATSAPP_TEMPLATE_REENGAGEMENT,
           bodyParameters: [
+            firstName,
             status === 'inactive'
-              ? `Oi ${firstName}, passei pra saber de ti. Faz um tempinho que a gente não se fala — qualquer resposta me ajuda.`
-              : `Oi ${firstName}, reparei que tu sumiu uns dias. Manda um áudio rápido com qualquer gasto que eu cuido do resto.`,
+              ? 'Passei pra saber de ti. Faz um tempinho que a gente não se fala — qualquer resposta me ajuda.'
+              : 'Reparei que tu sumiu uns dias. Manda um áudio rápido com qualquer gasto que eu cuido do resto.',
           ],
         },
       })
