@@ -70,13 +70,21 @@ const templates: TemplateDef[] = [
     ],
   },
   {
-    name: 'generic_notification',
+    // Copy ancorada em "atualização da sua conta" pra qualificar como
+    // UTILITY (personal finance management updates). A v1 ("Olá! {{1}}...")
+    // foi reclassificada pra Marketing pelo classificador da Meta —
+    // genérica demais, sem âncora transacional. Nome novo (`account_update`)
+    // pra contornar a propagação lenta de deleção do `generic_notification` v1.
+    name: 'account_update',
     category: 'UTILITY',
     language: 'pt_BR',
     components: [
       {
         type: 'BODY',
-        text: 'Olá! {{1}}\n\nAbra o Finn pra ver mais.',
+        text:
+          'Atualização da sua conta Finn:\n\n' +
+          '{{1}}\n\n' +
+          'Abra o app pra ver detalhes.',
         example: {
           body_text: [['Você tem 2 insights financeiros novos esta semana']],
         },
@@ -97,10 +105,12 @@ async function createTemplate(t: TemplateDef): Promise<void> {
   const data = await res.json()
 
   if (data.error) {
-    // 192/2388023: nome duplicado. Tratamos como "já existe" e seguimos.
+    // 2388023/2388024: nome+idioma já existe. Tratamos como "já existe" e seguimos.
     const isDuplicate =
       data.error.error_subcode === 2388023 ||
-      /already exists/i.test(data.error.message || '')
+      data.error.error_subcode === 2388024 ||
+      /already exists/i.test(data.error.message || '') ||
+      /Já existe conteúdo/i.test(data.error.error_user_msg || '')
     if (isDuplicate) {
       console.log(`⚠️  ${t.name}: já existe — pulando`)
       return
@@ -123,7 +133,7 @@ async function main() {
   console.log('\nQuando todos virarem APPROVED, seta as env vars no Vercel:')
   console.log('  WHATSAPP_TEMPLATE_PAYMENT_REMINDER=payment_reminder')
   console.log('  WHATSAPP_TEMPLATE_INVOICE_REMINDER=invoice_reminder')
-  console.log('  WHATSAPP_TEMPLATE_GENERIC_NOTIFICATION=generic_notification')
+  console.log('  WHATSAPP_TEMPLATE_GENERIC_NOTIFICATION=account_update')
 }
 
 main().catch((err) => {
