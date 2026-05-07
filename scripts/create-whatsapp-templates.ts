@@ -167,3 +167,7 @@ main().catch((err) => {
   console.error('Erro fatal:', err)
   process.exit(1)
 })
+
+// Marca arquivo como módulo (sem isso, TS trata como script global e
+// constantes top-level como WABA_ID colidem com delete-whatsapp-template.ts).
+export {}

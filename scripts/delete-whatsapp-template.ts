@@ -37,3 +37,7 @@ async function main() {
 }
 
 main().catch(err => { console.error(err); process.exit(1) })
+
+// Marca arquivo como módulo (sem isso, TS trata como script global e
+// constantes top-level colidem com create-whatsapp-templates.ts).
+export {}
