@@ -154,23 +154,65 @@ async function handleVerification(from: string, code: string) {
 
 /**
  * Detecta saudações curtas tipo "oi", "olá", "bom dia" etc. Usado no
- * fluxo de welcome: quando o user responde a MSG1 com saudação (em vez
- * de áudio/foto/transação), disparamos a MSG2 e seguimos.
- * Conservador — só lista explícita pra evitar false positives.
+ * fluxo de welcome E pra resposta enlatada quando o user manda saudação
+ * fora de contexto financeiro.
+ * Conservador — só lista explícita pra evitar false positives. Aceita
+ * sufixo " finn" / ", finn" automaticamente, então "e aí finn" e "salve
+ * finn" não precisam estar listados.
  */
 function looksLikeGreeting(text: string): boolean {
-  const cleaned = text.trim().toLowerCase().replace(/[!.?,;:]/g, '').replace(/\s+/g, ' ')
+  const cleaned = text
+    .trim().toLowerCase()
+    .replace(/[!.?,;:]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/\s*,?\s*finn$/i, '')  // tira sufixo "finn" pra match no core
+    .trim()
   const greetings = new Set([
     'oi', 'olá', 'ola', 'oie', 'oii', 'oiii',
     'eai', 'e aí', 'e ai', 'fala', 'salve', 'opa', 'opaa',
     'bom dia', 'boa tarde', 'boa noite', 'bnoite', 'bdia', 'btarde',
     'ok', 'okay', 'tá', 'ta', 'tah', 'beleza', 'blz', 'show',
     'tudo bem', 'tudo bom', 'td bom', 'tudo certo', 'td certo',
-    'oi finn', 'olá finn', 'ola finn', 'oi, finn', 'olá, finn', 'fala finn',
-    'oi tudo bem', 'oi td bem', 'tudo certo finn',
+    'oi tudo bem', 'oi td bem',
     'hello', 'hi',
   ])
   return greetings.has(cleaned)
+}
+
+/**
+ * Detecta agradecimentos curtos. Mesma lógica do looksLikeGreeting —
+ * lista explícita conservadora pra evitar false positives.
+ */
+function looksLikeThanks(text: string): boolean {
+  const cleaned = text
+    .trim().toLowerCase()
+    .replace(/[!.?,;:]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/\s*,?\s*finn$/i, '')
+    .trim()
+  const thanks = new Set([
+    'obrigado', 'obrigada', 'obg', 'obgd', 'obgda',
+    'valeu', 'vlw', 'vlww',
+    'agradeço', 'agradecido', 'agradecida',
+    'thanks', 'thx', 'ty',
+    'muito obrigado', 'muito obrigada', 'mt obg', 'mto obg',
+  ])
+  return thanks.has(cleaned)
+}
+
+/**
+ * Resposta enlatada pra interação casual (saudação ou agradecimento).
+ * Retorna null se não for caso de canned reply — caller deve seguir o
+ * fluxo padrão (classificador → agente OU parser).
+ */
+function casualReply(text: string, firstName: string): string | null {
+  if (looksLikeGreeting(text)) {
+    return `Oi, ${firstName}! 👋 Tô por aqui. Manda áudio com qualquer gasto, foto de cupom 📸, ou pergunta sobre teu mês. O que precisa?`
+  }
+  if (looksLikeThanks(text)) {
+    return `Por nada, ${firstName}! 🙏 Tô por aqui sempre que precisar.`
+  }
+  return null
 }
 
 /** Marca o welcome flow como concluído (idempotente). */
@@ -196,6 +238,25 @@ async function handleTextMessage(
     await sendWhatsAppWelcomeMsg2(from, name)
     await markWelcomeDone(connection.id)
     return
+  }
+
+  // ── Canned reply pra saudação/agradecimento — instantâneo, sem LLM ───
+  // OTHER mais elaborado (ex: "tô triste", "que dia é hoje?") cai
+  // no agente Sonnet via maybeRunAgent. Aqui só o atalho barato.
+  {
+    const user = await prisma.user.findUnique({ where: { id: connection.userId } })
+    const firstName = user?.name?.split(' ')[0] || 'amigo'
+    const canned = casualReply(text, firstName)
+    if (canned) {
+      await sendWhatsAppMessage({ to: from, text: canned })
+      await prisma.botMessage.createMany({
+        data: [
+          { userId: connection.userId, connectionId: connection.id, direction: 'INBOUND', rawContent: text, status: 'PARSED' },
+          { userId: connection.userId, connectionId: connection.id, direction: 'OUTBOUND', rawContent: canned, status: 'CONFIRMED' },
+        ],
+      })
+      return
+    }
   }
 
   // Try conversational agent first (for QUERY-type intents)

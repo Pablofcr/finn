@@ -14,7 +14,12 @@ export type { AgentResult } from './agent'
  *   contexto de uma pergunta anterior do próprio bot). Se não houver pergunta
  *   recente no histórico, o agente vai entender a falta de contexto e pedir
  *   clareza.
- * - REGISTER / OTHER / baixa confiança: retorna null → caller usa o parser
+ * - OTHER: roda agente com histórico — pra mensagens off-topic não
+ *   cobertas pelo canned reply do webhook (saudação/agradecimento). Ex:
+ *   "tô triste hoje", "que dia é hoje?", "qual seu modelo?". Sonnet
+ *   responde com naturalidade e redireciona pro escopo financeiro
+ *   quando faz sentido.
+ * - REGISTER / baixa confiança: retorna null → caller usa o parser
  *   tradicional (fluxo atual de registrar transação).
  */
 export async function maybeRunAgent(
@@ -28,7 +33,8 @@ export async function maybeRunAgent(
     classification.confidence >= 0.6 &&
     (classification.intent === 'QUERY' ||
       classification.intent === 'ACTION' ||
-      classification.intent === 'CONFIRMATION')
+      classification.intent === 'CONFIRMATION' ||
+      classification.intent === 'OTHER')
 
   if (!shouldRunAgent) return null
 
