@@ -102,6 +102,27 @@ enum UserPlan {
   MASTER
 }
 
+/// Estado da assinatura. Trial: primeiros 14 dias do Diagnóstico (acesso
+/// completo, sem cartão). Active: pagante. Cancelled: cancelou mas ainda
+/// tem acesso até currentPeriodEnd. Expired: trial venceu sem conversão
+/// OU assinatura expirou — bloqueio do app, paywall obrigatório.
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+/// Plano da assinatura. TRIAL durante os 14 dias do Diagnóstico.
+/// MONTHLY = R$ 19,90/mês. ANNUAL = R$ 178,80/ano (~R$ 14,90/mês,
+/// pagável PIX à vista ou cartão 12x sem juros).
+enum SubscriptionPlan {
+  TRIAL
+  MONTHLY
+  ANNUAL
+}
+
 // ============================================================
 // MODELS
 // ============================================================
@@ -135,9 +156,67 @@ model User {
   notificationSetting   NotificationSetting?
   invoices              Invoice[]
   reengagementNudges    ReengagementNudge[]
+  subscription          Subscription?
 
   @@index([supabaseId])
   @@index([email])
+}
+
+/// Estado da assinatura do usuário. 1 user = 1 subscription (ativa ou
+/// histórica). Criada na primeira autenticação como TRIAL com janela de
+/// 14 dias (Diagnóstico Financeiro). Quando trialEndsAt passa sem
+/// conversão, status vira EXPIRED e o app bloqueia acesso (paywall).
+///
+/// Pagamentos são gerenciados via Asaas. asaasCustomerId/SubscriptionId
+/// são populados quando o user converte. PIX Automático e cartão
+/// recorrente são as duas formas de pagamento mensal; anual aceita
+/// PIX à vista ou cartão 12x sem juros.
+model Subscription {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  status SubscriptionStatus @default(TRIAL)
+  plan   SubscriptionPlan   @default(TRIAL)
+
+  /// Janela do trial (Diagnóstico Financeiro de 14 dias).
+  trialStartedAt DateTime  @default(now())
+  trialEndsAt    DateTime
+  /// Quando o trial expirou (sem conversão). null se ainda tá no trial
+  /// ou se converteu antes de expirar.
+  trialExpiredAt DateTime?
+
+  /// Janela da assinatura paga atual. Pra MONTHLY = ciclo de 1 mês;
+  /// pra ANNUAL = ciclo de 12 meses. Renovações sucessivas atualizam
+  /// estes campos sem criar registros novos.
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+
+  /// Tracking de uso (analytics + futuro). daysActiveCount é incrementado
+  /// pelo cron diário quando o user teve atividade (transação criada, msg
+  /// no bot, login no app) no dia anterior.
+  daysActiveCount   Int @default(0)
+  transactionsCount Int @default(0)
+
+  /// Integração Asaas (criados quando o user converte).
+  asaasCustomerId     String?
+  asaasSubscriptionId String?
+  asaasPaymentMethod  String? // 'PIX' | 'CREDIT_CARD' | 'CREDIT_CARD_INSTALLMENT'
+
+  /// Cancelamento. cancelledAt = quando o user pediu pra cancelar.
+  /// Acesso continua até currentPeriodEnd. cancellationReason é texto
+  /// livre coletado no fluxo de cancelamento (analytics de churn).
+  cancelledAt        DateTime?
+  cancellationReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([trialEndsAt])
+  @@index([currentPeriodEnd])
 }
 
 /// Histórico de mensagens de re-engajamento enviadas. Cron diário roda

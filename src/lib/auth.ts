@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import prisma from '@/lib/prisma'
 import { defaultCategories } from '@/lib/seed/default-categories'
 
+const TRIAL_DAYS = 14
+
 export async function getAuthUser() {
   const supabase = await createClient()
   const { data: { user: supabaseUser } } = await supabase.auth.getUser()
@@ -49,6 +51,21 @@ export async function getAuthUser() {
         }
       }
     } catch { /* ignore if categories already exist */ }
+
+    // Cria Subscription com janela de 14 dias do Diagnóstico Financeiro.
+    // Idempotente — se já existir (ex: backfill rodou antes), apenas pula.
+    try {
+      const now = new Date()
+      await prisma.subscription.create({
+        data: {
+          userId: user.id,
+          status: 'TRIAL',
+          plan: 'TRIAL',
+          trialStartedAt: now,
+          trialEndsAt: new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
+        },
+      })
+    } catch { /* unique constraint = já existe, segue */ }
   }
 
   return user
