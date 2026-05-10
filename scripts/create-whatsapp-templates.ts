@@ -54,6 +54,36 @@ const templates: TemplateDef[] = [
     ],
   },
   {
+    // Lembrete pós-vencimento: D+1 em diante. Texto difere de payment_reminder
+    // pra refletir realidade (já venceu, não vai vencer) e alertar sobre
+    // multa/juros que crescem cada dia. 3 botões já desde D+1 — Pausar
+    // disponível imediatamente porque depois de vencido faz sentido permitir
+    // pausar mesmo sem esperar D+5 (consolidação pedida pelo Pablo).
+    name: 'payment_overdue_reminder',
+    category: 'UTILITY',
+    language: 'pt_BR',
+    components: [
+      {
+        type: 'BODY',
+        text:
+          '⚠️ Pagamento em atraso: *{{1}}* — {{2}} (venceu em {{3}}).\n\n' +
+          'Cuidado: você pode estar sujeito a multa e juros que aumentam a cada dia.\n\n' +
+          'Toque num dos botões ou abra o Finn pra ver detalhes.',
+        example: {
+          body_text: [['Aluguel', 'R$ 1.500,00', '10/05/2026']],
+        },
+      },
+      {
+        type: 'BUTTONS',
+        buttons: [
+          { type: 'QUICK_REPLY', text: 'Já paguei' },
+          { type: 'QUICK_REPLY', text: 'Lembrar amanhã' },
+          { type: 'QUICK_REPLY', text: 'Pausar' },
+        ],
+      },
+    ],
+  },
+  {
     name: 'invoice_reminder',
     category: 'UTILITY',
     language: 'pt_BR',
@@ -158,6 +188,7 @@ async function main() {
   console.log('  https://business.facebook.com/latest/whatsapp_manager/message_templates')
   console.log('\nQuando todos virarem APPROVED, seta as env vars no Vercel:')
   console.log('  WHATSAPP_TEMPLATE_PAYMENT_REMINDER=payment_reminder')
+  console.log('  WHATSAPP_TEMPLATE_PAYMENT_OVERDUE=payment_overdue_reminder')
   console.log('  WHATSAPP_TEMPLATE_INVOICE_REMINDER=invoice_reminder')
   console.log('  WHATSAPP_TEMPLATE_BALANCE_UPDATE=balance_update')
   console.log('  WHATSAPP_TEMPLATE_REENGAGEMENT=customer_reengagement')

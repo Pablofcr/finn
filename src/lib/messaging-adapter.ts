@@ -31,6 +31,12 @@ const WINDOW_MS = WINDOW_HOURS * 60 * 60 * 1000
  *     Idealmente com 2 botões QUICK_REPLY ("Paguei", "Lembrar amanhã")
  *     que mandam payloads `paid:<id>` e `snooze:<id>` pro webhook.
  *
+ *   WHATSAPP_TEMPLATE_PAYMENT_OVERDUE (UTILITY)
+ *     Body com 3 placeholders: descrição, valor formatado, vencimento.
+ *     Texto adverte que já venceu + alerta de multa/juros. 3 botões
+ *     QUICK_REPLY ("Paguei", "Lembrar amanhã", "Pausar") com payloads
+ *     `paid:<id>`, `snooze:<id>`, `pause:<id>`. Usado em D+1 em diante.
+ *
  *   WHATSAPP_TEMPLATE_INVOICE_REMINDER (UTILITY)
  *     Body com 3 placeholders: nome do cartão, valor, vencimento.
  *
@@ -45,6 +51,7 @@ const WINDOW_MS = WINDOW_HOURS * 60 * 60 * 1000
  */
 const TEMPLATES = {
   paymentReminder: process.env.WHATSAPP_TEMPLATE_PAYMENT_REMINDER,
+  paymentOverdue: process.env.WHATSAPP_TEMPLATE_PAYMENT_OVERDUE,
   invoiceReminder: process.env.WHATSAPP_TEMPLATE_INVOICE_REMINDER,
   balanceUpdate: process.env.WHATSAPP_TEMPLATE_BALANCE_UPDATE,
   reengagement: process.env.WHATSAPP_TEMPLATE_REENGAGEMENT,
@@ -177,18 +184,32 @@ export async function sendWhatsAppPaymentNotification(opts: {
     }
   }
 
-  if (!TEMPLATES.paymentReminder) {
+  // Variants overdue/overdue-pausable preferem template separado com texto
+  // "venceu em" + alerta de multa + 3 botões (paid/snooze/pause). Se a env
+  // var WHATSAPP_TEMPLATE_PAYMENT_OVERDUE ainda não estiver setada (template
+  // novo aguardando aprovação Meta), cai no payment_reminder pra mensagem
+  // chegar — texto "vence em" fica incorreto mas é melhor que perder o
+  // alerta. Demais variants (upcoming-3d, upcoming-1d, due-today-*) sempre
+  // usam o template padrão de lembrete antecipado.
+  const isOverdue =
+    opts.payment.variant === 'overdue' || opts.payment.variant === 'overdue-pausable'
+  const usingOverdueTemplate = isOverdue && !!TEMPLATES.paymentOverdue
+
+  const templateName = usingOverdueTemplate ? TEMPLATES.paymentOverdue : TEMPLATES.paymentReminder
+  if (!templateName) {
     return { ok: false, attempts, errorMessage: 'outside 24h window and WHATSAPP_TEMPLATE_PAYMENT_REMINDER not set' }
   }
 
+  const buttonPayloads = usingOverdueTemplate
+    ? [`paid:${opts.payment.recurringId}`, `snooze:${opts.payment.recurringId}`, `pause:${opts.payment.recurringId}`]
+    : [`paid:${opts.payment.recurringId}`, `snooze:${opts.payment.recurringId}`]
+
   const r = await sendWhatsAppTemplate({
     to: opts.connection.platformUserId,
-    templateName: TEMPLATES.paymentReminder,
+    templateName,
     languageCode: TEMPLATE_LANGUAGE,
     bodyParameters: [opts.payment.description, formattedAmount, formattedDate],
-    // Quick replies dinâmicos: id do recurring vai como payload pra
-    // bater com os handlers existentes em /webhook (paid:..., snooze:...)
-    buttonPayloads: [`paid:${opts.payment.recurringId}`, `snooze:${opts.payment.recurringId}`],
+    buttonPayloads,
   })
   attempts.push({ channel: 'template', ok: r.ok, error: r.error?.message })
   if (r.ok) return { ok: true, channel: 'template', attempts }

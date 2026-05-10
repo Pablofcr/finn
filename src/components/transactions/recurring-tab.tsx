@@ -393,8 +393,10 @@ export function RecurringTab() {
                 <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
                   No dia do vencimento, eu crio a transação automaticamente
                   e te aviso pelo WhatsApp depois — sem perguntar antes.
-                  Ideal pra <strong>assinaturas no cartão</strong> (Netflix,
-                  Spotify) e <strong>contas fixas</strong> (aluguel, plano de saúde).
+                  Ative só pra contas que <strong>já são cobradas
+                  automaticamente</strong> — assinaturas no cartão (Netflix,
+                  Spotify) ou débito em conta. Pra boleto e PIX, deixe
+                  desligado pra eu te perguntar antes.
                 </p>
               </div>
               <Switch checked={autoConfirm} onCheckedChange={setAutoConfirm} />
