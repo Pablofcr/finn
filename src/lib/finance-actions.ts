@@ -1,7 +1,9 @@
 import prisma from '@/lib/prisma'
 import { applyTransactionBalance, revertTransactionBalance } from '@/lib/transaction-balance'
 import { resolveAccount } from '@/lib/detect-payment-context'
+import { advanceByFrequency, expectedDueDatesBetween } from '@/lib/recurring-occurrence'
 import type { PaymentMethod } from '@/generated/prisma/enums'
+import type { RecurringTransaction, RecurringOccurrence } from '@/generated/prisma/client'
 
 export type MarkRecurringAsPaidResult = {
   ok: boolean
@@ -11,6 +13,18 @@ export type MarkRecurringAsPaidResult = {
   accountName?: string
   paymentMethod?: PaymentMethod
   nextDueDate?: string | null
+  error?: string
+}
+
+export type MarkRecurringOccurrencesAsPaidResult = {
+  ok: boolean
+  description?: string
+  paidCount?: number
+  totalAmount?: number
+  paidDates?: string[]
+  remainingPending?: number
+  accountName?: string
+  nextPendingDate?: string | null
   error?: string
 }
 
@@ -25,37 +39,75 @@ export type UpdateTransactionResult = {
   error?: string
 }
 
-function addByFrequency(current: Date, frequency: string): Date {
-  const next = new Date(current)
-  switch (frequency) {
-    case 'DAILY': next.setDate(next.getDate() + 1); break
-    case 'WEEKLY': next.setDate(next.getDate() + 7); break
-    case 'BIWEEKLY': next.setDate(next.getDate() + 14); break
-    case 'MONTHLY': next.setMonth(next.getMonth() + 1); break
-    case 'QUARTERLY': next.setMonth(next.getMonth() + 3); break
-    case 'YEARLY': next.setFullYear(next.getFullYear() + 1); break
+/**
+ * Garante que existem RecurringOccurrence PENDING pra toda data teórica
+ * entre a última occurrence conhecida (ou nextDueDate) e `until`. Idempotente
+ * via unique [recurringTransactionId, dueDate].
+ *
+ * Chamado pelo cron e pelo webhook antes de qualquer leitura de occurrences,
+ * pra cobrir o caso de recorrências que nunca rodaram desde o backfill ou
+ * acabaram de ser criadas. Para recorrências PAUSED/COMPLETED/CANCELLED,
+ * não gera nada.
+ */
+export async function ensureNextOccurrences(
+  recurring: Pick<RecurringTransaction, 'id' | 'startDate' | 'nextDueDate' | 'frequency' | 'status' | 'endDate'>,
+  until: Date,
+): Promise<number> {
+  if (recurring.status !== 'ACTIVE') return 0
+
+  // Última occurrence conhecida (PAID, PENDING, SNOOZED ou SKIPPED) — usada
+  // como ponto de partida pra avançar pelas datas teóricas. Se não existe,
+  // partimos do nextDueDate da recorrência.
+  const latest = await prisma.recurringOccurrence.findFirst({
+    where: { recurringTransactionId: recurring.id },
+    orderBy: { dueDate: 'desc' },
+    select: { dueDate: true },
+  })
+
+  // Próxima data teórica = latest + frequency, ou nextDueDate se não há latest.
+  const from = latest
+    ? advanceByFrequency(latest.dueDate, recurring.frequency)
+    : recurring.nextDueDate
+
+  if (from > until) return 0
+  if (recurring.endDate && from > recurring.endDate) return 0
+
+  const upper = recurring.endDate && recurring.endDate < until ? recurring.endDate : until
+  const dates = expectedDueDatesBetween(recurring.startDate, recurring.frequency, from, upper)
+
+  let created = 0
+  for (const dueDate of dates) {
+    try {
+      await prisma.recurringOccurrence.create({
+        data: { recurringTransactionId: recurring.id, dueDate, status: 'PENDING' },
+      })
+      created++
+    } catch {
+      // Unique violation — outra concorrência criou. Seguro pular.
+    }
   }
-  return next
+  return created
 }
 
 /**
- * Same semantics as the "Paguei" button in cron alerts: creates the transaction,
- * applies the balance, and advances nextDueDate (or marks as COMPLETED if past endDate).
- * `paidDate` defaults to the recurring's nextDueDate.
+ * Quita as N occurrences PENDING mais antigas (FIFO) de uma recorrência.
+ * Cria uma Transaction por occurrence, aplica balance, marca occurrence
+ * como PAID com `paidTransactionId` setado. Atômico por occurrence.
+ *
+ * Caller pode passar `n='all'` pra quitar todas as PENDING. Se houver menos
+ * PENDING que `n`, quita o que tem e retorna o paidCount real.
  */
-export async function markRecurringAsPaid(
+export async function markRecurringOccurrencesAsPaid(
   userId: string,
   recurringId: string,
-  paidDate?: Date
-): Promise<MarkRecurringAsPaidResult> {
+  n: number | 'all',
+): Promise<MarkRecurringOccurrencesAsPaidResult> {
   const recurring = await prisma.recurringTransaction.findFirst({
     where: { id: recurringId, userId },
   })
-
   if (!recurring) {
     return { ok: false, error: 'Recorrência não encontrada ou não pertence a este usuário.' }
   }
-
   if (recurring.status !== 'ACTIVE') {
     return { ok: false, error: `Recorrência está com status ${recurring.status}, não pode ser marcada como paga.` }
   }
@@ -73,34 +125,65 @@ export async function markRecurringAsPaid(
     accountId = resolved.id
   }
 
-  const txDate = paidDate ?? recurring.nextDueDate
-
-  const { created, account } = await prisma.$transaction(async (db) => {
-    const tx = await db.transaction.create({
-      data: {
-        userId,
-        description: recurring.description,
-        amount: recurring.amount,
-        type: recurring.type,
-        date: txDate,
-        accountId: accountId!,
-        categoryId: recurring.categoryId ?? undefined,
-        recurringTransactionId: recurring.id,
-        paymentMethod: 'DEBIT',
-      },
-    })
-    await applyTransactionBalance(db, {
-      type: recurring.type,
-      amount: Number(recurring.amount),
-      accountId: accountId!,
-      paymentMethod: 'DEBIT',
-      date: txDate,
-    })
-    const acc = await db.account.findUnique({ where: { id: accountId! }, select: { name: true } })
-    return { created: tx, account: acc }
+  const pending = await prisma.recurringOccurrence.findMany({
+    where: { recurringTransactionId: recurringId, status: 'PENDING' },
+    orderBy: { dueDate: 'asc' },
+    take: n === 'all' ? undefined : n,
   })
 
-  const nextDate = addByFrequency(recurring.nextDueDate, recurring.frequency)
+  if (pending.length === 0) {
+    return { ok: false, error: 'Nenhuma parcela pendente pra quitar.' }
+  }
+
+  const accountName = (await prisma.account.findUnique({
+    where: { id: accountId! },
+    select: { name: true },
+  }))?.name ?? 'conta padrão'
+
+  const paidDates: string[] = []
+  for (const occ of pending) {
+    await prisma.$transaction(async (db) => {
+      const tx = await db.transaction.create({
+        data: {
+          userId,
+          description: recurring.description,
+          amount: recurring.amount,
+          type: recurring.type,
+          date: occ.dueDate,
+          accountId: accountId!,
+          categoryId: recurring.categoryId ?? undefined,
+          recurringTransactionId: recurring.id,
+          paymentMethod: 'DEBIT',
+        },
+      })
+      await applyTransactionBalance(db, {
+        type: recurring.type,
+        amount: Number(recurring.amount),
+        accountId: accountId!,
+        paymentMethod: 'DEBIT',
+        date: occ.dueDate,
+      })
+      await db.recurringOccurrence.update({
+        where: { id: occ.id },
+        data: { status: 'PAID', paidTransactionId: tx.id },
+      })
+    })
+    paidDates.push(occ.dueDate.toISOString().slice(0, 10))
+  }
+
+  // Atualiza nextDueDate da recorrência pra próxima PENDING (se houver) ou
+  // pra próxima data teórica após a última paid. Mantém o campo coerente
+  // pra outras partes do sistema que ainda lêem nextDueDate.
+  const stillPending = await prisma.recurringOccurrence.findFirst({
+    where: { recurringTransactionId: recurringId, status: 'PENDING' },
+    orderBy: { dueDate: 'asc' },
+    select: { dueDate: true },
+  })
+
+  const lastPaidDate = pending[pending.length - 1].dueDate
+  const nextDate = stillPending
+    ? stillPending.dueDate
+    : advanceByFrequency(lastPaidDate, recurring.frequency)
   const becameCompleted = recurring.endDate !== null && nextDate > recurring.endDate
 
   if (becameCompleted) {
@@ -115,14 +198,49 @@ export async function markRecurringAsPaid(
     })
   }
 
+  const remainingPending = await prisma.recurringOccurrence.count({
+    where: { recurringTransactionId: recurringId, status: 'PENDING' },
+  })
+
   return {
     ok: true,
-    transactionId: created.id,
     description: recurring.description,
-    amount: Number(recurring.amount),
-    accountName: account?.name ?? 'conta padrão',
+    paidCount: pending.length,
+    totalAmount: Number(recurring.amount) * pending.length,
+    paidDates,
+    remainingPending,
+    accountName,
+    nextPendingDate: becameCompleted ? null : nextDate.toISOString(),
+  }
+}
+
+/**
+ * Same semantics as the "Paguei" button in cron alerts: creates the transaction,
+ * applies the balance, and advances nextDueDate (or marks as COMPLETED if past endDate).
+ *
+ * Implementado em cima de markRecurringOccurrencesAsPaid (n=1) — todos os
+ * callers existentes (cron auto-launch, /api/recurring/[id]/mark-paid,
+ * agent tool, webhook "paid") continuam funcionando, e ganham de graça a
+ * sincronização com a tabela de occurrences.
+ */
+export async function markRecurringAsPaid(
+  userId: string,
+  recurringId: string,
+  _paidDate?: Date,
+): Promise<MarkRecurringAsPaidResult> {
+  // paidDate é ignorado intencionalmente — agora a data vem da occurrence
+  // PENDING mais antiga (FIFO), que é a fonte de verdade pra qual parcela
+  // estamos quitando. Param mantido por compat com chamadas existentes.
+  const result = await markRecurringOccurrencesAsPaid(userId, recurringId, 1)
+  if (!result.ok) return { ok: false, error: result.error }
+
+  return {
+    ok: true,
+    description: result.description,
+    amount: result.totalAmount,
+    accountName: result.accountName,
     paymentMethod: 'DEBIT',
-    nextDueDate: becameCompleted ? null : nextDate.toISOString(),
+    nextDueDate: result.nextPendingDate,
   }
 }
 

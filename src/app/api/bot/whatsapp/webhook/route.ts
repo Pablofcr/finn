@@ -10,6 +10,8 @@ import { getOrCreateInvoiceFor, adjustInvoiceTotal } from '@/lib/invoice'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 import { maybeRunAgent } from '@/lib/agent'
 import { findCategoryForDescription } from '@/lib/resolve-category'
+import { markRecurringOccurrencesAsPaid } from '@/lib/finance-actions'
+import { formatBRDate, formatBRL } from '@/lib/recurring-occurrence'
 
 export const maxDuration = 60
 
@@ -779,69 +781,202 @@ async function handleButtonReply(from: string, buttonId: string, connection: { u
     await sendWhatsAppMessage({ to: from, text: '❌ Transação cancelada.' })
   }
 
+  // ─── paid: quita a parcela mais antiga PENDING (FIFO) ─────────────
+  // Botão "Já paguei" do lembrete single. Implementação delegada pra
+  // markRecurringOccurrencesAsPaid(1) — mantém compat 100% e ganha de
+  // graça a sincronização de RecurringOccurrence.
   if (action === 'paid') {
-    // Reuse recurring payment logic
-    const recurringId = targetId
-    const recurring = await prisma.recurringTransaction.findFirst({
-      where: { id: recurringId, userId: connection.userId },
-    })
-
-    if (!recurring) {
-      await sendWhatsAppMessage({ to: from, text: '⚠️ Transação não encontrada.' })
+    const result = await markRecurringOccurrencesAsPaid(connection.userId, targetId, 1)
+    if (!result.ok) {
+      await sendWhatsAppMessage({ to: from, text: `⚠️ ${result.error ?? 'Erro ao registrar pagamento.'}` })
       return
     }
-
-    let accountId = recurring.accountId
-    if (!accountId) {
-      const accounts = await prisma.account.findMany({
-        where: { userId: connection.userId, isActive: true },
-        orderBy: { createdAt: 'asc' },
-      })
-      const resolved = resolveAccount(null, 'DEBIT', accounts as any)
-      if (!resolved) return
-      accountId = resolved.id
-    }
-
-    await prisma.$transaction(async (db) => {
-      await db.transaction.create({
-        data: {
-          userId: connection.userId, description: recurring.description, amount: recurring.amount,
-          type: recurring.type, date: recurring.nextDueDate, accountId: accountId!,
-          categoryId: recurring.categoryId ?? undefined, recurringTransactionId: recurring.id,
-          paymentMethod: 'DEBIT',
-        },
-      })
-      await applyTransactionBalance(db, {
-        type: recurring.type,
-        amount: Number(recurring.amount),
-        accountId: accountId!,
-        paymentMethod: 'DEBIT',
-        date: recurring.nextDueDate,
-      })
-    })
-
-    // Advance next due date
-    const next = new Date(recurring.nextDueDate)
-    switch (recurring.frequency) {
-      case 'DAILY': next.setDate(next.getDate() + 1); break
-      case 'WEEKLY': next.setDate(next.getDate() + 7); break
-      case 'BIWEEKLY': next.setDate(next.getDate() + 14); break
-      case 'MONTHLY': next.setMonth(next.getMonth() + 1); break
-      case 'QUARTERLY': next.setMonth(next.getMonth() + 3); break
-      case 'YEARLY': next.setFullYear(next.getFullYear() + 1); break
-    }
-
-    if (recurring.endDate && next > recurring.endDate) {
-      await prisma.recurringTransaction.update({ where: { id: recurring.id }, data: { status: 'COMPLETED' } })
-    } else {
-      await prisma.recurringTransaction.update({ where: { id: recurring.id }, data: { nextDueDate: next } })
-    }
-
-    const formattedAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(recurring.amount))
+    const dateLabel = result.paidDates?.[0]
+      ? formatBRDate(new Date(result.paidDates[0]))
+      : null
+    const remaining = result.remainingPending ?? 0
+    const remainingLine = remaining > 0
+      ? `\n\nAinda restam *${remaining}* em aberto. Quer registrar mais?`
+      : ''
     await sendWhatsAppMessage({
       to: from,
-      text: `✅ *Pagamento confirmado!*\n\n*${recurring.description}*\n💰 ${formattedAmount}\n\nTransação registrada e saldo atualizado.`,
+      text:
+        `✅ *Pagamento confirmado!*\n\n` +
+        `*${result.description}*${dateLabel ? ` — parcela de ${dateLabel}` : ''}\n` +
+        `💰 ${formatBRL(result.totalAmount ?? 0)}\n\n` +
+        `Saldo atualizado.${remainingLine}`,
     })
+    // Follow-up: se ainda há PENDING, oferece quitar mais com botões.
+    if (remaining > 0) {
+      await sendWhatsAppInteractive({
+        to: from,
+        body: `Pagou mais alguma da *${result.description}*?`,
+        buttons: [
+          { id: `paid_some:${targetId}`, title: 'Paguei mais' },
+          { id: `paid_all:${targetId}`, title: 'Quitei o resto' },
+          { id: `no_more:${targetId}`, title: 'Não, só essa' },
+        ],
+      })
+    }
+    return
+  }
+
+  // ─── paid_all: quita todas PENDING da recorrência ──────────────────
+  if (action === 'paid_all') {
+    const result = await markRecurringOccurrencesAsPaid(connection.userId, targetId, 'all')
+    if (!result.ok) {
+      await sendWhatsAppMessage({ to: from, text: `⚠️ ${result.error ?? 'Erro ao registrar pagamentos.'}` })
+      return
+    }
+    const datesLabel = (result.paidDates ?? []).map(d => formatBRDate(new Date(d))).join(', ')
+    await sendWhatsAppMessage({
+      to: from,
+      text:
+        `Pronto, fechou tudo. *${result.description}* em dia: ${datesLabel} ` +
+        `(${formatBRL(result.totalAmount ?? 0)}). Já atualizei suas contas.`,
+    })
+    return
+  }
+
+  // ─── paid_some: pergunta quantas via list message ──────────────────
+  // List é single-select (radio), mostra "1 parcela / 2 / 3 / nenhuma".
+  // Limita opções a count atual de PENDING — não tem sentido oferecer
+  // "5 parcelas" se só tem 3 em aberto.
+  if (action === 'paid_some') {
+    const pendingCount = await prisma.recurringOccurrence.count({
+      where: { recurringTransactionId: targetId, status: 'PENDING' },
+    })
+    if (pendingCount === 0) {
+      await sendWhatsAppMessage({ to: from, text: '⚠️ Não há parcelas pendentes pra essa recorrência.' })
+      return
+    }
+    const recurring = await prisma.recurringTransaction.findFirst({
+      where: { id: targetId, userId: connection.userId },
+      select: { description: true, amount: true },
+    })
+    if (!recurring) {
+      await sendWhatsAppMessage({ to: from, text: '⚠️ Recorrência não encontrada.' })
+      return
+    }
+    const unit = Number(recurring.amount)
+    // Up to 9 opções (1..min(pendingCount, 9)) + "Nenhuma".
+    const maxOptions = Math.min(pendingCount, 9)
+    const rows = Array.from({ length: maxOptions }, (_, i) => {
+      const n = i + 1
+      return {
+        id: `paid_n:${targetId}:${n}`,
+        title: n === 1 ? '1 parcela' : `${n} parcelas`,
+        description: formatBRL(unit * n),
+      }
+    })
+    rows.push({ id: `no_more:${targetId}`, title: 'Nenhuma', description: 'Só lembrete' })
+
+    await sendWhatsAppList({
+      to: from,
+      body: `Quantas parcelas da *${recurring.description}* você pagou?`,
+      buttonLabel: 'Escolher',
+      sectionTitle: 'Quantidade',
+      rows,
+    })
+    return
+  }
+
+  // ─── paid_n:<recurringId>:<n>: confirma intent antes de registrar ──
+  // User selecionou "X parcelas" da list. Mostra QUAIS datas seriam
+  // marcadas (FIFO) e pede confirmação Sim/Não — sua ideia, Pablo, pra
+  // evitar erro irreversível.
+  if (action === 'paid_n') {
+    const [recurringId, nStr] = rest
+    const n = parseInt(nStr, 10)
+    if (!recurringId || !Number.isFinite(n) || n < 1) {
+      await sendWhatsAppMessage({ to: from, text: '⚠️ Solicitação inválida.' })
+      return
+    }
+    const recurring = await prisma.recurringTransaction.findFirst({
+      where: { id: recurringId, userId: connection.userId },
+      select: { description: true, amount: true },
+    })
+    if (!recurring) {
+      await sendWhatsAppMessage({ to: from, text: '⚠️ Recorrência não encontrada.' })
+      return
+    }
+    const oldest = await prisma.recurringOccurrence.findMany({
+      where: { recurringTransactionId: recurringId, status: 'PENDING' },
+      orderBy: { dueDate: 'asc' },
+      take: n,
+      select: { dueDate: true },
+    })
+    if (oldest.length === 0) {
+      await sendWhatsAppMessage({ to: from, text: '⚠️ Não há parcelas pendentes.' })
+      return
+    }
+    const datesLabel = oldest.map(o => formatBRDate(o.dueDate)).join(', ')
+    const total = Number(recurring.amount) * oldest.length
+
+    await sendWhatsAppInteractive({
+      to: from,
+      body:
+        `Vou registrar essas ${oldest.length === 1 ? 'parcela' : `${oldest.length} parcelas`} ` +
+        `da *${recurring.description}*: ${datesLabel} (${formatBRL(total)}). Tá certo?`,
+      buttons: [
+        { id: `confirm_paid_n:${recurringId}:${oldest.length}`, title: 'Sim, registrar' },
+        { id: `cancel_paid:${recurringId}`, title: 'Não, eram outras' },
+      ],
+    })
+    return
+  }
+
+  // ─── confirm_paid_n:<recurringId>:<n>: executa o registro FIFO ─────
+  if (action === 'confirm_paid_n') {
+    const [recurringId, nStr] = rest
+    const n = parseInt(nStr, 10)
+    if (!recurringId || !Number.isFinite(n) || n < 1) {
+      await sendWhatsAppMessage({ to: from, text: '⚠️ Solicitação inválida.' })
+      return
+    }
+    const result = await markRecurringOccurrencesAsPaid(connection.userId, recurringId, n)
+    if (!result.ok) {
+      await sendWhatsAppMessage({ to: from, text: `⚠️ ${result.error ?? 'Erro ao registrar pagamentos.'}` })
+      return
+    }
+    const datesLabel = (result.paidDates ?? []).map(d => formatBRDate(new Date(d))).join(', ')
+    const remaining = result.remainingPending ?? 0
+    const remainingLine = remaining > 0
+      ? `\n\nAinda ficaram *${remaining}* em aberto. Se pagou mais alguma, me avisa.`
+      : ''
+    await sendWhatsAppMessage({
+      to: from,
+      text:
+        `Anotei. *${result.description}* — ${result.paidCount} ` +
+        `${(result.paidCount ?? 0) === 1 ? 'parcela' : 'parcelas'} ` +
+        `(${datesLabel}, ${formatBRL(result.totalAmount ?? 0)}). Já atualizei suas contas.${remainingLine}`,
+    })
+    return
+  }
+
+  // ─── cancel_paid: empurra pro app pra escolher datas específicas ───
+  if (action === 'cancel_paid' || action === 'no_more') {
+    const recurring = await prisma.recurringTransaction.findFirst({
+      where: { id: targetId, userId: connection.userId },
+      select: { description: true },
+    })
+    const desc = recurring?.description ?? 'essa recorrência'
+    if (action === 'cancel_paid') {
+      await sendWhatsAppMessage({
+        to: from,
+        text:
+          `Beleza. Pra escolher exatamente quais parcelas da *${desc}* você pagou, ` +
+          `abre *Recorrências* no Finn e marca uma a uma. Volto a te lembrar das outras em alguns dias.`,
+      })
+    } else {
+      await sendWhatsAppMessage({
+        to: from,
+        text:
+          `Tranquilo. As outras seguem em aberto — volto a te lembrar daqui a uns dias. ` +
+          `Se pagou e esqueci de registrar, me avisa.`,
+      })
+    }
+    return
   }
 
   // Family de actions de snooze:

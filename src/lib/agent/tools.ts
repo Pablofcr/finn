@@ -11,7 +11,7 @@ import {
   getGoalProgress,
   searchTransactions,
 } from '@/lib/finance-queries'
-import { markRecurringAsPaid, updateTransaction } from '@/lib/finance-actions'
+import { markRecurringAsPaid, markRecurringOccurrencesAsPaid, updateTransaction } from '@/lib/finance-actions'
 import type { TransactionType, PaymentMethod } from '@/generated/prisma/enums'
 
 // ============================================================
@@ -261,6 +261,29 @@ export const AGENT_TOOLS: readonly ToolDefinition[] = [
     },
   },
   {
+    name: 'mark_recurring_occurrences_as_paid',
+    description:
+      'Marca N parcelas vencidas (RecurringOccurrence PENDING) de UMA recorrência como pagas em ordem FIFO (mais antigas primeiro). Use quando o usuário disser que pagou MAIS DE UMA parcela acumulada da mesma conta — ex: "paguei 2 da diarista", "quitei 3 semanas da diarista", "fechei as 2 mensalidades atrasadas". Pra uma parcela única, use mark_recurring_as_paid.\n\nFLUXO CORRETO: 1) get_pending_bills pra identificar a recorrência (campo `id` onde source="recurring"). 2) Chame esta tool com `recurring_id` + `n` (quantidade). Use `n="all"` se o usuário disser "quitei tudo", "paguei todas". A tool retorna as datas das parcelas quitadas e quantas ainda restam em aberto — reporte ao usuário.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        recurring_id: {
+          type: 'string',
+          description: 'ID da recorrência (do campo `id` de get_pending_bills com source="recurring")',
+        },
+        n: {
+          oneOf: [
+            { type: 'integer', minimum: 1 },
+            { type: 'string', enum: ['all'] },
+          ],
+          description:
+            'Quantidade de parcelas a quitar (FIFO). Use número inteiro ≥1 quando o usuário disse uma quantidade específica ("paguei 2"); use "all" quando disse pra quitar tudo ("paguei todas", "fechei tudo").',
+        },
+      },
+      required: ['recurring_id', 'n'],
+    },
+  },
+  {
     name: 'update_transaction',
     description:
       'Atualiza uma transação existente: troca a conta, a forma de pagamento ou a data. Use quando o usuário pedir correção de uma baixa recém-registrada ("corrige o Zen pra Nubank PIX", "na verdade paguei pelo Itaú", "foi no crédito não no débito").\n\nFLUXO CORRETO: 1) Primeiro chame search_transactions pra achar a transação pelo nome (passe os últimos dias como filtro). 2) Pegue o `id` da transação certa. 3) Chame esta tool passando `transaction_id` + só os campos a alterar.',
@@ -496,6 +519,22 @@ export async function executeTool(
           return { ok: false, error: 'paid_date inválida (use YYYY-MM-DD)' }
         }
         const result = await markRecurringAsPaid(userId, recurringId, paidDate ?? undefined)
+        return result.ok ? { ok: true, data: result } : { ok: false, error: result.error ?? 'falha ao marcar como pago' }
+      }
+
+      case 'mark_recurring_occurrences_as_paid': {
+        const recurringId = typeof toolInput.recurring_id === 'string' ? toolInput.recurring_id : ''
+        if (!recurringId) return { ok: false, error: 'recurring_id é obrigatório' }
+        const rawN = toolInput.n
+        let n: number | 'all'
+        if (rawN === 'all') {
+          n = 'all'
+        } else if (typeof rawN === 'number' && Number.isFinite(rawN) && rawN >= 1) {
+          n = Math.floor(rawN)
+        } else {
+          return { ok: false, error: 'n deve ser um inteiro ≥1 ou "all"' }
+        }
+        const result = await markRecurringOccurrencesAsPaid(userId, recurringId, n)
         return result.ok ? { ok: true, data: result } : { ok: false, error: result.error ?? 'falha ao marcar como pago' }
       }
 

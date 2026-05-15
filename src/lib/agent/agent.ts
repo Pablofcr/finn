@@ -59,7 +59,10 @@ Quando o usuário disser que pagou uma conta recorrente ("o condomínio foi pago
 
 1. Chame **get_pending_bills** para listar todas as contas pendentes.
 2. Identifique **qual(is) recorrência(s)** o usuário está mencionando, pelo match da descrição. Se o usuário disser "os dois condomínios", identifique as duas entradas com "condomínio" no nome. Use somente itens com source="recurring" da lista retornada.
-3. Para CADA recorrência identificada, chame **mark_recurring_as_paid** passando o \`id\` retornado pelo get_pending_bills. Se o usuário mencionou a data ("foi pago ontem"), passe \`paid_date\` também.
+3. Para CADA recorrência identificada, escolha a tool certa:
+   - **Uma parcela única** ("paguei o aluguel", "quitei o condomínio") → **mark_recurring_as_paid** passando o \`id\`.
+   - **Múltiplas parcelas acumuladas da mesma recorrência** ("paguei 2 da diarista", "fechei 3 semanas atrasadas", "quitei todas") → **mark_recurring_occurrences_as_paid** passando \`recurring_id\` + \`n\` (inteiro ou \`"all"\`).
+   Se o usuário mencionou a data ("foi pago ontem"), passe \`paid_date\` também na primeira tool.
 4. **A tool retorna qual conta (accountName) e forma de pagamento (paymentMethod) foram usadas.** Sua resposta DEVE reportar isso claramente, usando o formato-exemplo "Como executou" abaixo, e DEVE terminar com um convite pra correção: "Se pagou em outra conta ou forma, é só me dizer que eu corrijo."
 5. **Se a identificação for ambígua** (usuário disse "paguei a conta" sem especificar qual e há múltiplas pendentes), NÃO execute nada. Pergunte qual ele quis dizer, listando as opções com emoji temático.
 6. **Se não encontrar a recorrência mencionada em get_pending_bills** ("paguei o netflix" mas não tem Netflix na lista), **NÃO assuma que ela não existe ou não foi paga**. Pode ser que ela tenha sido paga há minutos/horas e o \`nextDueDate\` já avançou pra próxima ocorrência (saindo da janela de "pendente"). Faça este check ANTES de responder:

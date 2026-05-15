@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma'
 import {
   sendWhatsAppMessage,
+  sendWhatsAppInteractive,
   sendWhatsAppPaymentAlert,
   sendWhatsAppTemplate,
   type PaymentAlertVariant,
@@ -52,6 +53,7 @@ const WINDOW_MS = WINDOW_HOURS * 60 * 60 * 1000
 const TEMPLATES = {
   paymentReminder: process.env.WHATSAPP_TEMPLATE_PAYMENT_REMINDER,
   paymentOverdue: process.env.WHATSAPP_TEMPLATE_PAYMENT_OVERDUE,
+  paymentOverdueMulti: process.env.WHATSAPP_TEMPLATE_PAYMENT_OVERDUE_MULTI,
   invoiceReminder: process.env.WHATSAPP_TEMPLATE_INVOICE_REMINDER,
   balanceUpdate: process.env.WHATSAPP_TEMPLATE_BALANCE_UPDATE,
   reengagement: process.env.WHATSAPP_TEMPLATE_REENGAGEMENT,
@@ -209,6 +211,88 @@ export async function sendWhatsAppPaymentNotification(opts: {
     templateName,
     languageCode: TEMPLATE_LANGUAGE,
     bodyParameters: [opts.payment.description, formattedAmount, formattedDate],
+    buttonPayloads,
+  })
+  attempts.push({ channel: 'template', ok: r.ok, error: r.error?.message })
+  if (r.ok) return { ok: true, channel: 'template', attempts }
+  return { ok: false, attempts, errorMessage: r.error?.message ?? 'template send failed' }
+}
+
+/**
+ * Lembrete consolidado pra múltiplas parcelas em atraso da mesma recorrência.
+ * Copy aprovada pelos squads design+copy em 12/05/2026: tom de aliado, sem
+ * jargão de cobrança bancária. Botões: Paguei todas / Paguei algumas / Lembrar.
+ *
+ * Within window 24h: interactive free-form (3 botões).
+ * Fora: template HSM `paymentOverdueMulti` (mesmos 3 botões, payloads
+ * dinâmicos pra bater com webhook handlers).
+ */
+export async function sendWhatsAppMultiOverdueNotification(opts: {
+  userId: string
+  connection: WhatsAppConnectionLite
+  recurringId: string
+  description: string
+  count: number          // quantas parcelas em atraso
+  oldestDueDate: string  // ISO da mais antiga (pra "pendentes desde DD/MM")
+  totalAmount: number
+}): Promise<NotificationResult> {
+  const attempts: NotificationResult['attempts'] = []
+  const formattedTotal = new Intl.NumberFormat('pt-BR', {
+    style: 'currency', currency: 'BRL',
+  }).format(opts.totalAmount)
+  const formattedOldest = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' })
+    .format(new Date(opts.oldestDueDate))
+
+  const body =
+    `⚠️ *${opts.description}* — ${opts.count} pagamentos pendentes desde ${formattedOldest}. ` +
+    `Total ${formattedTotal}.\n\n` +
+    `Tá acumulando — toque num dos botões ou abra o Finn pra resolver.`
+
+  const buttons = [
+    { id: `paid_all:${opts.recurringId}`, title: 'Paguei todas' },
+    { id: `paid_some:${opts.recurringId}`, title: 'Paguei algumas' },
+    { id: `snooze:${opts.recurringId}`, title: 'Lembrar amanhã' },
+  ]
+
+  const withinWindow = await isWithinWhatsAppWindow(opts.userId)
+
+  if (withinWindow) {
+    const r = await sendWhatsAppInteractive({
+      to: opts.connection.platformUserId,
+      body,
+      buttons,
+    })
+    attempts.push({ channel: 'freeform', ok: r.ok, error: r.error?.message, isWindowError: r.error?.isWindowError })
+    if (r.ok) return { ok: true, channel: 'freeform', attempts }
+    if (!r.error?.isWindowError) {
+      return { ok: false, attempts, errorMessage: r.error?.message }
+    }
+  }
+
+  // Fora da janela 24h: template HSM. Se template multi ainda não setado
+  // (aguardando aprovação Meta), cai pro template single overdue como
+  // fallback — perde a consolidação mas a mensagem chega.
+  const templateName = TEMPLATES.paymentOverdueMulti ?? TEMPLATES.paymentOverdue ?? TEMPLATES.paymentReminder
+  if (!templateName) {
+    return { ok: false, attempts, errorMessage: 'outside 24h window and no payment template configured' }
+  }
+
+  // Se usando o template multi (com 4 placeholders + 3 botões dedicados),
+  // mapeia direto. Senão, cai num formato compatível com o template single
+  // (3 placeholders), o que perde a info de "N pagamentos".
+  const isMultiTemplate = templateName === TEMPLATES.paymentOverdueMulti
+  const bodyParameters = isMultiTemplate
+    ? [opts.description, String(opts.count), formattedOldest, formattedTotal]
+    : [opts.description, formattedTotal, formattedOldest]
+  const buttonPayloads = isMultiTemplate
+    ? [`paid_all:${opts.recurringId}`, `paid_some:${opts.recurringId}`, `snooze:${opts.recurringId}`]
+    : [`paid:${opts.recurringId}`, `snooze:${opts.recurringId}`, `pause:${opts.recurringId}`]
+
+  const r = await sendWhatsAppTemplate({
+    to: opts.connection.platformUserId,
+    templateName,
+    languageCode: TEMPLATE_LANGUAGE,
+    bodyParameters,
     buttonPayloads,
   })
   attempts.push({ channel: 'template', ok: r.ok, error: r.error?.message })

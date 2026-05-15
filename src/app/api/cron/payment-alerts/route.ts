@@ -3,9 +3,10 @@ import prisma from '@/lib/prisma'
 import {
   sendWhatsAppNotification,
   sendWhatsAppPaymentNotification,
+  sendWhatsAppMultiOverdueNotification,
 } from '@/lib/messaging-adapter'
 import type { PaymentAlertVariant } from '@/lib/messaging-adapter'
-import { markRecurringAsPaid } from '@/lib/finance-actions'
+import { markRecurringAsPaid, ensureNextOccurrences } from '@/lib/finance-actions'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 
 export async function GET(request: NextRequest) {
@@ -43,51 +44,92 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
   //    de manhã coisas que já estão vencidas (cobrança de vencidas é evening).
   const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0))
 
-  const upcomingPayments = await prisma.recurringTransaction.findMany({
+  // ─── STEP 1: garantir occurrences pendentes até hoje+7 ──────────────
+  // Pra cada recurring ACTIVE, gera occurrences PENDING faltantes entre
+  // a última conhecida e horizon. Idempotente — unique [recurringId, dueDate].
+  // Sem isso, recorrências criadas recentemente (sem cron rodando ainda)
+  // ou que avançaram pela frequência sem o cron ter populado occurrences
+  // ficariam invisíveis.
+  const horizon = new Date(now)
+  horizon.setUTCDate(horizon.getUTCDate() + 7)
+
+  const activeRecurrings = await prisma.recurringTransaction.findMany({
+    where: { status: 'ACTIVE' },
+    select: { id: true, startDate: true, nextDueDate: true, frequency: true, status: true, endDate: true },
+  })
+  let occurrencesGenerated = 0
+  for (const rec of activeRecurrings) {
+    occurrencesGenerated += await ensureNextOccurrences(rec, horizon)
+  }
+  if (occurrencesGenerated > 0) {
+    console.log(`[payment-alerts:${period}] Generated ${occurrencesGenerated} new occurrences`)
+  }
+
+  // ─── STEP 2: buscar occurrences PENDING na janela do período ────────
+  // Morning: dueDate entre hoje (00:00 UTC) e hoje+3 — alertas antecipados.
+  // Evening: dueDate <= fim de hoje — inclui vencidas (D+1, D+2, ...).
+  const pendingOccurrences = await prisma.recurringOccurrence.findMany({
     where: {
-      status: 'ACTIVE',
-      nextDueDate: period === 'evening'
+      status: 'PENDING',
+      dueDate: period === 'evening'
         ? { lte: maxDate }
         : { gte: startOfToday, lte: maxDate },
       OR: [
         { snoozedUntil: null },
         { snoozedUntil: { lte: now } },
       ],
+      recurring: {
+        status: 'ACTIVE',
+        OR: [
+          { snoozedUntil: null },
+          { snoozedUntil: { lte: now } },
+        ],
+      },
     },
+    orderBy: [{ recurringTransactionId: 'asc' }, { dueDate: 'asc' }],
     include: {
-      user: {
+      recurring: {
         include: {
-          notificationSetting: true,
-          botConnections: {
-            where: { isVerified: true, platform: 'WHATSAPP' },
+          user: {
+            include: {
+              notificationSetting: true,
+              botConnections: { where: { isVerified: true, platform: 'WHATSAPP' } },
+            },
           },
         },
       },
     },
   })
 
-  console.log(`[payment-alerts:${period}] Upcoming payments found:`, upcomingPayments.length)
+  // Agrupa occurrences por recurring pra decidir entre alerta single vs multi.
+  const occsByRecurring = new Map<string, typeof pendingOccurrences>()
+  for (const occ of pendingOccurrences) {
+    const arr = occsByRecurring.get(occ.recurringTransactionId) ?? []
+    arr.push(occ)
+    occsByRecurring.set(occ.recurringTransactionId, arr)
+  }
+
+  console.log(`[payment-alerts:${period}] Pending occurrences: ${pendingOccurrences.length} in ${occsByRecurring.size} recurrings`)
 
   let alertsSent = 0
   let alertsSkipped = 0
-  let autoLaunched = 0  // recorrências com autoConfirm=true lançadas automaticamente
+  let autoLaunched = 0
   const failures: { id: string; reason: string }[] = []
 
-  for (const payment of upcomingPayments) {
-    const connection = payment.user.botConnections[0]
+  for (const [recurringId, occs] of occsByRecurring) {
+    const recurring = occs[0].recurring
+    const connection = recurring.user.botConnections[0]
     if (!connection) {
       alertsSkipped++
       continue
     }
 
-    const settings = payment.user.notificationSetting
+    const settings = recurring.user.notificationSetting
     const alertsEnabled = settings?.telegramAlerts ?? true
     if (!alertsEnabled) {
       alertsSkipped++
       continue
     }
-
-    // Evening run: respect eveningPaymentReminder opt-out
     if (period === 'evening') {
       const eveningEnabled = settings?.eveningPaymentReminder ?? true
       if (!eveningEnabled) {
@@ -96,39 +138,26 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
       }
     }
 
+    const oldestOcc = occs[0]
     const daysUntilDue = Math.ceil(
-      (payment.nextDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      (oldestOcc.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     )
+    const overdueOccs = occs.filter(o => o.dueDate < startOfToday)
 
-    // ─── Auto-launch: recorrências marcadas como "Lança sozinho" ───────────
-    // Quando autoConfirm=true E vence hoje, cria a transação automaticamente
-    // sem perguntar. Usuário recebe WhatsApp pós-fato explicando o que foi
-    // lançado e onde (cartão Nubank fatura 10/05, conta Itaú débito, etc).
-    // Só dispara no morning run pra evitar duplicação se o evening rodar.
-    if (payment.autoConfirm && daysUntilDue === 0 && period === 'morning') {
-      // Idempotência: se já existe transação dessa recorrência hoje, skip
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
-      const alreadyToday = await prisma.transaction.findFirst({
-        where: {
-          recurringTransactionId: payment.id,
-          date: { gte: startOfDay, lte: endOfDay },
-        },
-        select: { id: true },
-      })
-
-      if (alreadyToday) {
-        alertsSkipped++
-        continue
-      }
-
+    // ─── Auto-launch (autoConfirm=true) ─────────────────────────────
+    // Mantém comportamento atual: quando a occurrence mais antiga é de
+    // hoje (D=0) e autoConfirm=true, lança automaticamente. Quita só 1
+    // parcela (markRecurringAsPaid → markRecurringOccurrencesAsPaid n=1).
+    // Se houver overdue acumuladas + autoConfirm=true, é cenário esquisito
+    // (cron falhou em dias anteriores) — quita só a de hoje, deixa as
+    // vencidas pro alerta normal.
+    if (recurring.autoConfirm && daysUntilDue === 0 && period === 'morning') {
       try {
-        const result = await markRecurringAsPaid(payment.userId, payment.id)
+        const result = await markRecurringAsPaid(recurring.userId, recurringId)
         if (result.ok) {
-          // Mensagem pós-fato: explica o que foi lançado e onde foi parar.
           const formattedAmount = new Intl.NumberFormat('pt-BR', {
             style: 'currency', currency: 'BRL',
-          }).format(Number(payment.amount))
+          }).format(Number(recurring.amount))
           const accountLine = result.accountName
             ? ` na conta *${result.accountName}*`
             : ''
@@ -138,25 +167,25 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
 
           const text =
             `🤖 *Lancei sozinho:*\n\n` +
-            `📌 *${payment.description}* — *${formattedAmount}*${accountLine}${methodLabel}\n\n` +
+            `📌 *${recurring.description}* — *${formattedAmount}*${accountLine}${methodLabel}\n\n` +
             `Saldo já atualizado. Se foi engano, abre *Transações* no app e exclui.`
 
           const sendResult = await sendWhatsAppNotification({
-            userId: payment.userId,
+            userId: recurring.userId,
             connection,
             text,
             templateFallback: {
               templateName: process.env.WHATSAPP_TEMPLATE_BALANCE_UPDATE,
-              bodyParameters: [`Lancei: ${payment.description} ${formattedAmount}`],
+              bodyParameters: [`Lancei: ${recurring.description} ${formattedAmount}`],
             },
           })
 
           await prisma.botMessage.create({
             data: {
-              userId: payment.userId,
+              userId: recurring.userId,
               connectionId: connection.id,
               direction: 'OUTBOUND',
-              rawContent: `🤖 Auto-lançado: ${payment.description} - ${formattedAmount}`,
+              rawContent: `🤖 Auto-lançado: ${recurring.description} - ${formattedAmount}`,
               status: sendResult.ok ? 'CONFIRMED' : 'REJECTED',
               errorMessage: sendResult.ok ? null : sendResult.errorMessage ?? 'send failed',
             },
@@ -165,25 +194,60 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
           if (sendResult.ok) {
             autoLaunched++
           } else {
-            failures.push({ id: payment.id, reason: `auto-launch notify failed: ${sendResult.errorMessage}` })
+            failures.push({ id: recurringId, reason: `auto-launch notify failed: ${sendResult.errorMessage}` })
           }
-          continue  // skip alerta normal — já foi lançado
+          continue
         } else {
-          // Auto-launch falhou (sem conta, etc.) — fallback pro alerta normal
-          console.warn(
-            `[payment-alerts:${period}] Auto-launch failed for recurring ${payment.id}: ${result.error}. Falling back to normal alert.`,
-          )
+          console.warn(`[payment-alerts:${period}] Auto-launch failed for ${recurringId}: ${result.error}. Falling back to alert.`)
         }
       } catch (err) {
-        console.error(
-          `[payment-alerts:${period}] Auto-launch error for recurring ${payment.id}:`,
-          err,
-        )
-        // Fallback pro alerta normal — não impede o fluxo
+        console.error(`[payment-alerts:${period}] Auto-launch error for ${recurringId}:`, err)
       }
     }
 
-    // Morning fires on 0, 1, 3 days out. Evening fires on day 0 OU vencidas.
+    // ─── Alerta MULTI (2+ parcelas vencidas, só evening) ─────────────
+    // Quando há 2+ overdue, manda lembrete consolidado novo: "N pagamentos
+    // pendentes desde DD/MM" + botões "Paguei todas / algumas / Lembrar".
+    if (overdueOccs.length >= 2 && period === 'evening') {
+      try {
+        const sendResult = await sendWhatsAppMultiOverdueNotification({
+          userId: recurring.userId,
+          connection,
+          recurringId,
+          description: recurring.description,
+          count: overdueOccs.length,
+          oldestDueDate: overdueOccs[0].dueDate.toISOString(),
+          totalAmount: Number(recurring.amount) * overdueOccs.length,
+        })
+
+        await prisma.botMessage.create({
+          data: {
+            userId: recurring.userId,
+            connectionId: connection.id,
+            direction: 'OUTBOUND',
+            rawContent: `⚠️ Multi-vencidas (${overdueOccs.length}x): ${recurring.description} [${sendResult.channel ?? 'failed'}]`,
+            status: sendResult.ok ? 'CONFIRMED' : 'REJECTED',
+            errorMessage: sendResult.ok ? null : sendResult.errorMessage ?? 'send failed',
+          },
+        })
+
+        if (sendResult.ok) {
+          alertsSent++
+        } else {
+          failures.push({ id: recurringId, reason: sendResult.errorMessage || 'multi send failed' })
+        }
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err)
+        failures.push({ id: recurringId, reason: `multi: ${reason}` })
+      }
+      continue
+    }
+
+    // ─── Alerta SINGLE (1 parcela ou múltiplas em manhã/upcoming) ────
+    // Pra evening, só dispara em D-N upcoming ou D=0 ou D+N overdue single.
+    // Pra morning, só em D=0/D-1/D-3 upcoming. Aqui usa daysUntilDue da
+    // occurrence MAIS ANTIGA — pra Diarista com 3 PENDING vencidas no
+    // morning, isso seria negativo, fora do shouldAlert do morning.
     const shouldAlert = period === 'evening'
       ? daysUntilDue <= 0
       : daysUntilDue === 0 || daysUntilDue === 1 || daysUntilDue === 3
@@ -193,8 +257,6 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
       continue
     }
 
-    // Computa variant baseado em daysUntilDue + period. Cada variant tem
-    // mensagem e botões diferentes (ver lib/whatsapp.ts:sendWhatsAppPaymentAlert).
     let variant: PaymentAlertVariant
     let daysOverdue: number | undefined
     if (period === 'morning') {
@@ -210,34 +272,15 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
       }
     }
 
-    // Evening: skip if user already registered a transaction for this recurring today.
-    // The bot's "Paguei" button advances nextDueDate (so a "due today" row goes out
-    // of the query), but vencidas might still appear if the user paid via app
-    // without using the recurring-paid flow — guarda contra duplicar nudge.
-    if (period === 'evening') {
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
-      const alreadyPaid = await prisma.transaction.findFirst({
-        where: {
-          recurringTransactionId: payment.id,
-          date: { gte: startOfDay, lte: maxDate },
-        },
-        select: { id: true },
-      })
-      if (alreadyPaid) {
-        alertsSkipped++
-        continue
-      }
-    }
-
     try {
       const sendResult = await sendWhatsAppPaymentNotification({
-        userId: payment.userId,
+        userId: recurring.userId,
         connection,
         payment: {
-          description: payment.description,
-          amount: Number(payment.amount),
-          dueDate: payment.nextDueDate.toISOString(),
-          recurringId: payment.id,
+          description: recurring.description,
+          amount: Number(recurring.amount),
+          dueDate: oldestOcc.dueDate.toISOString(),
+          recurringId,
           variant,
           daysOverdue,
         },
@@ -251,10 +294,10 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
 
       await prisma.botMessage.create({
         data: {
-          userId: payment.userId,
+          userId: recurring.userId,
           connectionId: connection.id,
           direction: 'OUTBOUND',
-          rawContent: `${logPrefix}: ${payment.description} - R$ ${Number(payment.amount).toFixed(2)} [${sendResult.channel ?? 'failed'}]`,
+          rawContent: `${logPrefix}: ${recurring.description} - R$ ${Number(recurring.amount).toFixed(2)} [${sendResult.channel ?? 'failed'}]`,
           status: sendResult.ok ? 'CONFIRMED' : 'REJECTED',
           errorMessage: sendResult.ok ? null : sendResult.errorMessage ?? 'send failed',
         },
@@ -264,13 +307,13 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
         alertsSent++
       } else {
         const reason = sendResult.errorMessage || 'send failed'
-        console.error(`[payment-alerts:${period}] Send failed for recurring ${payment.id}:`, JSON.stringify(sendResult.attempts))
-        failures.push({ id: payment.id, reason })
+        console.error(`[payment-alerts:${period}] Send failed for ${recurringId}:`, JSON.stringify(sendResult.attempts))
+        failures.push({ id: recurringId, reason })
       }
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err)
-      console.error(`[payment-alerts:${period}] Failed to send alert for recurring ${payment.id}:`, reason)
-      failures.push({ id: payment.id, reason })
+      console.error(`[payment-alerts:${period}] Failed to send alert for ${recurringId}:`, reason)
+      failures.push({ id: recurringId, reason })
     }
   }
 
@@ -389,7 +432,7 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
         finishedAt,
         durationMs: finishedAt.getTime() - startedAt.getTime(),
         status: totalFailures.length > 0 ? 'error' : 'success',
-        checked: upcomingPayments.length + unpaidInvoices.length,
+        checked: pendingOccurrences.length + unpaidInvoices.length,
         sent: alertsSent + invoiceSent,
         skipped: alertsSkipped + invoiceSkipped,
         failed: totalFailures.length,
@@ -404,7 +447,7 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
   return Response.json({
     data: {
       period,
-      payments: { checked: upcomingPayments.length, sent: alertsSent, autoLaunched, skipped: alertsSkipped, failures },
+      payments: { checked: pendingOccurrences.length, sent: alertsSent, autoLaunched, skipped: alertsSkipped, failures },
       invoices: { checked: unpaidInvoices.length, sent: invoiceSent, skipped: invoiceSkipped, failures: invoiceFailures },
       timestamp: now.toISOString(),
     },

@@ -84,6 +84,34 @@ const templates: TemplateDef[] = [
     ],
   },
   {
+    // Lembrete consolidado pra múltiplas parcelas vencidas da mesma
+    // recorrência. Copy aprovada pelo design-squad + copy-squad em 12/05.
+    // Botão "Paguei algumas" leva pro fluxo de list message (free-form
+    // dentro da janela 24h) que pergunta quantas + confirma FIFO.
+    name: 'payment_overdue_multi',
+    category: 'UTILITY',
+    language: 'pt_BR',
+    components: [
+      {
+        type: 'BODY',
+        text:
+          '⚠️ *{{1}}* — {{2}} pagamentos pendentes desde {{3}}. Total {{4}}.\n\n' +
+          'Tá acumulando — toque num dos botões ou abra o Finn pra resolver.',
+        example: {
+          body_text: [['Diarista', '3', '06/05/2026', 'R$ 420,00']],
+        },
+      },
+      {
+        type: 'BUTTONS',
+        buttons: [
+          { type: 'QUICK_REPLY', text: 'Paguei todas' },
+          { type: 'QUICK_REPLY', text: 'Paguei algumas' },
+          { type: 'QUICK_REPLY', text: 'Lembrar amanhã' },
+        ],
+      },
+    ],
+  },
+  {
     name: 'invoice_reminder',
     category: 'UTILITY',
     language: 'pt_BR',
@@ -189,6 +217,7 @@ async function main() {
   console.log('\nQuando todos virarem APPROVED, seta as env vars no Vercel:')
   console.log('  WHATSAPP_TEMPLATE_PAYMENT_REMINDER=payment_reminder')
   console.log('  WHATSAPP_TEMPLATE_PAYMENT_OVERDUE=payment_overdue_reminder')
+  console.log('  WHATSAPP_TEMPLATE_PAYMENT_OVERDUE_MULTI=payment_overdue_multi')
   console.log('  WHATSAPP_TEMPLATE_INVOICE_REMINDER=invoice_reminder')
   console.log('  WHATSAPP_TEMPLATE_BALANCE_UPDATE=balance_update')
   console.log('  WHATSAPP_TEMPLATE_REENGAGEMENT=customer_reengagement')
