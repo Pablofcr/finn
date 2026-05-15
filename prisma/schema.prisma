@@ -42,6 +42,13 @@ enum RecurrenceStatus {
   CANCELLED
 }
 
+enum OccurrenceStatus {
+  PENDING
+  PAID
+  SNOOZED
+  SKIPPED
+}
+
 enum BotPlatform {
   WHATSAPP
   TELEGRAM
@@ -351,6 +358,7 @@ model Transaction {
   account              Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
   category             Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   recurringTransaction RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
+  recurringOccurrence  RecurringOccurrence?
   invoice              Invoice?              @relation("InvoiceTransactions", fields: [invoiceId], references: [id], onDelete: SetNull)
   installment          Installment?
   botMessage           BotMessage?
@@ -397,9 +405,35 @@ model RecurringTransaction {
   category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   account      Account?      @relation(fields: [accountId], references: [id], onDelete: SetNull)
   transactions Transaction[]
+  occurrences  RecurringOccurrence[]
 
   @@index([userId])
   @@index([status, nextDueDate])
+}
+
+// Cada parcela esperada de uma RecurringTransaction vira uma occurrence.
+// Múltiplas podem ficar pendentes simultaneamente (ex: usuário não
+// confirmou nem snoozed o lembrete e a próxima parcela teórica chegou).
+// O cron payment-alerts gera occurrences à medida que dueDate é alcançado
+// e olha occurrences PENDING (não nextDueDate da recorrência mãe).
+model RecurringOccurrence {
+  id                     String           @id @default(uuid())
+  recurringTransactionId String
+  dueDate                DateTime
+  status                 OccurrenceStatus @default(PENDING)
+  snoozedUntil           DateTime?
+  paidTransactionId      String?          @unique
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  recurring   RecurringTransaction @relation(fields: [recurringTransactionId], references: [id], onDelete: Cascade)
+  transaction Transaction?         @relation(fields: [paidTransactionId], references: [id], onDelete: SetNull)
+
+  // Idempotência: uma única occurrence por (recorrência, data) — evita duplicação
+  // quando cron rodar duas vezes ou backfill colidir com geração futura.
+  @@unique([recurringTransactionId, dueDate])
+  @@index([status, dueDate])
+  @@index([recurringTransactionId, status])
 }
 
 model Budget {
