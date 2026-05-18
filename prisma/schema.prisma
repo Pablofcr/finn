@@ -496,17 +496,23 @@ model BotConnection {
 }
 
 model BotMessage {
-  id            String           @id @default(uuid())
-  userId        String
-  connectionId  String
-  direction     MessageDirection
-  rawContent    String
-  mediaType     String?
-  parsedData    Json?
-  status        MessageStatus    @default(RECEIVED)
-  transactionId String?          @unique
-  errorMessage  String?
-  createdAt     DateTime         @default(now())
+  id                String           @id @default(uuid())
+  userId            String
+  connectionId      String
+  direction         MessageDirection
+  rawContent        String
+  mediaType         String?
+  parsedData        Json?
+  status            MessageStatus    @default(RECEIVED)
+  transactionId     String?          @unique
+  errorMessage      String?
+  // wamid (WhatsApp Cloud API message id) ou equivalente Telegram.
+  // Pra OUTBOUND interativos: permite o webhook resolver `context.id` do
+  // button_reply de volta pra recurringId quando o template HSM devolve
+  // o texto literal do botão em vez do payload dinâmico (templates QUICK_REPLY
+  // sem example.payload no Meta Manager — fallback até reaprovação).
+  externalMessageId String?
+  createdAt         DateTime         @default(now())
 
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   connection  BotConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
@@ -515,6 +521,7 @@ model BotMessage {
   @@index([userId])
   @@index([connectionId])
   @@index([status])
+  @@index([externalMessageId])
 }
 
 model Insight {

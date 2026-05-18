@@ -96,8 +96,12 @@ export async function POST(request: NextRequest) {
     // Handle button replies (3-button interactive) and list replies (menu)
     if (message.type === 'interactive' && connection) {
       const replyId = message.interactive?.button_reply?.id || message.interactive?.list_reply?.id
+      // wamid da mensagem original que o user respondeu — necessário pra
+      // recuperar metadata (recurringId) quando o template HSM devolve o
+      // texto literal do botão em vez do payload dinâmico.
+      const contextWamid = message.context?.id as string | undefined
       if (replyId) {
-        await handleButtonReply(from, replyId, connection)
+        await handleButtonReply(from, replyId, connection, contextWamid)
       }
     }
 
@@ -548,7 +552,64 @@ async function handleImageMessage(from: string, message: any, connection: { user
   }
 }
 
-async function handleButtonReply(from: string, buttonId: string, connection: { userId: string; id: string }) {
+// Templates HSM com QUICK_REPLY criados sem `example.payload` no Meta Manager
+// devolvem o TEXTO do botão no `button_reply.id`, ignorando o payload dinâmico
+// que mandamos no envio. Pra desbloquear o fluxo sem reaprovar templates,
+// mapeamos texto literal → action canonical e resolvemos o recurringId pela
+// mensagem original (via context.id ⇄ BotMessage.externalMessageId).
+//
+// TODO(meta-templates): recriar payment_overdue_reminder e payment_overdue_multi
+// com example.payload nos botões. Aí esse fallback fica como defesa em depth.
+const BUTTON_TEXT_TO_ACTION: Record<string, string> = {
+  'paguei todas': 'paid_all',
+  'paguei algumas': 'paid_some',
+  'paguei mais': 'paid_some',
+  'quitei o resto': 'paid_all',
+  'já paguei': 'paid',
+  'ja paguei': 'paid',
+  'paguei': 'paid',
+  'lembrar amanhã': 'snooze',
+  'lembrar amanha': 'snooze',
+  'pausar': 'pause',
+  'não, só essa': 'no_more',
+  'nao, so essa': 'no_more',
+}
+
+async function resolveButtonIdFromText(
+  buttonId: string,
+  userId: string,
+  contextWamid: string | undefined,
+): Promise<string> {
+  // Se já vier no formato `action:rest`, deixa passar — payload dinâmico OK.
+  if (buttonId.includes(':')) return buttonId
+
+  const action = BUTTON_TEXT_TO_ACTION[buttonId.trim().toLowerCase()]
+  if (!action) return buttonId
+
+  if (!contextWamid) {
+    console.warn('[whatsapp] button text reply without context.id:', buttonId)
+    return buttonId
+  }
+
+  const original = await prisma.botMessage.findFirst({
+    where: { userId, externalMessageId: contextWamid, direction: 'OUTBOUND' },
+    select: { parsedData: true },
+  })
+  const parsed = original?.parsedData as { kind?: string; recurringId?: string } | null
+  if (parsed?.kind !== 'payment_alert' || !parsed.recurringId) {
+    console.warn('[whatsapp] could not resolve recurringId for button text:', buttonId, 'wamid:', contextWamid)
+    return buttonId
+  }
+  return `${action}:${parsed.recurringId}`
+}
+
+async function handleButtonReply(
+  from: string,
+  rawButtonId: string,
+  connection: { userId: string; id: string },
+  contextWamid?: string,
+) {
+  const buttonId = await resolveButtonIdFromText(rawButtonId, connection.userId, contextWamid)
   const [action, ...rest] = buttonId.split(':')
 
   // `set_installments:N:botMsgId` — user picked the installment count

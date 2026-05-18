@@ -228,6 +228,8 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
             rawContent: `⚠️ Multi-vencidas (${overdueOccs.length}x): ${recurring.description} [${sendResult.channel ?? 'failed'}]`,
             status: sendResult.ok ? 'CONFIRMED' : 'REJECTED',
             errorMessage: sendResult.ok ? null : sendResult.errorMessage ?? 'send failed',
+            externalMessageId: sendResult.messageId ?? null,
+            parsedData: { kind: 'payment_alert', alertKind: 'multi', recurringId },
           },
         })
 
@@ -300,6 +302,8 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
           rawContent: `${logPrefix}: ${recurring.description} - R$ ${Number(recurring.amount).toFixed(2)} [${sendResult.channel ?? 'failed'}]`,
           status: sendResult.ok ? 'CONFIRMED' : 'REJECTED',
           errorMessage: sendResult.ok ? null : sendResult.errorMessage ?? 'send failed',
+          externalMessageId: sendResult.messageId ?? null,
+          parsedData: { kind: 'payment_alert', alertKind: 'single', recurringId, variant },
         },
       })
 

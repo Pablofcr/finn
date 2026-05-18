@@ -68,6 +68,10 @@ export interface WhatsAppConnectionLite {
 export interface NotificationResult {
   ok: boolean
   channel?: 'freeform' | 'template'
+  // wamid retornado pela Meta (ou message_id Telegram). Caller persiste pra
+  // permitir lookup reverso via webhook context.id — necessário pro fallback
+  // de botões HSM com payload não-dinâmico, em que o reply chega com o texto.
+  messageId?: string
   attempts: Array<{
     channel: 'freeform' | 'template'
     ok: boolean
@@ -134,7 +138,7 @@ export async function sendWhatsAppNotification(opts: {
     const plain = htmlToPlain(opts.text)
     const r = await sendWhatsAppMessage({ to: opts.connection.platformUserId, text: plain })
     attempts.push({ channel: 'freeform', ok: r.ok, error: r.error?.message, isWindowError: r.error?.isWindowError })
-    if (r.ok) return { ok: true, channel: 'freeform', attempts }
+    if (r.ok) return { ok: true, channel: 'freeform', messageId: r.messageId, attempts }
     // Se não foi erro de janela, é fatal (token, número, etc) — não tenta template.
     if (!r.error?.isWindowError) {
       return { ok: false, attempts, errorMessage: r.error?.message }
@@ -155,7 +159,7 @@ export async function sendWhatsAppNotification(opts: {
     buttonPayloads: opts.templateFallback.buttonPayloads,
   })
   attempts.push({ channel: 'template', ok: r.ok, error: r.error?.message })
-  if (r.ok) return { ok: true, channel: 'template', attempts }
+  if (r.ok) return { ok: true, channel: 'template', messageId: r.messageId, attempts }
   return { ok: false, attempts, errorMessage: r.error?.message ?? 'template send failed' }
 }
 
@@ -180,7 +184,7 @@ export async function sendWhatsAppPaymentNotification(opts: {
   if (withinWindow) {
     const r = await sendWhatsAppPaymentAlert({ to: opts.connection.platformUserId, ...opts.payment })
     attempts.push({ channel: 'freeform', ok: r.ok, error: r.error?.message, isWindowError: r.error?.isWindowError })
-    if (r.ok) return { ok: true, channel: 'freeform', attempts }
+    if (r.ok) return { ok: true, channel: 'freeform', messageId: r.messageId, attempts }
     if (!r.error?.isWindowError) {
       return { ok: false, attempts, errorMessage: r.error?.message }
     }
@@ -214,7 +218,7 @@ export async function sendWhatsAppPaymentNotification(opts: {
     buttonPayloads,
   })
   attempts.push({ channel: 'template', ok: r.ok, error: r.error?.message })
-  if (r.ok) return { ok: true, channel: 'template', attempts }
+  if (r.ok) return { ok: true, channel: 'template', messageId: r.messageId, attempts }
   return { ok: false, attempts, errorMessage: r.error?.message ?? 'template send failed' }
 }
 
@@ -263,7 +267,7 @@ export async function sendWhatsAppMultiOverdueNotification(opts: {
       buttons,
     })
     attempts.push({ channel: 'freeform', ok: r.ok, error: r.error?.message, isWindowError: r.error?.isWindowError })
-    if (r.ok) return { ok: true, channel: 'freeform', attempts }
+    if (r.ok) return { ok: true, channel: 'freeform', messageId: r.messageId, attempts }
     if (!r.error?.isWindowError) {
       return { ok: false, attempts, errorMessage: r.error?.message }
     }
@@ -296,7 +300,7 @@ export async function sendWhatsAppMultiOverdueNotification(opts: {
     buttonPayloads,
   })
   attempts.push({ channel: 'template', ok: r.ok, error: r.error?.message })
-  if (r.ok) return { ok: true, channel: 'template', attempts }
+  if (r.ok) return { ok: true, channel: 'template', messageId: r.messageId, attempts }
   return { ok: false, attempts, errorMessage: r.error?.message ?? 'template send failed' }
 }
 
