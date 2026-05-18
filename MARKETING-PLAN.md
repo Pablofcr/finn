@@ -222,6 +222,59 @@
 
 ## 5. Comparativo final do ano 1
 
+### 5.1 Pagantes ativos por mês
+
+| Mês | Calendário | Pessimista | Esperado | Otimista |
+|-----|-----------|-----------:|---------:|---------:|
+| 0   | jul/26    | 0          | 0        | 0        |
+| 1   | ago/26    | 2          | 8        | 22       |
+| 2   | set/26    | 4          | 14       | 42       |
+| 3   | out/26    | 5          | 20       | 61       |
+| 4   | nov/26    | 6          | 26       | 79       |
+| 5   | dez/26    | 7          | 31       | 96       |
+| 6   | jan/27    | 8          | 35       | 112      |
+| 7   | fev/27    | 9          | 39       | 127      |
+| 8   | mar/27    | 10         | 43       | 141      |
+| 9   | abr/27    | 10         | 46       | 154      |
+| 10  | mai/27    | 11         | 49       | 166      |
+| 11  | jun/27    | **11**     | **51**   | **178**  |
+
+### 5.2 Saldo do mês (R$)
+
+| Mês | Calendário | Pessimista | Esperado | Otimista |
+|-----|-----------|-----------:|---------:|---------:|
+| 0   | jul/26    | -1.814     | -1.982   | -2.240   |
+| 1   | ago/26    | -1.793     | -1.905   | -2.016   |
+| 2   | set/26    | -1.772     | -1.833   | -1.804   |
+| 3   | out/26    | -1.761     | -1.769   | -1.605   |
+| 4   | nov/26    | -1.748     | -1.714   | -1.419   |
+| 5   | dez/26    | -1.736     | -1.663   | -1.243   |
+| 6   | jan/27    | -1.727     | -1.616   | -1.079   |
+| 7   | fev/27    | -1.720     | -1.574   |   -924   |
+| 8   | mar/27    | -1.714     | -1.538   |   -778   |
+| 9   | abr/27    | -1.707     | -1.504   |   -641   |
+| 10  | mai/27    | -1.703     | -1.474   |   -511   |
+| 11  | jun/27    | -1.698     | -1.445   |   -391   |
+
+### 5.3 Saldo acumulado (R$)
+
+| Mês | Calendário | Pessimista | Esperado | Otimista |
+|-----|-----------|-----------:|---------:|---------:|
+| 0   | jul/26    |  -1.814    |  -1.982  |  -2.240  |
+| 1   | ago/26    |  -3.607    |  -3.887  |  -4.256  |
+| 2   | set/26    |  -5.379    |  -5.720  |  -6.060  |
+| 3   | out/26    |  -7.140    |  -7.489  |  -7.665  |
+| 4   | nov/26    |  -8.888    |  -9.203  |  -9.084  |
+| 5   | dez/26    | -10.624    | -10.866  | -10.327  |
+| 6   | jan/27    | -12.351    | -12.482  | -11.406  |
+| 7   | fev/27    | -14.071    | -14.056  | -12.330  |
+| 8   | mar/27    | -15.785    | -15.594  | -13.108  |
+| 9   | abr/27    | -17.492    | -17.098  | -13.749  |
+| 10  | mai/27    | -19.195    | -18.572  | -14.260  |
+| 11  | jun/27    | **-20.893**| **-20.017** | **-14.651** |
+
+### 5.4 Resumo executivo do ano 1
+
 | Métrica | Pessimista | Esperado | Otimista |
 |---------|-----------|----------|----------|
 | Pagantes ativos M11 | **11** | **51** | **178** |
@@ -233,6 +286,18 @@
 | CAC efetivo | R$ 1.000 | R$ 300 | R$ 140 |
 | LTV | R$ 89 | R$ 134 | R$ 224 |
 | LTV/CAC | 0,09 (inviável) | 0,45 (frágil) | 1,6 (viável) |
+
+### 5.5 Leitura comparativa dos fluxos
+
+1. **Os três cenários consomem caixa parecido nos primeiros 4 meses.** Até nov/26 (M4), a diferença entre o pior e o melhor saldo do mês é de apenas ~R$ 196. Razão: o marketing fixo (R$ 1.500/mês) domina o gasto, e nenhum cenário gera receita relevante antes de M3-M4.
+
+2. **O otimista começa a divergir a partir de M4.** Em nov/26 o saldo mensal otimista já é melhor que o do esperado; em M6 fica visivelmente melhor que o pessimista.
+
+3. **O esperado e o pessimista andam quase juntos até M6 e divergem timidamente depois.** A diferença de saldo acumulado entre eles ao fim do ano 1 é só R$ 876 (-R$ 20.017 vs -R$ 20.893). O ganho do esperado **NÃO está em cash flow imediato — está no estado da máquina** ao fim do ano (51 vs 11 pagantes) que destrava receita futura no ano 2.
+
+4. **Nenhum cenário atinge break-even no ano 1.** Mesmo o otimista, com 178 pagantes ao fim, fecha M11 em -R$ 391. Break-even mensal projetado para M13-M14 (ago/27).
+
+5. **Runway necessário pra sobreviver o ano 1:** entre R$ 15k (otimista) e R$ 21k (pessimista). Recomendação: planejar com **R$ 25-30k de reserva de caixa** — cobre o pessimista + buffer pra ajustes de criativo e meses imprevistos.
 
 > **Observação chave:** o burn dos três cenários no ano 1 é parecido (R$ 14-21k) porque o gasto é dominado por marketing fixo. O que muda DRAMATICAMENTE é o **estado da máquina ao final do ano** — no otimista, sai com 178 pagantes ativos e R$ 2.383/mês de receita recorrente; no pessimista, com 11 e R$ 149.
 
