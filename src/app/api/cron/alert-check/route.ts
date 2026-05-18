@@ -6,6 +6,9 @@ import prisma from '@/lib/prisma'
 // fallback de botões HSM (templates QUICK_REPLY criados sem example.payload
 // devolvem o texto literal em vez do payload dinâmico).
 //
+// Vive sob /api/cron/* porque é a única árvore whitelisted pelo middleware
+// que não exige sessão Supabase (ver src/lib/supabase/middleware.ts).
+//
 // Dois modos:
 //   - Sem Authorization: retorna SÓ AGREGADOS (count, withWamid, withRecurringId,
 //     fallbackReady). Público — não vaza nada sensível. Usado pela routine remota.
