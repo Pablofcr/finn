@@ -105,6 +105,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // QUICK_REPLY clicks em template HSM chegam com type:'button' (não 'interactive').
+    // Shape: { type:'button', button:{ payload, text }, context:{ id:<wamid> } }
+    // payload pode vir como id canônico (paid_some:<recurringId>) ou — quando o
+    // template foi criado sem example.payload no Meta Manager — só o texto.
+    // resolveButtonIdFromText() cobre ambos os casos via context.id.
+    if (message.type === 'button' && connection) {
+      const payload = message.button?.payload || message.button?.text
+      const contextWamid = message.context?.id as string | undefined
+      if (payload) {
+        await handleButtonReply(from, payload, connection, contextWamid)
+      }
+    }
+
     // ── Welcome MSG2 flush ──────────────────────────────────────────────
     // Após processar a primeira mensagem do user (qualquer tipo: áudio,
     // foto, texto-transação, query), dispara a MSG2 didática pra continuar
