@@ -49,8 +49,14 @@ export async function POST(request: NextRequest) {
   const from = message.from // Phone number
   const messageId = message.id
 
-  console.log('WhatsApp webhook from:', from, 'length:', from?.length, 'type:', message.type)
+  // Log full message shape pra facilitar diagnóstico no Vercel quando
+  // algum type novo (button, reaction, etc) cair fora dos handlers.
+  console.log('[whatsapp:inbound]', JSON.stringify({
+    from, type: message.type, hasContext: !!message.context?.id,
+    interactive: message.interactive, button: message.button,
+  }))
 
+  let handled = false
   try {
     // Mark as read immediately
     await markAsRead(messageId)
@@ -93,6 +99,11 @@ export async function POST(request: NextRequest) {
       await handleImageMessage(from, message, connection)
     }
 
+    // Handle text/audio/image: marca handled se entrou em algum branch acima.
+    if (message.type === 'text' || message.type === 'audio' || message.type === 'image') {
+      handled = true
+    }
+
     // Handle button replies (3-button interactive) and list replies (menu)
     if (message.type === 'interactive' && connection) {
       const replyId = message.interactive?.button_reply?.id || message.interactive?.list_reply?.id
@@ -101,7 +112,10 @@ export async function POST(request: NextRequest) {
       // texto literal do botão em vez do payload dinâmico.
       const contextWamid = message.context?.id as string | undefined
       if (replyId) {
+        handled = true
         await handleButtonReply(from, replyId, connection, contextWamid)
+      } else {
+        console.warn('[whatsapp] interactive sem button_reply/list_reply:', JSON.stringify(message.interactive))
       }
     }
 
@@ -114,8 +128,26 @@ export async function POST(request: NextRequest) {
       const payload = message.button?.payload || message.button?.text
       const contextWamid = message.context?.id as string | undefined
       if (payload) {
+        handled = true
         await handleButtonReply(from, payload, connection, contextWamid)
+      } else {
+        console.warn('[whatsapp] button sem payload/text:', JSON.stringify(message.button))
       }
+    }
+
+    // Defesa em depth: se chegou aqui com user conectado mas nenhum handler
+    // casou (type novo, branch quebrado, etc), avisa o user em vez de deixar
+    // no silêncio. Tipos abaixo são ruído conhecido e devem ficar mudos:
+    // reaction (emoji), system (mudança de número), unsupported (sticker exótico).
+    const silentTypes = new Set(['reaction', 'system', 'unsupported', 'ephemeral'])
+    if (!handled && connection && !silentTypes.has(message.type)) {
+      console.warn('[whatsapp] inbound não roteado:', JSON.stringify({
+        type: message.type, button: message.button, interactive: message.interactive,
+      }))
+      await sendWhatsAppMessage({
+        to: from,
+        text: 'Não consegui processar essa interação. Toca de novo no botão ou abre o Finn pra resolver.',
+      })
     }
 
     // ── Welcome MSG2 flush ──────────────────────────────────────────────
