@@ -557,7 +557,12 @@ export default function NewTransactionPage() {
                       <div className="flex-1">
                         <Label className="block">Lançar sozinho na data</Label>
                         <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
-                          Lançar automático no vencimento — eu te aviso pelo WhatsApp.
+                          No dia do vencimento, eu crio a transação automaticamente
+                          e te aviso pelo WhatsApp depois — sem perguntar antes.
+                          Ative só pra contas que <strong>já são cobradas
+                          automaticamente</strong> — assinaturas no cartão (Netflix,
+                          Spotify) ou débito em conta. Pra boleto e PIX, deixe
+                          desligado pra eu te perguntar antes.
                         </p>
                       </div>
                       <Switch checked={autoConfirm} onCheckedChange={setAutoConfirm} />
