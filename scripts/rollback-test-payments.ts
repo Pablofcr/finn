@@ -1,16 +1,20 @@
 /**
  * Reverte os pagamentos registrados pelo teste do HSM multi-overdue.
  * Pega as RecurringOccurrence da Diarista que foram marcadas como PAID
- * nos últimos 15 minutos, reverte cada uma via revertOccurrencePayment
- * (deleta Transaction + reverte saldo + volta status pra PENDING) e
- * recoloca nextDueDate da recurring na occurrence pendente mais antiga.
+ * nos últimos 15 minutos, reverte cada uma (deleta Transaction +
+ * reverte saldo + volta status pra PENDING) e recoloca nextDueDate da
+ * recurring na occurrence pendente mais antiga.
+ *
+ * Inline o que `revertOccurrencePayment` faria — fica self-contained pra
+ * não depender de exports de finance-actions que possam ainda não estar
+ * commitados.
  *
  * Uso:
  *   npx tsx --env-file=.env.local scripts/rollback-test-payments.ts
  */
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
-import { revertOccurrencePayment } from '../src/lib/finance-actions'
+import { revertTransactionBalance } from '../src/lib/transaction-balance'
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
 const prisma = new PrismaClient({ adapter })
@@ -35,7 +39,7 @@ async function main() {
       updatedAt: { gte: cutoff },
     },
     orderBy: { dueDate: 'asc' },
-    select: { id: true, dueDate: true, paidTransactionId: true },
+    include: { transaction: true },
   })
 
   if (recentlyPaid.length === 0) {
@@ -51,12 +55,32 @@ async function main() {
 
   let revertedCount = 0
   for (const o of recentlyPaid) {
-    const r = await revertOccurrencePayment(pablo.id, o.id)
-    if (r.ok) {
+    if (o.status !== 'PAID' || !o.transaction) {
+      console.log(`  ✗ ${o.dueDate.toISOString().slice(0, 10)}: não está PAID ou sem tx linkada`)
+      continue
+    }
+    const tx = o.transaction
+    try {
+      await prisma.$transaction(async (db) => {
+        await revertTransactionBalance(db, {
+          type: tx.type,
+          amount: Number(tx.amount),
+          accountId: tx.accountId,
+          toAccountId: tx.toAccountId,
+          paymentMethod: tx.paymentMethod,
+          date: tx.date,
+        })
+        await db.recurringOccurrence.update({
+          where: { id: o.id },
+          data: { status: 'PENDING', paidTransactionId: null },
+        })
+        await db.transaction.delete({ where: { id: tx.id } })
+      })
       revertedCount++
       console.log(`  ✓ revertida ${o.dueDate.toISOString().slice(0, 10)}`)
-    } else {
-      console.log(`  ✗ falhou ${o.dueDate.toISOString().slice(0, 10)}: ${r.error}`)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.log(`  ✗ falhou ${o.dueDate.toISOString().slice(0, 10)}: ${msg}`)
     }
   }
 
