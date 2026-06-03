@@ -492,15 +492,43 @@ export default function SettingsPage() {
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Tem certeza que deseja excluir sua conta?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação é permanente e irreversível. Todos os seus dados financeiros,
-                    transações, contas, metas e configurações serão excluídos definitivamente.
-                    Recomendamos exportar seus dados antes de continuar.
+                  <AlertDialogTitle>Excluir sua conta do Finn</AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-3">
+                    <span className="block">
+                      Vamos apagar tudo: suas transações, contas, metas, categorias,
+                      orçamentos e a conexão com o WhatsApp. Seu acesso (email e senha)
+                      continua existindo.
+                    </span>
+                    <span className="block">
+                      Se você entrar de novo com esse mesmo email depois, criamos uma
+                      conta nova, do zero. Se quiser parar de usar o Finn de vez, é só
+                      não voltar.
+                    </span>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  {/* "Recomeçar do zero" e "Excluir tudo" rodam o mesmo endpoint;
+                      diferem só no toast e no destino pós-logout (Recomeçar → login
+                      pre-preenchido pra facilitar; Excluir → login limpo). */}
+                  <AlertDialogAction
+                    className="bg-background border border-input hover:bg-accent text-foreground"
+                    onClick={async () => {
+                      toast.info('Limpando sua conta...')
+                      try {
+                        const res = await fetch('/api/user/delete', { method: 'DELETE' })
+                        if (!res.ok) throw new Error()
+                        toast.success('Tudo limpo. Quando voltar, é só logar com o mesmo email.')
+                        const target = email ? `/login?email=${encodeURIComponent(email)}` : '/login'
+                        await signOut()
+                        window.location.href = target
+                      } catch {
+                        toast.error('Não foi possível limpar a conta. Tente novamente.')
+                      }
+                    }}
+                  >
+                    Recomeçar do zero
+                  </AlertDialogAction>
                   <AlertDialogAction
                     className="bg-destructive text-white hover:bg-destructive/90"
                     onClick={async () => {
@@ -515,7 +543,7 @@ export default function SettingsPage() {
                       }
                     }}
                   >
-                    Sim, excluir tudo
+                    Excluir tudo
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +11,10 @@ import Link from 'next/link'
 
 export default function LoginPage() {
   const { signIn, signInWithGoogle, resetPassword } = useAuth()
-  const [email, setEmail] = useState('')
+  // Pre-fill email vindo de ?email= (usado pelo flow "Recomeçar do zero"
+  // depois de deletar a conta — facilita logar de volta sem digitar).
+  const searchParams = useSearchParams()
+  const [email, setEmail] = useState(searchParams.get('email') ?? '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
