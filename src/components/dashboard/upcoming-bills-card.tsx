@@ -31,25 +31,30 @@ function severityFor(daysUntil: number): {
   chipClass: string
   ringClass: string
 } {
-  if (daysUntil <= 0) {
+  // 3 níveis cromáticos (Lei de Hick): vermelho = passou, âmbar = janela
+  // próxima, neutro = pode esperar. Microcopy usa linguagem natural temporal
+  // ("ontem"/"hoje"/"amanhã") em vez de número quando dá.
+  if (daysUntil < 0) {
+    const overdue = Math.abs(daysUntil)
+    const label = overdue === 1 ? 'Venceu ontem' : `Venceu há ${Math.min(overdue, 99)} dias`
+    return {
+      label,
+      chipClass: 'bg-red-500/15 text-red-700 dark:text-red-300 ring-1 ring-inset ring-red-500/30 font-semibold',
+      ringClass: 'ring-2 ring-red-500/60',
+    }
+  }
+  if (daysUntil === 0) {
     return {
       label: 'Vence hoje',
-      chipClass: 'bg-red-500/10 text-red-600 dark:text-red-400 ring-1 ring-inset ring-red-500/20',
-      ringClass: 'ring-2 ring-red-500/40',
+      chipClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-inset ring-amber-500/25',
+      ringClass: 'ring-2 ring-amber-500/40',
     }
   }
   if (daysUntil === 1) {
     return {
       label: 'Vence amanhã',
-      chipClass: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 ring-1 ring-inset ring-orange-500/20',
-      ringClass: 'ring-1 ring-inset ring-black/5 dark:ring-white/10',
-    }
-  }
-  if (daysUntil <= 3) {
-    return {
-      label: `Em ${daysUntil} dias`,
-      chipClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-      ringClass: 'ring-1 ring-inset ring-black/5 dark:ring-white/10',
+      chipClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-inset ring-amber-500/20',
+      ringClass: 'ring-1 ring-inset ring-amber-500/20',
     }
   }
   return {
