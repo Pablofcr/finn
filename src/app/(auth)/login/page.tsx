@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,17 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
+// Wrapper Suspense — useSearchParams faz client-side bailout, e o Next exige
+// boundary explícito pra páginas estáticas (senão build falha no prerender).
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const { signIn, signInWithGoogle, resetPassword } = useAuth()
   // Pre-fill email vindo de ?email= (usado pelo flow "Recomeçar do zero"
   // depois de deletar a conta — facilita logar de volta sem digitar).
