@@ -215,6 +215,147 @@ export async function markRecurringOccurrencesAsPaid(
 }
 
 /**
+ * Quita occurrences específicas (por ID, não FIFO). Permite o caso parcial
+ * não-FIFO ("paguei só a do meio") — exclusivo da UI no app. Retorna IDs
+ * das occurrences quitadas e das Transactions criadas pra alimentar Undo.
+ *
+ * Cada occurrence vira uma Transaction; balance é aplicado por occurrence.
+ * Diferente de markRecurringOccurrencesAsPaid (FIFO), aqui o caller já
+ * escolheu quais; não tocamos em nextDueDate da recurring se as quitadas
+ * forem do meio.
+ */
+export async function markRecurringOccurrenceIdsAsPaid(
+  userId: string,
+  occurrenceIds: string[],
+): Promise<{
+  ok: boolean
+  paidCount?: number
+  totalAmount?: number
+  results?: Array<{ occurrenceId: string; transactionId: string; dueDate: string }>
+  description?: string
+  error?: string
+}> {
+  if (occurrenceIds.length === 0) {
+    return { ok: false, error: 'Nenhuma parcela selecionada.' }
+  }
+
+  const occurrences = await prisma.recurringOccurrence.findMany({
+    where: {
+      id: { in: occurrenceIds },
+      status: 'PENDING',
+      recurring: { userId },
+    },
+    include: { recurring: true },
+  })
+
+  if (occurrences.length === 0) {
+    return { ok: false, error: 'Nenhuma parcela pendente encontrada (talvez já foram quitadas).' }
+  }
+
+  // Todas as occurrences precisam ser da mesma recurring — caso contrário
+  // o caller cometeu erro. Não dá pra misturar contas em uma chamada.
+  const uniqueRecurringIds = new Set(occurrences.map(o => o.recurringTransactionId))
+  if (uniqueRecurringIds.size > 1) {
+    return { ok: false, error: 'Selecione parcelas de uma única recorrência por vez.' }
+  }
+
+  const recurring = occurrences[0].recurring
+
+  let accountId = recurring.accountId
+  if (!accountId) {
+    const accounts = await prisma.account.findMany({
+      where: { userId, isActive: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    const resolved = resolveAccount(null, 'DEBIT', accounts as Parameters<typeof resolveAccount>[2])
+    if (!resolved) {
+      return { ok: false, error: 'Nenhuma conta ativa encontrada pra dar baixa.' }
+    }
+    accountId = resolved.id
+  }
+
+  const results: Array<{ occurrenceId: string; transactionId: string; dueDate: string }> = []
+  for (const occ of occurrences) {
+    await prisma.$transaction(async (db) => {
+      const tx = await db.transaction.create({
+        data: {
+          userId,
+          description: recurring.description,
+          amount: recurring.amount,
+          type: recurring.type,
+          date: occ.dueDate,
+          accountId: accountId!,
+          categoryId: recurring.categoryId ?? undefined,
+          recurringTransactionId: recurring.id,
+          paymentMethod: 'DEBIT',
+        },
+      })
+      await applyTransactionBalance(db, {
+        type: recurring.type,
+        amount: Number(recurring.amount),
+        accountId: accountId!,
+        paymentMethod: 'DEBIT',
+        date: occ.dueDate,
+      })
+      await db.recurringOccurrence.update({
+        where: { id: occ.id },
+        data: { status: 'PAID', paidTransactionId: tx.id },
+      })
+      results.push({
+        occurrenceId: occ.id,
+        transactionId: tx.id,
+        dueDate: occ.dueDate.toISOString(),
+      })
+    })
+  }
+
+  return {
+    ok: true,
+    paidCount: results.length,
+    totalAmount: Number(recurring.amount) * results.length,
+    results,
+    description: recurring.description,
+  }
+}
+
+/**
+ * Reverte uma quitação: deleta a Transaction, reverte balance e devolve
+ * a occurrence pro status PENDING. Usado pelo Undo da UI.
+ */
+export async function revertOccurrencePayment(
+  userId: string,
+  occurrenceId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const occ = await prisma.recurringOccurrence.findFirst({
+    where: { id: occurrenceId, recurring: { userId } },
+    include: { transaction: true },
+  })
+  if (!occ) return { ok: false, error: 'Parcela não encontrada.' }
+  if (occ.status !== 'PAID' || !occ.transaction) {
+    return { ok: false, error: 'Parcela não está marcada como paga.' }
+  }
+
+  const tx = occ.transaction
+  await prisma.$transaction(async (db) => {
+    await revertTransactionBalance(db, {
+      type: tx.type,
+      amount: Number(tx.amount),
+      accountId: tx.accountId,
+      toAccountId: tx.toAccountId,
+      paymentMethod: tx.paymentMethod,
+      date: tx.date,
+    })
+    await db.recurringOccurrence.update({
+      where: { id: occ.id },
+      data: { status: 'PENDING', paidTransactionId: null },
+    })
+    await db.transaction.delete({ where: { id: tx.id } })
+  })
+
+  return { ok: true }
+}
+
+/**
  * Same semantics as the "Paguei" button in cron alerts: creates the transaction,
  * applies the balance, and advances nextDueDate (or marks as COMPLETED if past endDate).
  *

@@ -13,11 +13,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency, formatDate, cn } from '@/lib/utils'
 import { RECURRENCE_LABELS } from '@/lib/constants'
 import {
-  Repeat, Pencil, Trash2, Pause, Play, Sparkles, Plus, Banknote, Receipt,
+  Repeat, Pencil, Trash2, Pause, Play, Sparkles, Plus, Banknote, Receipt, ChevronDown,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { getCategoryIcon } from '@/lib/category-icon'
+import { OverdueOccurrencesPanel } from './overdue-occurrences-panel'
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   ACTIVE: {
@@ -53,6 +54,8 @@ interface Recurring {
   accountId?: string
   category?: { id: string; name: string; icon?: string; color?: string }
   account?: { id: string; name: string }
+  pendingOverdueCount?: number
+  oldestOverdueDate?: string | null
 }
 
 export function RecurringTab() {
@@ -66,6 +69,17 @@ export function RecurringTab() {
   // Optimistic delete (mesmo padrão da página de transações)
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set())
   const undoneRef = useRef<Set<string>>(new Set())
+
+  // Recorrências com painel de parcelas em aberto expandido inline.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const toggleExpanded = useCallback((id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
 
   // Form state
   const [type, setType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE')
@@ -518,7 +532,36 @@ export function RecurringTab() {
                         Lança sozinho
                       </span>
                     )}
+                    {/* Badge "N em aberto" — só quando há parcelas vencidas.
+                        Clicável: expande painel inline com lista + checkboxes. */}
+                    {(item.pendingOverdueCount ?? 0) > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(item.id)}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-inset ring-amber-500/25 hover:bg-amber-500/20 transition-colors cursor-pointer"
+                        aria-expanded={expandedIds.has(item.id)}
+                        aria-label={expandedIds.has(item.id) ? 'Esconder parcelas em aberto' : 'Ver parcelas em aberto'}
+                      >
+                        {item.pendingOverdueCount} em aberto
+                        <ChevronDown
+                          className={cn(
+                            'h-3 w-3 transition-transform',
+                            expandedIds.has(item.id) && 'rotate-180',
+                          )}
+                          strokeWidth={2.5}
+                        />
+                      </button>
+                    )}
                   </div>
+
+                  {expandedIds.has(item.id) && (
+                    <OverdueOccurrencesPanel
+                      recurringId={item.id}
+                      amount={Number(item.amount)}
+                      description={item.description}
+                      onPaid={fetchData}
+                    />
+                  )}
 
                   {/* Rodapé: próxima data + ações */}
                   <div className="flex items-center justify-between pt-1 border-t border-border/40">

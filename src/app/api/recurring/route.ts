@@ -8,13 +8,35 @@ export async function GET() {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
 
+  const now = new Date()
+  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0))
+
   const recurring = await prisma.recurringTransaction.findMany({
     where: { userId: user.id },
-    include: { category: true },
+    include: {
+      category: true,
+      // Agrega contagem e mais antiga PENDING vencida pra o card da UI
+      // mostrar badge "N em aberto" sem precisar de N requests adicionais.
+      occurrences: {
+        where: { status: 'PENDING', dueDate: { lt: startOfToday } },
+        orderBy: { dueDate: 'asc' },
+        select: { id: true, dueDate: true },
+      },
+    },
     orderBy: { nextDueDate: 'asc' },
   })
 
-  return Response.json({ data: recurring })
+  // Achata occurrences pra apenas o que a UI precisa.
+  const enriched = recurring.map(r => {
+    const { occurrences, ...rest } = r
+    return {
+      ...rest,
+      pendingOverdueCount: occurrences.length,
+      oldestOverdueDate: occurrences[0]?.dueDate.toISOString() ?? null,
+    }
+  })
+
+  return Response.json({ data: enriched })
 }
 
 export async function POST(request: NextRequest) {
@@ -45,6 +67,17 @@ export async function POST(request: NextRequest) {
     },
     include: { category: true },
   })
+
+  // Cria a primeira RecurringOccurrence imediatamente — sem isso, o cron
+  // só popula na próxima execução (manhã/noite), e o usuário pode tentar
+  // marcar como paga antes da primeira occurrence existir.
+  await prisma.recurringOccurrence.create({
+    data: {
+      recurringTransactionId: recurring.id,
+      dueDate: new Date(startDate),
+      status: 'PENDING',
+    },
+  }).catch(() => {/* unique violation = ok, já existe */})
 
   return Response.json({ data: recurring }, { status: 201 })
 }
