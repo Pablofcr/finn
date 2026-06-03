@@ -23,8 +23,10 @@ function LoginForm() {
   const { signIn, signInWithGoogle, resetPassword } = useAuth()
   // Pre-fill email vindo de ?email= (usado pelo flow "Recomeçar do zero"
   // depois de deletar a conta — facilita logar de volta sem digitar).
+  // ?reset=1 mostra banner explicando que a senha continua a mesma.
   const searchParams = useSearchParams()
   const [email, setEmail] = useState(searchParams.get('email') ?? '')
+  const afterReset = searchParams.get('reset') === '1'
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -49,6 +51,16 @@ function LoginForm() {
           Entre na sua conta para acessar suas finanças.
         </p>
       </div>
+
+      {afterReset && (
+        <div className="mb-6 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 p-3.5 text-sm text-emerald-700 dark:text-emerald-400">
+          <p className="font-semibold mb-1">Sua conta foi limpa.</p>
+          <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 leading-relaxed">
+            Pode entrar com o mesmo e-mail e <strong>a mesma senha</strong> de antes — não
+            precisa redefinir. Sua conta vai aparecer do zero, do jeito que tu pediu.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
@@ -82,9 +94,22 @@ function LoginForm() {
                 }
                 const result = await resetPassword(email)
                 if (result.error) {
-                  toast.error('Não foi possível enviar o e-mail. Tente novamente.')
+                  // Mostra a mensagem real do Supabase (rate limit, SMTP, etc).
+                  // Tradução básica das mais comuns; senão deixa o original.
+                  const raw = result.error.toLowerCase()
+                  let msg: string
+                  if (raw.includes('rate limit') || raw.includes('too many')) {
+                    msg = 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.'
+                  } else if (raw.includes('not authorized') || raw.includes('forbidden')) {
+                    msg = 'Esse e-mail está bloqueado para envio. Entre em contato com o suporte.'
+                  } else if (raw.includes('invalid email') || raw.includes('not a valid')) {
+                    msg = 'E-mail inválido. Confira a digitação.'
+                  } else {
+                    msg = `Não foi possível enviar o e-mail: ${result.error}`
+                  }
+                  toast.error(msg)
                 } else {
-                  toast.success('Link de redefinição enviado! Verifique sua caixa de entrada.')
+                  toast.success('Link de redefinição enviado! Verifique sua caixa de entrada (e o spam).')
                 }
               }}
               className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"

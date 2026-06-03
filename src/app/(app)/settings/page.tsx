@@ -555,9 +555,14 @@ export default function SettingsPage() {
                         const res = await fetch('/api/user/delete', { method: 'DELETE' })
                         if (!res.ok) throw new Error()
                         toast.success('Tudo limpo. Quando voltar, é só logar com o mesmo email.')
-                        const target = email ? `/login?email=${encodeURIComponent(email)}` : '/login'
+                        // ?reset=1 ativa banner no /login explicando que a senha
+                        // continua sendo a mesma (DELETE apaga DB row, não
+                        // Supabase Auth) — sem isso o user pensa que precisa
+                        // resetar senha e bate em rate limit do Supabase.
+                        const qs = new URLSearchParams({ reset: '1' })
+                        if (email) qs.set('email', email)
                         await signOut()
-                        window.location.href = target
+                        window.location.href = `/login?${qs.toString()}`
                       } catch {
                         toast.error('Não foi possível limpar a conta. Tente novamente.')
                       }
