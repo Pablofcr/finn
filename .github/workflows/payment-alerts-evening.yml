@@ -1,11 +1,13 @@
 name: Payment alerts — evening nudge
 
-# Runs at 21:00 UTC daily (= 18:00 BRT). Vercel Hobby caps us to 2 cron jobs,
-# so this second trigger lives in GitHub Actions and calls the same endpoint
-# with ?period=evening.
+# Runs at 22:30 UTC daily (= 19:30 BRT). Squad decision 2026-06-02: 18h
+# pegava trânsito/reunião final/médico ainda no consultório; 19h30 é a
+# janela pós-jantar com runway de 2-3h pré-corte bancário (Pix 24/7,
+# boleto até 22-23h59). Vercel Hobby cap = 2 crons, então o run da noite
+# fica em GitHub Actions chamando o mesmo endpoint com ?period=evening.
 on:
   schedule:
-    - cron: "0 21 * * *"
+    - cron: "30 22 * * *"
   workflow_dispatch: # allow manual trigger from the Actions tab
 
 jobs:
