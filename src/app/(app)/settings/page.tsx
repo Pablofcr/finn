@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
@@ -27,15 +27,58 @@ const CURRENCIES = [
   { value: 'GBP', label: 'Libra (£)' },
 ]
 
-const TIMEZONES = [
-  { value: 'America/Sao_Paulo', label: 'Brasília (GMT-3)' },
-  { value: 'America/Manaus', label: 'Manaus (GMT-4)' },
-  { value: 'America/Belem', label: 'Belém (GMT-3)' },
-  { value: 'America/Fortaleza', label: 'Fortaleza (GMT-3)' },
-  { value: 'America/Recife', label: 'Recife (GMT-3)' },
-  { value: 'America/Cuiaba', label: 'Cuiabá (GMT-4)' },
-  { value: 'America/Rio_Branco', label: 'Rio Branco (GMT-5)' },
+// Lista agrupada de timezones. Default = Brasília. Estrangeiras úteis pra
+// brasileiros no exterior. GMT offsets mostrados são padrão (sem horário de
+// verão) — DST nas cidades aplicáveis (NY, Madrid, etc) desloca ±1h sazonal.
+const TIMEZONE_GROUPS: Array<{ label: string; items: { value: string; label: string }[] }> = [
+  {
+    label: 'Brasil',
+    items: [
+      { value: 'America/Sao_Paulo', label: 'Brasília (GMT-3)' },
+      { value: 'America/Belem', label: 'Belém (GMT-3)' },
+      { value: 'America/Fortaleza', label: 'Fortaleza (GMT-3)' },
+      { value: 'America/Recife', label: 'Recife (GMT-3)' },
+      { value: 'America/Manaus', label: 'Manaus (GMT-4)' },
+      { value: 'America/Cuiaba', label: 'Cuiabá (GMT-4)' },
+      { value: 'America/Rio_Branco', label: 'Rio Branco (GMT-5)' },
+    ],
+  },
+  {
+    label: 'Américas',
+    items: [
+      { value: 'America/Buenos_Aires', label: 'Buenos Aires (GMT-3)' },
+      { value: 'America/Santiago', label: 'Santiago (GMT-4)' },
+      { value: 'America/Lima', label: 'Lima / Bogotá (GMT-5)' },
+      { value: 'America/New_York', label: 'Nova York / Toronto (GMT-5)' },
+      { value: 'America/Chicago', label: 'Chicago / CDMX (GMT-6)' },
+      { value: 'America/Denver', label: 'Denver (GMT-7)' },
+      { value: 'America/Los_Angeles', label: 'Los Angeles (GMT-8)' },
+    ],
+  },
+  {
+    label: 'Europa',
+    items: [
+      { value: 'Europe/Lisbon', label: 'Lisboa (GMT 0)' },
+      { value: 'Europe/London', label: 'Londres (GMT 0)' },
+      { value: 'Europe/Madrid', label: 'Madri (GMT+1)' },
+      { value: 'Europe/Paris', label: 'Paris (GMT+1)' },
+      { value: 'Europe/Berlin', label: 'Berlim (GMT+1)' },
+      { value: 'Europe/Rome', label: 'Roma (GMT+1)' },
+    ],
+  },
+  {
+    label: 'Ásia / Pacífico / África',
+    items: [
+      { value: 'Africa/Johannesburg', label: 'Joanesburgo (GMT+2)' },
+      { value: 'Asia/Dubai', label: 'Dubai (GMT+4)' },
+      { value: 'Asia/Shanghai', label: 'Xangai / Singapura (GMT+8)' },
+      { value: 'Asia/Tokyo', label: 'Tóquio / Seul (GMT+9)' },
+      { value: 'Australia/Sydney', label: 'Sydney (GMT+10)' },
+    ],
+  },
 ]
+
+const TIMEZONES = TIMEZONE_GROUPS.flatMap(g => g.items)
 
 interface NotificationSettings {
   emailNotifications: boolean
@@ -260,9 +303,16 @@ export default function SettingsPage() {
                     {TIMEZONES.find((tz) => tz.value === timezone)?.label || ''}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent>
-                  {TIMEZONES.map((tz) => (
-                    <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+                <SelectContent className="max-h-[60vh]">
+                  {TIMEZONE_GROUPS.map((group) => (
+                    <SelectGroup key={group.label}>
+                      <SelectLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {group.label}
+                      </SelectLabel>
+                      {group.items.map((tz) => (
+                        <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
                   ))}
                 </SelectContent>
               </Select>

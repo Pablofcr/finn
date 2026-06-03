@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 import { markRecurringOccurrenceIdsAsPaid } from '@/lib/finance-actions'
 import { advanceByFrequency } from '@/lib/recurring-occurrence'
+import { getTodayInTimezone } from '@/lib/date-tz'
 
 /**
  * GET: lista parcelas relevantes da recorrência pra UI inline expandable.
@@ -27,8 +28,7 @@ export async function GET(
     return Response.json({ error: 'Recorrência não encontrada' }, { status: 404 })
   }
 
-  const now = new Date()
-  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0))
+  const startOfToday = getTodayInTimezone(user.timezone || 'America/Sao_Paulo')
 
   // Vencidas (dueDate < startOfToday) — todas elas.
   const overdue = await prisma.recurringOccurrence.findMany({

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
+import { getTodayInTimezone, daysUntilInTimezone } from '@/lib/date-tz'
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUser()
@@ -193,11 +194,13 @@ export async function GET(request: NextRequest) {
     })
   )
 
-  // Upcoming bills — recurrings + invoices in next 7 days
+  // Upcoming bills — recurrings + invoices in next 7 days. Janela respeita a
+  // tz do user: o "agora" é o midnight local convertido pra UTC, e os 7 dias
+  // são contados em dias-calendário do user, não em horas UTC.
+  const userTz = user.timezone || 'America/Sao_Paulo'
+  const todayInTz = getTodayInTimezone(userTz)
+  const sevenDaysOut = new Date(todayInTz.getTime() + 8 * 24 * 60 * 60 * 1000 - 1)
   const now = new Date()
-  const sevenDaysOut = new Date(now)
-  sevenDaysOut.setDate(sevenDaysOut.getDate() + 7)
-  sevenDaysOut.setHours(23, 59, 59, 999)
 
   const [upcomingRecurrings, upcomingInvoices] = await Promise.all([
     prisma.recurringTransaction.findMany({
@@ -223,10 +226,8 @@ export async function GET(request: NextRequest) {
     }),
   ])
 
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   function daysUntil(date: Date): number {
-    const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    return daysUntilInTimezone(date, userTz)
   }
 
   const upcomingBills = [

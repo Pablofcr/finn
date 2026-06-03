@@ -3,13 +3,13 @@ import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import { recurringSchema } from '@/lib/validations/recurring'
 import { checkLimit } from '@/lib/plan-limits'
+import { getTodayInTimezone } from '@/lib/date-tz'
 
 export async function GET() {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const now = new Date()
-  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0))
+  const startOfToday = getTodayInTimezone(user.timezone || 'America/Sao_Paulo')
 
   const recurring = await prisma.recurringTransaction.findMany({
     where: { userId: user.id },
