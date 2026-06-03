@@ -620,6 +620,15 @@ const BUTTON_TEXT_TO_ACTION: Record<string, string> = {
   'nao, so essa': 'no_more',
 }
 
+// Strip emojis + variation selectors do início do texto. Templates HSM novos
+// têm prefixo tipo "✅ Já paguei" / "⏰ Lembrar amanhã" / "⏸️ Pausar"; o map
+// BUTTON_TEXT_TO_ACTION é mantido sem emoji pra ser robusto a futuras
+// mudanças de visual. Regex pega: emoji pictográfico, regional indicators,
+// dingbats, variation selector (️) e o whitespace seguinte.
+function stripLeadingEmoji(s: string): string {
+  return s.replace(/^[\p{Extended_Pictographic}‍️]+\s*/u, '').trim()
+}
+
 async function resolveButtonIdFromText(
   buttonId: string,
   userId: string,
@@ -628,7 +637,8 @@ async function resolveButtonIdFromText(
   // Se já vier no formato `action:rest`, deixa passar — payload dinâmico OK.
   if (buttonId.includes(':')) return buttonId
 
-  const action = BUTTON_TEXT_TO_ACTION[buttonId.trim().toLowerCase()]
+  const normalized = stripLeadingEmoji(buttonId).toLowerCase()
+  const action = BUTTON_TEXT_TO_ACTION[normalized]
   if (!action) return buttonId
 
   if (!contextWamid) {

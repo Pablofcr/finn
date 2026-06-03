@@ -47,8 +47,8 @@ const templates: TemplateDef[] = [
       {
         type: 'BUTTONS',
         buttons: [
-          { type: 'QUICK_REPLY', text: 'Já paguei' },
-          { type: 'QUICK_REPLY', text: 'Lembrar amanhã' },
+          { type: 'QUICK_REPLY', text: '✅ Já paguei' },
+          { type: 'QUICK_REPLY', text: '⏰ Lembrar amanhã' },
         ],
       },
     ],
@@ -76,9 +76,9 @@ const templates: TemplateDef[] = [
       {
         type: 'BUTTONS',
         buttons: [
-          { type: 'QUICK_REPLY', text: 'Já paguei' },
-          { type: 'QUICK_REPLY', text: 'Lembrar amanhã' },
-          { type: 'QUICK_REPLY', text: 'Pausar' },
+          { type: 'QUICK_REPLY', text: '✅ Já paguei' },
+          { type: 'QUICK_REPLY', text: '⏰ Lembrar amanhã' },
+          { type: 'QUICK_REPLY', text: '⏸️ Pausar' },
         ],
       },
     ],
@@ -104,9 +104,9 @@ const templates: TemplateDef[] = [
       {
         type: 'BUTTONS',
         buttons: [
-          { type: 'QUICK_REPLY', text: 'Paguei todas' },
-          { type: 'QUICK_REPLY', text: 'Paguei algumas' },
-          { type: 'QUICK_REPLY', text: 'Lembrar amanhã' },
+          { type: 'QUICK_REPLY', text: '✅ Paguei todas' },
+          { type: 'QUICK_REPLY', text: '📋 Paguei algumas' },
+          { type: 'QUICK_REPLY', text: '⏰ Lembrar amanhã' },
         ],
       },
     ],

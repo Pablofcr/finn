@@ -253,9 +253,9 @@ export async function sendWhatsAppMultiOverdueNotification(opts: {
     `Tá acumulando — toque num dos botões ou abra o Finn pra resolver.`
 
   const buttons = [
-    { id: `paid_all:${opts.recurringId}`, title: 'Paguei todas' },
-    { id: `paid_some:${opts.recurringId}`, title: 'Paguei algumas' },
-    { id: `snooze:${opts.recurringId}`, title: 'Lembrar amanhã' },
+    { id: `paid_all:${opts.recurringId}`, title: '✅ Paguei todas' },
+    { id: `paid_some:${opts.recurringId}`, title: '📋 Paguei algumas' },
+    { id: `snooze:${opts.recurringId}`, title: '⏰ Lembrar amanhã' },
   ]
 
   const withinWindow = await isWithinWhatsAppWindow(opts.userId)
