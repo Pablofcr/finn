@@ -47,6 +47,15 @@ export function getTodayInTimezone(timezone: string): Date {
 }
 
 /**
+ * Retorna o fim do dia atual na tz do user (23:59:59.999 local), expresso
+ * em UTC. Útil pra filtros `where: { date: { lte: endOfToday } }`.
+ */
+export function endOfTodayInTimezone(timezone: string): Date {
+  const start = getTodayInTimezone(timezone)
+  return new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1)
+}
+
+/**
  * Diferença em dias-calendário entre `targetDate` e "hoje na tz do user".
  * Retorna negativo se vencido, 0 se vence hoje, positivo se futuro.
  *

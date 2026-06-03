@@ -1,26 +1,35 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
+import { getTodayInTimezone } from '@/lib/date-tz'
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
 
+  // Defaults month/year derivam do calendário do user, não do server (UTC).
+  // Construção das datas usa Date.UTC pra consistência dev↔prod independente
+  // do server local tz (Vercel = UTC, dev local = BRT).
+  const userTz = user.timezone || 'America/Sao_Paulo'
+  const todayInTz = getTodayInTimezone(userTz)
+  const defaultMonth = todayInTz.getUTCMonth() + 1
+  const defaultYear = todayInTz.getUTCFullYear()
+
   const { searchParams } = request.nextUrl
-  const month = parseInt(searchParams.get('month') || String(new Date().getMonth() + 1))
-  const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()))
+  const month = parseInt(searchParams.get('month') || String(defaultMonth))
+  const year = parseInt(searchParams.get('year') || String(defaultYear))
 
   // Filtro de conta: comma-separated. Se vazio/ausente, agrega tudo.
   const accountIdsParam = searchParams.get('accountIds')
   const accountIds = accountIdsParam ? accountIdsParam.split(',').filter(Boolean) : []
   const accountFilter = accountIds.length > 0 ? { accountId: { in: accountIds } } : {}
 
-  const startDate = new Date(year, month - 1, 1)
-  const endDate = new Date(year, month, 0, 23, 59, 59)
+  const startDate = new Date(Date.UTC(year, month - 1, 1))
+  const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59))
 
   // Previous month for comparison
-  const prevStartDate = new Date(year, month - 2, 1)
-  const prevEndDate = new Date(year, month - 1, 0, 23, 59, 59)
+  const prevStartDate = new Date(Date.UTC(year, month - 2, 1))
+  const prevEndDate = new Date(Date.UTC(year, month - 1, 0, 23, 59, 59))
 
   // Current month transactions
   const transactions = await prisma.transaction.findMany({
@@ -69,8 +78,8 @@ export async function GET(request: NextRequest) {
   const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
   const monthlyEvolution = []
   for (let i = 11; i >= 0; i--) {
-    const mDate = new Date(year, month - 1 - i, 1)
-    const mEnd = new Date(mDate.getFullYear(), mDate.getMonth() + 1, 0, 23, 59, 59)
+    const mDate = new Date(Date.UTC(year, month - 1 - i, 1))
+    const mEnd = new Date(Date.UTC(mDate.getUTCFullYear(), mDate.getUTCMonth() + 1, 0, 23, 59, 59))
 
     const mTransactions = await prisma.transaction.findMany({
       where: {
@@ -85,7 +94,7 @@ export async function GET(request: NextRequest) {
     const mExpense = mTransactions.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.amount), 0)
 
     monthlyEvolution.push({
-      month: `${monthNames[mDate.getMonth()]}/${String(mDate.getFullYear()).slice(2)}`,
+      month: `${monthNames[mDate.getUTCMonth()]}/${String(mDate.getUTCFullYear()).slice(2)}`,
       income: mIncome,
       expense: mExpense,
       balance: mIncome - mExpense,
@@ -129,11 +138,11 @@ export async function GET(request: NextRequest) {
   })
 
   // Daily spending trend
-  const daysInMonth = new Date(year, month, 0).getDate()
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate()
   const dailyData = []
   for (let day = 1; day <= daysInMonth; day++) {
-    const dayStart = new Date(year, month - 1, day)
-    const dayEnd = new Date(year, month - 1, day, 23, 59, 59)
+    const dayStart = new Date(Date.UTC(year, month - 1, day))
+    const dayEnd = new Date(Date.UTC(year, month - 1, day, 23, 59, 59))
 
     const dayExpense = transactions
       .filter((t) => t.type === 'EXPENSE' && t.date >= dayStart && t.date <= dayEnd)

@@ -1,18 +1,21 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
-import { getTodayInTimezone, daysUntilInTimezone } from '@/lib/date-tz'
+import { getTodayInTimezone, daysUntilInTimezone, endOfTodayInTimezone } from '@/lib/date-tz'
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { searchParams } = request.nextUrl
-  const month = parseInt(searchParams.get('month') || String(new Date().getMonth() + 1))
-  const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()))
+  const userTz = user.timezone || 'America/Sao_Paulo'
+  const todayInTz = getTodayInTimezone(userTz)
 
-  const startDate = new Date(year, month - 1, 1)
-  const endDate = new Date(year, month, 0, 23, 59, 59)
+  const { searchParams } = request.nextUrl
+  const month = parseInt(searchParams.get('month') || String(todayInTz.getUTCMonth() + 1))
+  const year = parseInt(searchParams.get('year') || String(todayInTz.getUTCFullYear()))
+
+  const startDate = new Date(Date.UTC(year, month - 1, 1))
+  const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59))
 
   // Get accounts with all info needed for "Saldo por conta" card
   const accountsRaw = await prisma.account.findMany({
@@ -142,8 +145,7 @@ export async function GET(request: NextRequest) {
 
   // Recent transactions — only past/today, never future installments,
   // so the feed reflects what actually happened (not projected parcels).
-  const todayEnd = new Date()
-  todayEnd.setHours(23, 59, 59, 999)
+  const todayEnd = endOfTodayInTimezone(userTz)
   const recentTransactions = await prisma.transaction.findMany({
     where: { userId: user.id, date: { lte: todayEnd } },
     include: {
@@ -197,8 +199,6 @@ export async function GET(request: NextRequest) {
   // Upcoming bills — recurrings + invoices in next 7 days. Janela respeita a
   // tz do user: o "agora" é o midnight local convertido pra UTC, e os 7 dias
   // são contados em dias-calendário do user, não em horas UTC.
-  const userTz = user.timezone || 'America/Sao_Paulo'
-  const todayInTz = getTodayInTimezone(userTz)
   const sevenDaysOut = new Date(todayInTz.getTime() + 8 * 24 * 60 * 60 * 1000 - 1)
   const now = new Date()
 

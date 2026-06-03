@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import Anthropic from '@anthropic-ai/sdk'
 import { canUseFeature } from '@/lib/plan-limits'
+import { getTodayInTimezone } from '@/lib/date-tz'
 
 const anthropic = new Anthropic()
 
@@ -14,11 +15,14 @@ export async function POST() {
     return Response.json({ error: 'Funcionalidade exclusiva do Finn Pro. Faça upgrade para desbloquear.', upgrade: true }, { status: 403 })
   }
 
-  const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
-  const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-  const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+  // Month boundaries no calendário do user.
+  const todayInTz = getTodayInTimezone(user.timezone || 'America/Sao_Paulo')
+  const year = todayInTz.getUTCFullYear()
+  const month = todayInTz.getUTCMonth()
+  const startOfMonth = new Date(Date.UTC(year, month, 1))
+  const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59))
+  const startOfPrevMonth = new Date(Date.UTC(year, month - 1, 1))
+  const endOfPrevMonth = new Date(Date.UTC(year, month, 0, 23, 59, 59))
 
   // Current month transactions
   const transactions = await prisma.transaction.findMany({

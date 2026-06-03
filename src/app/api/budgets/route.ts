@@ -3,31 +3,41 @@ import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import { budgetSchema } from '@/lib/validations/budget'
 import { checkLimit } from '@/lib/plan-limits'
+import { getTodayInTimezone } from '@/lib/date-tz'
 
-function getPeriodRange(period: string): { gte: Date; lte: Date } {
-  const now = new Date()
+function getPeriodRange(period: string, timezone: string): { gte: Date; lte: Date } {
+  // "Agora" no calendário do user, não no server local time. Const day usa
+  // getUTCDay porque todayInTz é a midnight local expressa em UTC — o dia
+  // da semana é o dia local correto.
+  const todayInTz = getTodayInTimezone(timezone)
+  const year = todayInTz.getUTCFullYear()
+  const month = todayInTz.getUTCMonth()
+  const date = todayInTz.getUTCDate()
+
   if (period === 'WEEKLY') {
-    const day = now.getDay()
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day)
-    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (6 - day), 23, 59, 59)
+    const day = todayInTz.getUTCDay()
+    const start = new Date(Date.UTC(year, month, date - day))
+    const end = new Date(Date.UTC(year, month, date + (6 - day), 23, 59, 59))
     return { gte: start, lte: end }
   }
   if (period === 'YEARLY') {
     return {
-      gte: new Date(now.getFullYear(), 0, 1),
-      lte: new Date(now.getFullYear(), 11, 31, 23, 59, 59),
+      gte: new Date(Date.UTC(year, 0, 1)),
+      lte: new Date(Date.UTC(year, 11, 31, 23, 59, 59)),
     }
   }
   // MONTHLY (default)
   return {
-    gte: new Date(now.getFullYear(), now.getMonth(), 1),
-    lte: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59),
+    gte: new Date(Date.UTC(year, month, 1)),
+    lte: new Date(Date.UTC(year, month + 1, 0, 23, 59, 59)),
   }
 }
 
 export async function GET() {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const userTz = user.timezone || 'America/Sao_Paulo'
 
   const budgets = await prisma.budget.findMany({
     where: { userId: user.id },
@@ -37,7 +47,7 @@ export async function GET() {
 
   const budgetsWithSpent = await Promise.all(
     budgets.map(async (b) => {
-      const range = getPeriodRange(b.period)
+      const range = getPeriodRange(b.period, userTz)
       const result = await prisma.transaction.aggregate({
         where: {
           userId: user.id,

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
+import { endOfTodayInTimezone } from '@/lib/date-tz'
 
 /**
  * Exporta transações filtradas como CSV.
@@ -43,8 +44,7 @@ export async function GET(request: NextRequest) {
     if (endDate) where.date.lte = new Date(endDate)
   }
   if (!includeFuture) {
-    const endOfToday = new Date()
-    endOfToday.setUTCHours(23, 59, 59, 999)
+    const endOfToday = endOfTodayInTimezone(user.timezone || 'America/Sao_Paulo')
     if (!where.date) where.date = {}
     if (!where.date.lte || new Date(where.date.lte) > endOfToday) {
       where.date.lte = endOfToday

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import { applyTransactionBalance } from '@/lib/transaction-balance'
+import { getTodayInTimezone } from '@/lib/date-tz'
 
 /**
  * Pays an invoice: creates a DEBIT transaction on the bank account that the
@@ -47,8 +48,10 @@ export async function POST(
     return Response.json({ error: 'Não é possível pagar fatura com outro cartão de crédito.' }, { status: 400 })
   }
 
-  const today = new Date()
-  const payDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  // payDate = "hoje" no calendário do user (midnight UTC do dia local).
+  // Importante porque a transação fica visível no histórico marcada como
+  // "hoje" — se usar server-UTC, perto da meia-noite local pula 1 dia.
+  const payDate = getTodayInTimezone(user.timezone || 'America/Sao_Paulo')
 
   const result = await prisma.$transaction(async (db) => {
     // Debit the bank account for the invoice total

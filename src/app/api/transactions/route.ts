@@ -5,6 +5,7 @@ import { transactionSchema } from '@/lib/validations/transaction'
 import { checkTransactionLimit } from '@/lib/plan-limits'
 import { applyTransactionBalance } from '@/lib/transaction-balance'
 import { getOrCreateInvoiceFor, adjustInvoiceTotal } from '@/lib/invoice'
+import { endOfTodayInTimezone } from '@/lib/date-tz'
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUser()
@@ -47,9 +48,9 @@ export async function GET(request: NextRequest) {
     if (endDate) where.date.lte = new Date(endDate)
   }
   if (!includeFuture) {
-    // Limita date <= fim de hoje (UTC). Se já tem endDate, mantém o menor dos dois.
-    const endOfToday = new Date()
-    endOfToday.setUTCHours(23, 59, 59, 999)
+    // Limita date <= fim de hoje no calendário do user. Se já tem endDate,
+    // mantém o menor dos dois.
+    const endOfToday = endOfTodayInTimezone(user.timezone || 'America/Sao_Paulo')
     if (!where.date) where.date = {}
     if (!where.date.lte || new Date(where.date.lte) > endOfToday) {
       where.date.lte = endOfToday
