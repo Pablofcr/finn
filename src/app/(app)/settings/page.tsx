@@ -46,10 +46,8 @@ interface NotificationSettings {
   monthlyReport: boolean
   botConfirmations: boolean
   autoInsights: boolean
-  // Backend ainda guarda telegramInsights/telegramAlerts (reusados como flags
-  // genéricas pra alertas no bot). UI não expõe mais esses nomes.
-  telegramInsights: boolean
-  telegramAlerts: boolean
+  botInsights: boolean
+  botAlerts: boolean
   eveningPaymentReminder: boolean
 }
 
@@ -76,8 +74,8 @@ export default function SettingsPage() {
     monthlyReport: true,
     botConfirmations: true,
     autoInsights: true,
-    telegramInsights: true,
-    telegramAlerts: true,
+    botInsights: true,
+    botAlerts: true,
     eveningPaymentReminder: true,
   })
 
@@ -108,8 +106,8 @@ export default function SettingsPage() {
           monthlyReport: notifRes.data.monthlyReport,
           botConfirmations: notifRes.data.botConfirmations,
           autoInsights: notifRes.data.autoInsights ?? true,
-          telegramInsights: notifRes.data.telegramInsights ?? true,
-          telegramAlerts: notifRes.data.telegramAlerts ?? true,
+          botInsights: notifRes.data.botInsights ?? true,
+          botAlerts: notifRes.data.botAlerts ?? true,
           eveningPaymentReminder: notifRes.data.eveningPaymentReminder ?? true,
         })
       }
@@ -296,8 +294,8 @@ export default function SettingsPage() {
             { key: 'monthlyReport' as const, label: 'Resumo mensal', desc: 'Relatório completo todo mês' },
             { key: 'botConfirmations' as const, label: 'Confirmações do bot', desc: 'Confirmar transações criadas pelo assistente' },
             { key: 'autoInsights' as const, label: 'Insights automáticos', desc: 'Gerar análises financeiras semanalmente com IA' },
-            { key: 'telegramInsights' as const, label: 'Insights pelo WhatsApp', desc: 'Receber insights importantes no WhatsApp' },
-            { key: 'telegramAlerts' as const, label: 'Alertas pelo WhatsApp', desc: 'Receber lembretes de vencimento no WhatsApp' },
+            { key: 'botInsights' as const, label: 'Insights pelo WhatsApp', desc: 'Receber insights importantes no WhatsApp' },
+            { key: 'botAlerts' as const, label: 'Alertas pelo WhatsApp', desc: 'Receber lembretes de vencimento no WhatsApp' },
             { key: 'eveningPaymentReminder' as const, label: 'Lembrete de fim de dia', desc: 'Reenvio às 18h no vencimento se ainda não foi marcado como pago' },
           ].map((item) => (
             <div key={item.key} className="flex items-center justify-between py-1">

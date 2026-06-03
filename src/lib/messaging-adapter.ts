@@ -68,9 +68,9 @@ export interface WhatsAppConnectionLite {
 export interface NotificationResult {
   ok: boolean
   channel?: 'freeform' | 'template'
-  // wamid retornado pela Meta (ou message_id Telegram). Caller persiste pra
-  // permitir lookup reverso via webhook context.id — necessário pro fallback
-  // de botões HSM com payload não-dinâmico, em que o reply chega com o texto.
+  // wamid retornado pela Meta. Caller persiste pra permitir lookup reverso via
+  // webhook context.id — necessário pro fallback de botões HSM com payload
+  // não-dinâmico, em que o reply chega com o texto.
   messageId?: string
   attempts: Array<{
     channel: 'freeform' | 'template'

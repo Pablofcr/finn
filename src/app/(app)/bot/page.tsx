@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Send, CheckCircle, Copy, ExternalLink,
-  Bell, Shield, MessageCircle, Unplug, Sparkles, Mic, Camera, AlertTriangle,
+  Bell, Shield, MessageCircle, Unplug, Sparkles, Mic, Camera,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -22,7 +22,6 @@ interface ConnectionStatus {
   platformUserId?: string
   verificationCode?: string | null
   whatsappNumber?: string
-  hadTelegram?: boolean
 }
 
 function WhatsAppBubble({
@@ -50,34 +49,6 @@ function WhatsAppBubble({
         {children}
       </div>
     </div>
-  )
-}
-
-function TelegramMigrationBanner({ onCleanup }: { onCleanup: () => void }) {
-  return (
-    <Card className="border-amber-200 dark:border-amber-900/30 bg-amber-50/60 dark:bg-amber-500/5">
-      <CardContent className="pt-5 pb-5">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 shrink-0">
-            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-          </div>
-          <div className="space-y-1.5 flex-1">
-            <p className="font-semibold text-sm">O Finn no Telegram foi descontinuado</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Migramos toda a experiência pro <strong>WhatsApp</strong>, com um assistente
-              conversacional muito mais inteligente — entende perguntas em linguagem natural,
-              transcreve áudio, lê cupom fiscal e dá baixa em recorrências. Conecte abaixo.
-            </p>
-            <button
-              onClick={onCleanup}
-              className="text-xs text-muted-foreground/70 hover:text-muted-foreground underline underline-offset-2 mt-1"
-            >
-              Limpar conexão antiga do Telegram
-            </button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   )
 }
 
@@ -422,12 +393,11 @@ export default function BotPage() {
       const res = await fetch('/api/bot/whatsapp/connect', { method: 'POST' })
       if (res.ok) {
         const result = await res.json()
-        setStatus((prev) => ({
+        setStatus({
           connected: false,
           verificationCode: result.data.verificationCode,
           whatsappNumber: result.data.whatsappNumber,
-          hadTelegram: prev?.hadTelegram,
-        }))
+        })
       } else {
         const err = await res.json()
         toast.error(err.error || 'Falha ao gerar código.')
@@ -442,23 +412,11 @@ export default function BotPage() {
     try {
       const res = await fetch('/api/bot/whatsapp/connect', { method: 'DELETE' })
       if (res.ok) {
-        setStatus((prev) => ({ connected: false, hadTelegram: prev?.hadTelegram }))
+        setStatus({ connected: false })
         toast.success('WhatsApp desconectado.')
       }
     } catch {
       toast.error('Falha ao desconectar.')
-    }
-  }
-
-  async function handleCleanupTelegram() {
-    try {
-      const res = await fetch('/api/bot/telegram/connect', { method: 'DELETE' })
-      if (res.ok) {
-        setStatus((prev) => prev ? { ...prev, hadTelegram: false } : prev)
-        toast.success('Conexão antiga do Telegram removida.')
-      }
-    } catch {
-      toast.error('Não foi possível limpar a conexão antiga.')
     }
   }
 
@@ -479,10 +437,6 @@ export default function BotPage() {
           Seu assistente financeiro no WhatsApp — converse, registre e acompanhe tudo direto do chat.
         </p>
       </div>
-
-      {status?.hadTelegram && (
-        <TelegramMigrationBanner onCleanup={handleCleanupTelegram} />
-      )}
 
       {status?.connected ? (
         <WhatsAppConnectedState

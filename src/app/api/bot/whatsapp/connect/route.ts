@@ -6,18 +6,11 @@ export async function GET() {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const [whatsapp, telegram] = await Promise.all([
-    prisma.botConnection.findFirst({
-      where: { userId: user.id, platform: 'WHATSAPP' },
-    }),
-    prisma.botConnection.findFirst({
-      where: { userId: user.id, platform: 'TELEGRAM' },
-      select: { id: true },
-    }),
-  ])
+  const whatsapp = await prisma.botConnection.findFirst({
+    where: { userId: user.id, platform: 'WHATSAPP' },
+  })
 
   const whatsappNumber = process.env.WHATSAPP_DISPLAY_NUMBER || ''
-  const hadTelegram = !!telegram
 
   return Response.json({
     data: whatsapp
@@ -26,9 +19,8 @@ export async function GET() {
           platformUserId: whatsapp.platformUserId,
           verificationCode: whatsapp.isVerified ? null : whatsapp.verificationCode,
           whatsappNumber,
-          hadTelegram,
         }
-      : { connected: false, whatsappNumber, hadTelegram },
+      : { connected: false, whatsappNumber },
   })
 }
 

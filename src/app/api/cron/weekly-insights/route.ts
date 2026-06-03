@@ -42,10 +42,7 @@ export async function GET(request: NextRequest) {
       if (!insights || insights.length === 0) continue
       insightsGenerated += insights.length
 
-      // Send important insights via WhatsApp (telegramInsights flag is reused
-      // as a generic "send insights via bot" toggle — not renamed to avoid
-      // a Prisma migration; the UI no longer exposes it.)
-      const insightsEnabled = user.notificationSetting?.telegramInsights ?? true
+      const insightsEnabled = user.notificationSetting?.botInsights ?? true
       const connection = user.botConnections[0]
 
       if (insightsEnabled && connection) {

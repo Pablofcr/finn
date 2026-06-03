@@ -36,9 +36,9 @@ export interface WhatsAppSendResult {
   ok: boolean
   messageId?: string
   /// Erro estruturado quando a Meta recusa. `isWindowError` = true quando o
-  /// motivo é janela de 24h fechada — sinal pro adapter cair em template HSM
-  /// ou fallback Telegram. Demais erros são fatais (token inválido, número
-  /// errado etc.) e não devem disparar fallback.
+  /// motivo é janela de 24h fechada — sinal pro adapter cair em template HSM.
+  /// Demais erros são fatais (token inválido, número errado etc.) e não devem
+  /// disparar fallback.
   error?: {
     code?: number
     subcode?: number
@@ -266,8 +266,8 @@ export type ReengagementStatus = 'warning' | 'at-risk' | 'inactive'
 
 /**
  * Copy do reengagement, sem efeito colateral. Exportado pro cron de
- * reengagement poder reusar via messaging-adapter (com fallback Telegram +
- * template HSM) em vez de chamar `sendWhatsAppReengagement` direto.
+ * reengagement poder reusar via messaging-adapter (com fallback de template
+ * HSM) em vez de chamar `sendWhatsAppReengagement` direto.
  */
 export function buildReengagementText(firstName: string, status: ReengagementStatus): string {
   switch (status) {

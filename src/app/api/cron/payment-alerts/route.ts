@@ -125,7 +125,7 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
     }
 
     const settings = recurring.user.notificationSetting
-    const alertsEnabled = settings?.telegramAlerts ?? true
+    const alertsEnabled = settings?.botAlerts ?? true
     if (!alertsEnabled) {
       alertsSkipped++
       continue
@@ -354,7 +354,7 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
     const connection = invoice.user.botConnections[0]
     if (!connection) { invoiceSkipped++; continue }
 
-    const alertsEnabled = invoice.user.notificationSetting?.telegramAlerts ?? true
+    const alertsEnabled = invoice.user.notificationSetting?.botAlerts ?? true
     if (!alertsEnabled) { invoiceSkipped++; continue }
 
     if (period === 'evening') {

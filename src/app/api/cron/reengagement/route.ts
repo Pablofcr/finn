@@ -20,7 +20,7 @@ import { buildReengagementText, type ReengagementStatus } from '@/lib/whatsapp'
  * Lifetime cap: 3 nudges totais por user — depois disso, nunca mais.
  *
  * Abort conditions (cada user passa por checagem antes de receber):
- *   - notificationSetting.telegramAlerts = false (opt-out)
+ *   - notificationSetting.botAlerts = false (opt-out)
  *   - botConnections WHATSAPP isVerified = false (sem canal)
  *   - lifetime nudge count >= 3
  *   - cooldown da janela do status atual ainda ativo
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     select: {
       id: true,
       name: true,
-      notificationSetting: { select: { telegramAlerts: true } },
+      notificationSetting: { select: { botAlerts: true } },
       botConnections: {
         where: { platform: 'WHATSAPP', isVerified: true },
         select: { platformUserId: true },
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     evaluated++
 
     // Abort: opt-out
-    const alertsEnabled = user.notificationSetting?.telegramAlerts ?? true
+    const alertsEnabled = user.notificationSetting?.botAlerts ?? true
     if (!alertsEnabled) { skipped++; continue }
 
     const connection = user.botConnections[0]
