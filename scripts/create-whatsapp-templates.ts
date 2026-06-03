@@ -45,10 +45,14 @@ const templates: TemplateDef[] = [
         },
       },
       {
+        // Meta rejeita emojis/variáveis/quebras em texto de QUICK_REPLY
+        // (error_subcode 2388060). Os botões aqui ficam plain text. O caminho
+        // free-form (sendWhatsAppPaymentNotification em whatsapp.ts) tem
+        // emojis quando a janela 24h está aberta.
         type: 'BUTTONS',
         buttons: [
-          { type: 'QUICK_REPLY', text: '✅ Já paguei' },
-          { type: 'QUICK_REPLY', text: '⏰ Lembrar amanhã' },
+          { type: 'QUICK_REPLY', text: 'Já paguei' },
+          { type: 'QUICK_REPLY', text: 'Lembrar amanhã' },
         ],
       },
     ],
@@ -74,11 +78,12 @@ const templates: TemplateDef[] = [
         },
       },
       {
+        // Meta proíbe emojis em QUICK_REPLY.
         type: 'BUTTONS',
         buttons: [
-          { type: 'QUICK_REPLY', text: '✅ Já paguei' },
-          { type: 'QUICK_REPLY', text: '⏰ Lembrar amanhã' },
-          { type: 'QUICK_REPLY', text: '⏸️ Pausar' },
+          { type: 'QUICK_REPLY', text: 'Já paguei' },
+          { type: 'QUICK_REPLY', text: 'Lembrar amanhã' },
+          { type: 'QUICK_REPLY', text: 'Pausar' },
         ],
       },
     ],
@@ -102,11 +107,12 @@ const templates: TemplateDef[] = [
         },
       },
       {
+        // Meta proíbe emojis em QUICK_REPLY.
         type: 'BUTTONS',
         buttons: [
-          { type: 'QUICK_REPLY', text: '✅ Paguei todas' },
-          { type: 'QUICK_REPLY', text: '📋 Paguei algumas' },
-          { type: 'QUICK_REPLY', text: '⏰ Lembrar amanhã' },
+          { type: 'QUICK_REPLY', text: 'Paguei todas' },
+          { type: 'QUICK_REPLY', text: 'Paguei algumas' },
+          { type: 'QUICK_REPLY', text: 'Lembrar amanhã' },
         ],
       },
     ],
