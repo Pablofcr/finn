@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import Anthropic from '@anthropic-ai/sdk'
 import { sendWhatsAppNotification } from '@/lib/messaging-adapter'
+import { getTodayInTimezone } from '@/lib/date-tz'
 
 export const maxDuration = 120
 
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
     if (txCount < 3) continue
 
     try {
-      const insights = await generateInsightsForUser(user.id)
+      const insights = await generateInsightsForUser(user.id, user.timezone || 'America/Sao_Paulo')
       if (!insights || insights.length === 0) continue
       insightsGenerated += insights.length
 
@@ -103,14 +104,18 @@ export async function GET(request: NextRequest) {
   })
 }
 
-async function generateInsightsForUser(userId: string) {
+async function generateInsightsForUser(userId: string, timezone: string) {
   const anthropic = new Anthropic()
 
-  const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
-  const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-  const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+  // Month boundaries no fuso do user. Sem isso, na virada do mês cron
+  // server-UTC pode pegar Maio quando o user já está em Junho (ou vice-versa).
+  const todayInTz = getTodayInTimezone(timezone)
+  const year = todayInTz.getUTCFullYear()
+  const month = todayInTz.getUTCMonth()  // 0-indexed
+  const startOfMonth = new Date(Date.UTC(year, month, 1))
+  const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59))
+  const startOfPrevMonth = new Date(Date.UTC(year, month - 1, 1))
+  const endOfPrevMonth = new Date(Date.UTC(year, month, 0, 23, 59, 59))
 
   const [transactions, prevTransactions, budgets, goals, accounts] = await Promise.all([
     prisma.transaction.findMany({

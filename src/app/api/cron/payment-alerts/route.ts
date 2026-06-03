@@ -8,6 +8,7 @@ import {
 import type { PaymentAlertVariant } from '@/lib/messaging-adapter'
 import { markRecurringAsPaid, ensureNextOccurrences } from '@/lib/finance-actions'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
+import { daysUntilInTimezone } from '@/lib/date-tz'
 
 export async function GET(request: NextRequest) {
   // Verify cron secret to prevent unauthorized calls
@@ -139,10 +140,11 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
     }
 
     const oldestOcc = occs[0]
-    const daysUntilDue = Math.ceil(
-      (oldestOcc.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-    )
-    const overdueOccs = occs.filter(o => o.dueDate < startOfToday)
+    // daysUntilDue/overdue calculados no fuso do user — sem isso, perto da
+    // virada do dia local, alertas erram por 1 dia (ver Fase 1).
+    const userTz = recurring.user.timezone || 'America/Sao_Paulo'
+    const daysUntilDue = daysUntilInTimezone(oldestOcc.dueDate, userTz)
+    const overdueOccs = occs.filter(o => daysUntilInTimezone(o.dueDate, userTz) < 0)
 
     // ─── Auto-launch (autoConfirm=true) ─────────────────────────────
     // Mantém comportamento atual: quando a occurrence mais antiga é de
@@ -362,7 +364,8 @@ export async function runPaymentAlerts(period: 'morning' | 'evening' = 'morning'
       if (!eveningEnabled) { invoiceSkipped++; continue }
     }
 
-    const daysUntil = Math.ceil((invoice.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    const invoiceTz = invoice.user.timezone || 'America/Sao_Paulo'
+    const daysUntil = daysUntilInTimezone(invoice.dueDate, invoiceTz)
     const shouldAlert = period === 'evening'
       ? daysUntil === 0
       : daysUntil === 0 || daysUntil === 1 || daysUntil === 3
