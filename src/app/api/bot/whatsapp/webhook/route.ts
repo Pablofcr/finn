@@ -788,12 +788,20 @@ async function handleButtonReply(
       accountId = resolved?.id || null
     }
     if (!accountId) {
-      await sendWhatsAppMessage({
-        to: from,
-        text: paymentMethod === 'CREDIT'
-          ? '⚠️ Você ainda não cadastrou um cartão de crédito no app. Adicione um em Contas e tente de novo.'
-          : '⚠️ Crie uma conta no app primeiro.',
-      })
+      // Diferencia "nunca cadastrou nada" de "tem contas arquivadas". A 2ª
+      // ação é abrir Contas e tocar no chip "Inativa" — não criar conta nova.
+      const totalAccounts = await prisma.account.count({ where: { userId: connection.userId } })
+      let text: string
+      if (paymentMethod === 'CREDIT') {
+        text = totalAccounts > 0
+          ? '⚠️ Nenhum cartão de crédito ativo. Reative o seu em *Contas* no app ou cadastre um novo.'
+          : '⚠️ Você ainda não cadastrou um cartão de crédito no app. Adicione um em *Contas* e tente de novo.'
+      } else {
+        text = totalAccounts > 0
+          ? '⚠️ Suas contas estão todas arquivadas. Abre *Contas* no app e toca em "Inativa · toca pra reativar".'
+          : '⚠️ Crie uma conta no app primeiro.'
+      }
+      await sendWhatsAppMessage({ to: from, text })
       return
     }
 

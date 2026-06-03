@@ -11,6 +11,7 @@ export const accountSchema = z.object({
   closingDay: z.number().int().min(1).max(31).optional(),
   dueDay: z.number().int().min(1).max(31).optional(),
   linkedAccountId: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
 })
 
 export type AccountInput = z.infer<typeof accountSchema>

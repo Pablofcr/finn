@@ -168,6 +168,39 @@ export default function AccountsPage() {
     }
   }
 
+  async function handleReactivate(id: string) {
+    try {
+      const account = accounts.find(a => a.id === id)
+      if (!account) return
+      const res = await fetch(`/api/accounts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: account.name,
+          type: account.type,
+          balance: Number(account.balance),
+          color: account.color,
+          icon: account.icon,
+          isDefault: !!account.isDefault,
+          creditLimit: account.creditLimit ? Number(account.creditLimit) : undefined,
+          closingDay: account.closingDay || undefined,
+          dueDay: account.dueDay || undefined,
+          linkedAccountId: account.linkedAccountId || null,
+          isActive: true,
+        }),
+      })
+      if (res.ok) {
+        toast.success(`${account.name} reativada.`)
+        fetchAccounts()
+      } else {
+        const err = await res.json()
+        toast.error(err.error || 'Não foi possível reativar a conta.')
+      }
+    } catch {
+      toast.error('Não foi possível reativar a conta. Tente novamente.')
+    }
+  }
+
   async function handleDelete(id: string) {
     try {
       const res = await fetch(`/api/accounts/${id}`, { method: 'DELETE' })
@@ -466,9 +499,14 @@ export default function AccountsPage() {
                             {account.isDefault && ' · Principal'}
                           </p>
                           {inactive && (
-                            <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-slate-500/15 text-slate-600 dark:text-slate-400">
-                              Inativa
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleReactivate(account.id)}
+                              className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-slate-500/15 text-slate-600 dark:text-slate-400 hover:bg-emerald-500/15 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                              title="Toca pra reativar"
+                            >
+                              Inativa · toca pra reativar
+                            </button>
                           )}
                         </div>
                       </div>
