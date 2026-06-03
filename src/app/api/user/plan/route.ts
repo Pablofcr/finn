@@ -7,26 +7,44 @@ export async function GET() {
   const user = await getAuthUser()
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const plan = user.plan || 'FREE'
+  const plan = user.plan || 'TRIAL'
   const limits = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]
 
-  // Get current usage
+  // Get current usage + subscription pra countdown do trial
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  const [transactionsCount, accountsCount, budgetsCount, goalsCount, recurringCount] = await Promise.all([
+  const [transactionsCount, accountsCount, budgetsCount, goalsCount, recurringCount, subscription] = await Promise.all([
     prisma.transaction.count({ where: { userId: user.id, createdAt: { gte: startOfMonth } } }),
     prisma.account.count({ where: { userId: user.id } }),
     prisma.budget.count({ where: { userId: user.id } }),
     prisma.goal.count({ where: { userId: user.id } }),
     prisma.recurringTransaction.count({ where: { userId: user.id, status: 'ACTIVE' } }),
+    prisma.subscription.findUnique({
+      where: { userId: user.id },
+      select: { status: true, trialEndsAt: true, currentPeriodEnd: true },
+    }),
   ])
+
+  // Dias restantes do trial — só faz sentido pra plan=TRIAL
+  let daysLeftInTrial: number | null = null
+  if (plan === 'TRIAL' && subscription?.trialEndsAt) {
+    const msLeft = subscription.trialEndsAt.getTime() - now.getTime()
+    daysLeftInTrial = Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)))
+  }
 
   return Response.json({
     data: {
       plan,
       price: PLAN_PRICES[plan as keyof typeof PLAN_PRICES],
       limits,
+      subscription: subscription ? {
+        status: subscription.status,
+        trialEndsAt: subscription.trialEndsAt?.toISOString() ?? null,
+        currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() ?? null,
+      } : null,
+      daysLeftInTrial,
+      foundingMember: plan === 'MASTER',
       usage: {
         transactionsThisMonth: transactionsCount,
         accounts: accountsCount,
@@ -43,9 +61,9 @@ export async function PUT(request: NextRequest) {
   if (!user) return Response.json({ error: 'Não autorizado' }, { status: 401 })
 
   const body = await request.json()
-  const { plan, billingCycle } = body as { plan: 'PRO' | 'FREE'; billingCycle?: 'MONTHLY' | 'YEARLY' }
+  const { plan, billingCycle } = body as { plan: 'PRO' | 'TRIAL'; billingCycle?: 'MONTHLY' | 'YEARLY' }
 
-  if (plan !== 'PRO' && plan !== 'FREE') {
+  if (plan !== 'PRO' && plan !== 'TRIAL') {
     return Response.json({ error: 'Plano inválido' }, { status: 400 })
   }
 
@@ -116,8 +134,8 @@ export async function PUT(request: NextRequest) {
     }
   }
 
-  // If downgrading to Free, cancel Finn subscription recurring
-  if (plan === 'FREE') {
+  // If downgrading to Trial, cancel Finn subscription recurring
+  if (plan === 'TRIAL') {
     await prisma.recurringTransaction.updateMany({
       where: {
         userId: user.id,
@@ -133,7 +151,7 @@ export async function PUT(request: NextRequest) {
       plan,
       message: plan === 'PRO'
         ? 'Bem-vindo ao Finn Pro! Assinatura registrada automaticamente.'
-        : 'Plano alterado para Free.',
+        : 'Plano voltou para Diagnóstico.',
     },
   })
 }

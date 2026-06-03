@@ -106,6 +106,8 @@ export default function SettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState('')
   const [currency, setCurrency] = useState('BRL')
   const [timezone, setTimezone] = useState('America/Sao_Paulo')
+  const [plan, setPlan] = useState<string>('TRIAL')
+  const [daysLeftInTrial, setDaysLeftInTrial] = useState<number | null>(null)
 
   // Notifications
   const [notifications, setNotifications] = useState<NotificationSettings>({
@@ -125,9 +127,10 @@ export default function SettingsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [userRes, notifRes] = await Promise.all([
+      const [userRes, notifRes, planRes] = await Promise.all([
         fetch('/api/user').then(r => r.json()),
         fetch('/api/settings/notifications').then(r => r.json()),
+        fetch('/api/user/plan').then(r => r.json()),
       ])
 
       if (userRes.data) {
@@ -137,6 +140,11 @@ export default function SettingsPage() {
         setAvatarUrl(userRes.data.avatarUrl || '')
         setCurrency(userRes.data.defaultCurrency || 'BRL')
         setTimezone(userRes.data.timezone || 'America/Sao_Paulo')
+      }
+
+      if (planRes.data) {
+        setPlan(planRes.data.plan)
+        setDaysLeftInTrial(planRes.data.daysLeftInTrial)
       }
 
       if (notifRes.data) {
@@ -235,8 +243,36 @@ export default function SettingsPage() {
               {avatarUrl && <AvatarImage src={avatarUrl} />}
               <AvatarFallback className="text-lg">{getInitials(name || 'U')}</AvatarFallback>
             </Avatar>
-            <div>
-              <p className="font-medium">{name}</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-medium">{name}</p>
+                {plan === 'MASTER' && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-gradient-to-r from-amber-500/15 to-yellow-500/15 text-amber-700 dark:text-amber-400 ring-1 ring-inset ring-amber-500/25"
+                    title="Acesso vitalício como fundador/staff"
+                  >
+                    ★ Founding Member
+                  </span>
+                )}
+                {plan === 'TRIAL' && daysLeftInTrial !== null && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-blue-500/10 text-blue-700 dark:text-blue-400 ring-1 ring-inset ring-blue-500/25"
+                    title="Diagnóstico Financeiro de 14 dias"
+                  >
+                    Diagnóstico · {daysLeftInTrial}d
+                  </span>
+                )}
+                {plan === 'PRO' && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-inset ring-emerald-500/25">
+                    Desafio Ativo
+                  </span>
+                )}
+                {plan === 'EXPIRED' && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-inset ring-amber-500/25">
+                    Diagnóstico encerrado
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">{email}</p>
             </div>
           </div>

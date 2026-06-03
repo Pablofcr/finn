@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import { recurringSchema } from '@/lib/validations/recurring'
-import { checkLimit } from '@/lib/plan-limits'
+import { checkLimit, planLimitMessage } from '@/lib/plan-limits'
 import { getTodayInTimezone } from '@/lib/date-tz'
 
 export async function GET() {
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
   const limitCheck = await checkLimit(user.id, 'recurringTransactions')
   if (!limitCheck.allowed) {
-    return Response.json({ error: `Limite do plano gratuito atingido (${limitCheck.current}/${limitCheck.limit}). Faça upgrade para o Finn Pro.`, upgrade: true }, { status: 403 })
+    return Response.json({ error: planLimitMessage(limitCheck.plan, `${limitCheck.current}/${limitCheck.limit} recorrências`), upgrade: true }, { status: 403 })
   }
 
   const body = await request.json()

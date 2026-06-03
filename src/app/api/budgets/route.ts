@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import { budgetSchema } from '@/lib/validations/budget'
-import { checkLimit } from '@/lib/plan-limits'
+import { checkLimit, planLimitMessage } from '@/lib/plan-limits'
 import { getTodayInTimezone } from '@/lib/date-tz'
 
 function getPeriodRange(period: string, timezone: string): { gte: Date; lte: Date } {
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
   const limitCheck = await checkLimit(user.id, 'budgets')
   if (!limitCheck.allowed) {
-    return Response.json({ error: `Limite do plano gratuito atingido (${limitCheck.current}/${limitCheck.limit}). Faça upgrade para o Finn Pro.`, upgrade: true }, { status: 403 })
+    return Response.json({ error: planLimitMessage(limitCheck.plan, `${limitCheck.current}/${limitCheck.limit} orçamentos`), upgrade: true }, { status: 403 })
   }
 
   const body = await request.json()

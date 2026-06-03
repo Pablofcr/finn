@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
-import { canUseFeature } from '@/lib/plan-limits'
+import { canUseFeature, planLimitMessage, getUserPlan } from '@/lib/plan-limits'
 import { resolveCategoryForText } from '@/lib/resolve-category'
 
 export async function GET(request: NextRequest) {

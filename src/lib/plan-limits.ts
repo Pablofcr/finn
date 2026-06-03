@@ -1,6 +1,51 @@
 import prisma from '@/lib/prisma'
 
+// PRO completo — usado como base pra TRIAL (Diagnóstico 14d) e MASTER
+// (founder/staff/gift). Ver feedback-plan-strategy memory pra decisão.
+const PRO_LIMITS = {
+  transactionsPerMonth: Infinity,
+  accounts: Infinity,
+  budgets: Infinity,
+  goals: Infinity,
+  recurringTransactions: Infinity,
+  aiInsights: true,
+  botVoice: true,
+  botPhoto: true,
+  autoCategory: true,
+  exportData: true,
+  fullReports: true,
+} as const
+
 export const PLAN_LIMITS = {
+  // Diagnóstico Financeiro de 14 dias — acesso completo, sem cartão.
+  TRIAL: PRO_LIMITS,
+
+  // Trial venceu sem conversão — read-only. Mantém exportData pra honrar
+  // a garantia ("você fica com os PDFs"). Nada de criar/editar.
+  EXPIRED: {
+    transactionsPerMonth: 0,
+    accounts: 0,
+    budgets: 0,
+    goals: 0,
+    recurringTransactions: 0,
+    aiInsights: false,
+    botVoice: 0,
+    botPhoto: 0,
+    autoCategory: false,
+    exportData: true,
+    fullReports: false,
+  },
+
+  // Desafio Controle Total — pago.
+  PRO: PRO_LIMITS,
+
+  // Founder/staff/grandfather — idêntico a PRO; badge "Founding Member"
+  // sinaliza simbolismo separado das features.
+  MASTER: PRO_LIMITS,
+
+  // Legado — usuários antigos antes da estratégia Diagnóstico. Mantido pra
+  // não quebrar rows existentes; migration script converte FREE → TRIAL.
+  // Não deve ser atribuído a novos users.
   FREE: {
     transactionsPerMonth: 40,
     accounts: 1,
@@ -14,41 +59,35 @@ export const PLAN_LIMITS = {
     exportData: false,
     fullReports: false,
   },
-  PRO: {
-    transactionsPerMonth: Infinity,
-    accounts: Infinity,
-    budgets: Infinity,
-    goals: Infinity,
-    recurringTransactions: Infinity,
-    aiInsights: true,
-    botVoice: true,
-    botPhoto: true,
-    autoCategory: true,
-    exportData: true,
-    fullReports: true,
-  },
-  MASTER: {
-    transactionsPerMonth: Infinity,
-    accounts: Infinity,
-    budgets: Infinity,
-    goals: Infinity,
-    recurringTransactions: Infinity,
-    aiInsights: true,
-    botVoice: true,
-    botPhoto: true,
-    autoCategory: true,
-    exportData: true,
-    fullReports: true,
-  },
 } as const
 
 export type PlanType = keyof typeof PLAN_LIMITS
 
 export const PLAN_PRICES = {
-  FREE: 0,
+  TRIAL: 0,
+  EXPIRED: 0,
   PRO: 14.90,
   MASTER: 0,
+  FREE: 0,
 } as const
+
+/**
+ * Mensagem de erro a retornar quando o user atinge um limite ou tenta usar
+ * feature bloqueada. Diferencia EXPIRED (trial terminou — CTA Desafio) de
+ * FREE legado (CTA upgrade genérico) de TRIAL/PRO/MASTER (limite real, raro).
+ */
+export function planLimitMessage(plan: PlanType, resource?: string): string {
+  if (plan === 'EXPIRED') {
+    return 'Seu Diagnóstico Financeiro de 14 dias terminou. Assine o Desafio Controle Total pra continuar usando o Finn.'
+  }
+  if (plan === 'FREE') {
+    return resource
+      ? `Limite do plano gratuito atingido${resource ? ` (${resource})` : ''}. Faça upgrade pra continuar.`
+      : 'Esse recurso está bloqueado no plano gratuito. Faça upgrade pra desbloquear.'
+  }
+  // TRIAL/PRO/MASTER chegando aqui é caso raro (limite numérico real)
+  return 'Limite atingido. Tente novamente mais tarde.'
+}
 
 export async function getUserPlan(userId: string): Promise<PlanType> {
   const user = await prisma.user.findUnique({

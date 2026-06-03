@@ -1,6 +1,6 @@
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
-import { canUseFeature } from '@/lib/plan-limits'
+import { canUseFeature, planLimitMessage, getUserPlan } from '@/lib/plan-limits'
 
 export async function GET() {
   const user = await getAuthUser()
@@ -8,7 +8,7 @@ export async function GET() {
 
   const allowed = await canUseFeature(user.id, 'exportData')
   if (!allowed) {
-    return Response.json({ error: 'Funcionalidade exclusiva do Finn Pro. Faça upgrade para desbloquear.', upgrade: true }, { status: 403 })
+    return Response.json({ error: planLimitMessage(await getUserPlan(user.id)), upgrade: true }, { status: 403 })
   }
 
   const [accounts, categories, transactions, budgets, goals, recurringTransactions] =

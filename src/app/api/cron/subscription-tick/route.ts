@@ -35,18 +35,26 @@ export async function GET(request: NextRequest) {
   yesterdayEnd.setUTCHours(23, 59, 59, 999)
 
   // ── 1) Expira trials que já venceram ────────────────────────────────
+  // Sincroniza User.plan: TRIAL → EXPIRED. Só toca users que estavam em
+  // TRIAL — PRO/MASTER que por algum motivo tenham subscription TRIAL
+  // (não deveria acontecer) ficam com User.plan intacto.
   const trialsToExpire = await prisma.subscription.findMany({
     where: { status: 'TRIAL', trialEndsAt: { lte: now } },
-    select: { id: true, userId: true, trialEndsAt: true },
+    include: { user: { select: { plan: true } } },
   })
 
   for (const sub of trialsToExpire) {
-    await prisma.subscription.update({
-      where: { id: sub.id },
-      data: {
-        status: 'EXPIRED',
-        trialExpiredAt: now,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.update({
+        where: { id: sub.id },
+        data: { status: 'EXPIRED', trialExpiredAt: now },
+      })
+      if (sub.user.plan === 'TRIAL') {
+        await tx.user.update({
+          where: { id: sub.userId },
+          data: { plan: 'EXPIRED' },
+        })
+      }
     })
   }
 
@@ -57,13 +65,21 @@ export async function GET(request: NextRequest) {
       status: 'ACTIVE',
       currentPeriodEnd: { lte: now, not: null },
     },
-    select: { id: true, userId: true },
+    include: { user: { select: { plan: true } } },
   })
 
   for (const sub of paidToExpire) {
-    await prisma.subscription.update({
-      where: { id: sub.id },
-      data: { status: 'EXPIRED' },
+    await prisma.$transaction(async (tx) => {
+      await tx.subscription.update({
+        where: { id: sub.id },
+        data: { status: 'EXPIRED' },
+      })
+      if (sub.user.plan === 'PRO') {
+        await tx.user.update({
+          where: { id: sub.userId },
+          data: { plan: 'EXPIRED' },
+        })
+      }
     })
   }
 

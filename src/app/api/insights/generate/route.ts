@@ -1,7 +1,7 @@
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import Anthropic from '@anthropic-ai/sdk'
-import { canUseFeature } from '@/lib/plan-limits'
+import { canUseFeature, planLimitMessage, getUserPlan } from '@/lib/plan-limits'
 import { getTodayInTimezone } from '@/lib/date-tz'
 
 const anthropic = new Anthropic()
@@ -12,7 +12,7 @@ export async function POST() {
 
   const allowed = await canUseFeature(user.id, 'aiInsights')
   if (!allowed) {
-    return Response.json({ error: 'Funcionalidade exclusiva do Finn Pro. Faça upgrade para desbloquear.', upgrade: true }, { status: 403 })
+    return Response.json({ error: planLimitMessage(await getUserPlan(user.id)), upgrade: true }, { status: 403 })
   }
 
   // Month boundaries no calendário do user.

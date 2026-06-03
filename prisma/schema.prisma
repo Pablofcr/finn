@@ -102,8 +102,15 @@ enum InvoiceStatus {
   OVERDUE
 }
 
+/// Plano de features do user. TRIAL = Diagnóstico 14d com acesso completo
+/// (= PRO). EXPIRED = trial venceu sem conversão, read-only + paywall.
+/// PRO = Desafio pago. MASTER = founder/staff/grandfather (= PRO + badge
+/// Founding Member). FREE legado — kept para migração; novos usuários nunca
+/// recebem FREE (default agora é TRIAL).
 enum UserPlan {
   FREE
+  TRIAL
+  EXPIRED
   PRO
   MASTER
 }
@@ -140,7 +147,7 @@ model User {
   name            String
   phone           String?
   avatarUrl       String?
-  plan            UserPlan @default(FREE)
+  plan            UserPlan @default(TRIAL)
   defaultCurrency Currency @default(BRL)
   timezone        String   @default("America/Sao_Paulo")
   locale          String   @default("pt-BR")
