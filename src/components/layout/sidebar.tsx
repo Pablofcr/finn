@@ -12,6 +12,7 @@ import {
   Target, BarChart3, Bot, Lightbulb, Settings, Plus, Shield, Crown, CreditCard
 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'layout-dashboard': LayoutDashboard,
@@ -35,6 +36,12 @@ export function Sidebar() {
   const { user } = useAuth()
   const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário'
   const [unreadInsights, setUnreadInsights] = useState(0)
+  // avatar custom vem do User.avatarUrl no banco (settings page salva lá).
+  // Fallback pro avatar_url do Supabase (OAuth Google) — antes só usava
+  // initials, ignorando ambos.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    user?.user_metadata?.avatar_url ?? null,
+  )
 
   const fetchUnread = useCallback(async () => {
     try {
@@ -44,6 +51,15 @@ export function Sidebar() {
         setUnreadInsights(data.data?.unreadCount || 0)
       }
     } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/user')
+      .then(r => r.json())
+      .then(d => {
+        if (d?.data?.avatarUrl) setAvatarUrl(d.data.avatarUrl)
+      })
+      .catch(() => { /* ignore */ })
   }, [])
 
   useEffect(() => {
@@ -138,9 +154,12 @@ export function Sidebar() {
       <div className="px-4 pb-4 pt-2 mt-auto shrink-0">
         <div className="border-t border-white/15 pt-4">
           <Link href="/settings" className="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/15 rounded-xl transition-all cursor-pointer">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 border-2 border-white/30 text-sm font-semibold shrink-0">
-              {getInitials(displayName)}
-            </div>
+            <Avatar className="h-10 w-10 border-2 border-white/30 shrink-0">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+              <AvatarFallback className="bg-white/20 text-white text-sm font-semibold">
+                {getInitials(displayName)}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex flex-col min-w-0">
               <span className="text-[0.938rem] font-semibold truncate">{displayName}</span>
               <span className="text-xs text-white/60">Visualizar perfil</span>

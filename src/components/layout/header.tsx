@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,8 +19,20 @@ import Link from 'next/link'
 export function Header() {
   const { user, signOut } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    user?.user_metadata?.avatar_url ?? null,
+  )
 
   const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário'
+
+  useEffect(() => {
+    fetch('/api/user')
+      .then(r => r.json())
+      .then(d => {
+        if (d?.data?.avatarUrl) setAvatarUrl(d.data.avatarUrl)
+      })
+      .catch(() => { /* ignore */ })
+  }, [])
 
   return (
     <>
@@ -45,6 +57,7 @@ export function Header() {
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" className="gap-2" />}>
               <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
                 <AvatarFallback className="text-xs">
                   {getInitials(displayName)}
                 </AvatarFallback>

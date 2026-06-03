@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
@@ -10,6 +11,7 @@ import {
   Target, BarChart3, Bot, Lightbulb, Settings, Plus, Shield, Crown
 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'layout-dashboard': LayoutDashboard,
@@ -30,6 +32,18 @@ export function MobileSidebar() {
   const pathname = usePathname()
   const { user } = useAuth()
   const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário'
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    user?.user_metadata?.avatar_url ?? null,
+  )
+
+  useEffect(() => {
+    fetch('/api/user')
+      .then(r => r.json())
+      .then(d => {
+        if (d?.data?.avatarUrl) setAvatarUrl(d.data.avatarUrl)
+      })
+      .catch(() => { /* ignore */ })
+  }, [])
 
   return (
     <div className="flex h-full flex-col sidebar-gradient text-white">
@@ -93,9 +107,12 @@ export function MobileSidebar() {
       <div className="px-4 pb-4 pt-2 mt-auto">
         <div className="border-t border-white/15 pt-4">
           <Link href="/settings" className="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/15 rounded-xl transition-all cursor-pointer">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 border-2 border-white/30 text-sm font-semibold shrink-0">
-              {getInitials(displayName)}
-            </div>
+            <Avatar className="h-10 w-10 border-2 border-white/30 shrink-0">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+              <AvatarFallback className="bg-white/20 text-white text-sm font-semibold">
+                {getInitials(displayName)}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex flex-col min-w-0">
               <span className="text-[0.938rem] font-semibold truncate">{displayName}</span>
               <span className="text-xs text-white/60">Visualizar perfil</span>

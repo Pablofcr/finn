@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -49,6 +50,18 @@ export function MobileMenuDrawer({
   const pathname = usePathname()
   const { user } = useAuth()
   const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário'
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    user?.user_metadata?.avatar_url ?? null,
+  )
+
+  useEffect(() => {
+    fetch('/api/user')
+      .then(r => r.json())
+      .then(d => {
+        if (d?.data?.avatarUrl) setAvatarUrl(d.data.avatarUrl)
+      })
+      .catch(() => { /* ignore */ })
+  }, [])
   const isUserAdmin = isAdmin(user?.email)
 
   // Body scroll lock — overflow:hidden on html+body is more reliable on iOS
@@ -212,9 +225,12 @@ export function MobileMenuDrawer({
             onClick={onClose}
             className="flex items-center gap-3 p-3 bg-white/10 hover:bg-white/15 rounded-lg transition-all"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-sm font-semibold shrink-0">
-              {getInitials(displayName)}
-            </div>
+            <Avatar className="h-9 w-9 border border-white/30 shrink-0">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+              <AvatarFallback className="bg-white/20 text-white text-sm font-semibold">
+                {getInitials(displayName)}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex flex-col min-w-0">
               <span className="text-[14px] font-semibold truncate leading-tight">{displayName}</span>
               <span className="text-[11px] text-white/60">Visualizar perfil</span>
