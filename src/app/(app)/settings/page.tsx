@@ -267,6 +267,14 @@ export default function SettingsPage() {
                     Desafio Ativo
                   </span>
                 )}
+                {plan === 'PRO_COURTESY' && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-violet-500/12 text-violet-700 dark:text-violet-400 ring-1 ring-inset ring-violet-500/25"
+                    title="Acesso cortesia do Finn"
+                  >
+                    🎁 Convidado
+                  </span>
+                )}
                 {plan === 'EXPIRED' && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-inset ring-amber-500/25">
                     Diagnóstico encerrado

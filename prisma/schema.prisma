@@ -104,14 +104,17 @@ enum InvoiceStatus {
 
 /// Plano de features do user. TRIAL = Diagnóstico 14d com acesso completo
 /// (= PRO). EXPIRED = trial venceu sem conversão, read-only + paywall.
-/// PRO = Desafio pago. MASTER = founder/staff/grandfather (= PRO + badge
-/// Founding Member). FREE legado — kept para migração; novos usuários nunca
-/// recebem FREE (default agora é TRIAL).
+/// PRO = Desafio pago. PRO_COURTESY = "Convidado do Finn" — acesso cortesia
+/// (família/amigos/influencers), idêntico a PRO em features mas SEM cobrança,
+/// e EXCLUÍDO de métricas de conversão/MRR/churn pago. MASTER = founder/
+/// staff/grandfather (= PRO + badge Founding Member). FREE legado — kept
+/// para migração; novos usuários nunca recebem FREE.
 enum UserPlan {
   FREE
   TRIAL
   EXPIRED
   PRO
+  PRO_COURTESY
   MASTER
 }
 

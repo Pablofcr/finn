@@ -39,6 +39,10 @@ export const PLAN_LIMITS = {
   // Desafio Controle Total — pago.
   PRO: PRO_LIMITS,
 
+  // "Convidado do Finn" — cortesia (família/amigos/influencers). Idêntico
+  // a PRO em features. Excluído de métricas de MRR/conversão/churn pago.
+  PRO_COURTESY: PRO_LIMITS,
+
   // Founder/staff/grandfather — idêntico a PRO; badge "Founding Member"
   // sinaliza simbolismo separado das features.
   MASTER: PRO_LIMITS,
@@ -67,6 +71,7 @@ export const PLAN_PRICES = {
   TRIAL: 0,
   EXPIRED: 0,
   PRO: 14.90,
+  PRO_COURTESY: 0,
   MASTER: 0,
   FREE: 0,
 } as const

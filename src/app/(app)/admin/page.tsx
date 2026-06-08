@@ -38,6 +38,7 @@ interface UserData {
 interface Stats {
   totalUsers: number
   proUsers: number
+  courtesyUsers: number
   freeUsers: number
   conversionRate: string
   totalTransactions: number
@@ -162,7 +163,13 @@ export default function AdminPage() {
       })
       if (res.ok) {
         setUsers(prev => prev.map(u => u.id === userId ? { ...u, plan: newPlan } : u))
-        toast.success(`Plano alterado para ${newPlan}`)
+        const friendly = newPlan === 'PRO_COURTESY' ? 'Convidado'
+          : newPlan === 'PRO' ? 'Pro (pagante)'
+          : newPlan === 'TRIAL' ? 'Diagnóstico'
+          : newPlan === 'EXPIRED' ? 'Expirado'
+          : newPlan === 'MASTER' ? 'Master'
+          : newPlan
+        toast.success(`Plano alterado para ${friendly}`)
       }
     } catch {
       toast.error('Não foi possível alterar o plano.')
@@ -230,8 +237,9 @@ export default function AdminPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { icon: Users, label: 'Total de usuários', value: stats.totalUsers, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-500/10' },
-            { icon: Crown, label: 'Usuários Pro', value: stats.proUsers, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' },
-            { icon: Users, label: 'Usuários Free', value: stats.freeUsers, color: 'text-slate-500', bg: 'bg-slate-50 dark:bg-slate-500/10' },
+            { icon: Crown, label: 'Pro pagante', value: stats.proUsers, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' },
+            { icon: Crown, label: 'Convidados (cortesia)', value: stats.courtesyUsers ?? 0, color: 'text-violet-500', bg: 'bg-violet-50 dark:bg-violet-500/10' },
+            { icon: Users, label: 'Demais usuários', value: stats.freeUsers, color: 'text-slate-500', bg: 'bg-slate-50 dark:bg-slate-500/10' },
             { icon: TrendingUp, label: 'Taxa de conversão', value: `${stats.conversionRate}%`, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
             { icon: ArrowLeftRight, label: 'Transações totais', value: stats.totalTransactions, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-500/10' },
             { icon: ShieldAlert, label: 'Em risco esta semana', value: stats.usersAtRisk, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-500/10' },
@@ -394,10 +402,21 @@ export default function AdminPage() {
                             ? 'bg-gradient-to-r from-amber-500 to-red-500 text-white border-0'
                             : u.plan === 'PRO'
                               ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0'
-                              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-0'
+                              : u.plan === 'PRO_COURTESY'
+                                ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white border-0'
+                                : u.plan === 'TRIAL'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400 border-0'
+                                  : u.plan === 'EXPIRED'
+                                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 border-0'
+                                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-0'
                         }
                       >
-                        {u.plan === 'MASTER' ? '⚡ Master' : u.plan === 'PRO' ? '👑 Pro' : 'Free'}
+                        {u.plan === 'MASTER' ? '⚡ Master'
+                          : u.plan === 'PRO' ? '👑 Pro'
+                          : u.plan === 'PRO_COURTESY' ? '🎁 Convidado'
+                          : u.plan === 'TRIAL' ? 'Diagnóstico'
+                          : u.plan === 'EXPIRED' ? 'Expirado'
+                          : 'Free'}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-center">{u.transactions}</td>
@@ -412,27 +431,21 @@ export default function AdminPage() {
                       {new Date(u.createdAt).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {u.plan === 'FREE' ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs"
-                          disabled={updating === u.id}
-                          onClick={() => handleChangePlan(u.id, 'PRO')}
-                        >
-                          {updating === u.id ? '...' : 'Ativar Pro'}
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-muted-foreground"
-                          disabled={updating === u.id}
-                          onClick={() => handleChangePlan(u.id, 'FREE')}
-                        >
-                          {updating === u.id ? '...' : 'Rebaixar'}
-                        </Button>
-                      )}
+                      {/* Select com todos os planos pra qualquer transição.
+                          MASTER fica fora pra não dar gift de "founder" por engano. */}
+                      <select
+                        className="text-xs rounded-md border border-input bg-background px-2 py-1 disabled:opacity-50"
+                        value={u.plan}
+                        disabled={updating === u.id}
+                        onChange={(e) => handleChangePlan(u.id, e.target.value)}
+                      >
+                        <option value="TRIAL">Diagnóstico</option>
+                        <option value="EXPIRED">Expirado</option>
+                        <option value="PRO">Pro (pagante)</option>
+                        <option value="PRO_COURTESY">Convidado (cortesia)</option>
+                        {u.plan === 'MASTER' && <option value="MASTER">Master</option>}
+                        {u.plan === 'FREE' && <option value="FREE">Free (legado)</option>}
+                      </select>
                     </td>
                   </tr>
                   )

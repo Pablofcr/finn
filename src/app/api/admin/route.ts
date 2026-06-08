@@ -126,10 +126,13 @@ export async function GET() {
     }
   })
 
-  // Aggregate stats
-  const [totalUsers, proUsers, totalTransactions, newUsersThisMonth, newUsersThisWeek, totalAccounts] = await Promise.all([
+  // Aggregate stats. proUsers conta APENAS PRO pagante; PRO_COURTESY e
+  // MASTER ficam de fora pra não inflar conversionRate/MRR. Decisão
+  // squad (Fader): cohorts heterogêneas destroem analytics — separar agora.
+  const [totalUsers, proUsers, courtesyUsers, totalTransactions, newUsersThisMonth, newUsersThisWeek, totalAccounts] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { plan: 'PRO' } }),
+    prisma.user.count({ where: { plan: 'PRO_COURTESY' } }),
     prisma.transaction.count(),
     prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
     prisma.user.count({ where: { createdAt: { gte: startOfWeek } } }),
@@ -144,7 +147,7 @@ export async function GET() {
     u.engagementStatus === 'inactive',
   ).length
 
-  // Monthly revenue estimate
+  // Monthly revenue: só PRO pagante. Cortesia/Master não contam.
   const monthlyRevenue = proUsers * 14.90
 
   return Response.json({
@@ -152,7 +155,8 @@ export async function GET() {
       stats: {
         totalUsers,
         proUsers,
-        freeUsers: totalUsers - proUsers,
+        courtesyUsers,
+        freeUsers: totalUsers - proUsers - courtesyUsers,
         conversionRate: totalUsers > 0 ? ((proUsers / totalUsers) * 100).toFixed(1) : '0',
         totalTransactions,
         totalAccounts,
@@ -174,7 +178,8 @@ export async function PUT(request: NextRequest) {
 
   const { userId, plan } = await request.json()
 
-  if (!userId || !['FREE', 'PRO', 'MASTER'].includes(plan)) {
+  const VALID_PLANS = ['FREE', 'TRIAL', 'EXPIRED', 'PRO', 'PRO_COURTESY', 'MASTER']
+  if (!userId || !VALID_PLANS.includes(plan)) {
     return Response.json({ error: 'Dados inválidos' }, { status: 400 })
   }
 
